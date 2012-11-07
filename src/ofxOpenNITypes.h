@@ -731,13 +731,13 @@ public:
     
     ofxOpenNIDepthThreshold();
     
-    ofxOpenNIDepthThreshold(int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 2);
+    ofxOpenNIDepthThreshold(int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 1);
     
-    ofxOpenNIDepthThreshold(ofxOpenNIROI & _roi, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 2);
+    ofxOpenNIDepthThreshold(ofxOpenNIROI & _roi, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 1);
     
-    void set(int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 2);
+    void set(int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 1);
     
-    void set(ofxOpenNIROI & _roi, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 2);
+    void set(ofxOpenNIROI & _roi, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, int _pointCloudDrawSize = 2, int _pointCloudResolution = 1);
     
     inline bool inside(ofPoint& p){
         if(bUseXY){

@@ -32,7 +32,7 @@
 ofxOpenNIUser::ofxOpenNIUser(){
     
     pointCloudDrawSize = 2;
-    pointCloudResolution = 2;
+    pointCloudResolution = 1;
     
     confidenceThreshold =  0.5f;
     
@@ -555,12 +555,17 @@ void ofxOpenNIDepthThreshold::set(ofxOpenNIROI & _roi,
 
 //--------------------------------------------------------------
 void ofxOpenNIDepthThreshold::drawPointCloud(){
-    ofPushStyle();
+    //glPushMatrix();
+	//glRotatef(180, 0, 0, 1);
+
+	ofPushStyle();
     glPointSize(pointCloudDrawSize);
     glEnable(GL_DEPTH_TEST);
-    pointCloud[1].drawVertices();
+	
+	pointCloud[1].drawVertices();
     glDisable(GL_DEPTH_TEST);
     ofPopStyle();
+	//glPopMatrix();
 }
 
 //--------------------------------------------------------------

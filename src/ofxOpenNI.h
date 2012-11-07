@@ -280,8 +280,9 @@ public:
 	ofPoint worldToProjective(const ofPoint & p);
 	ofPoint worldToProjective(const XnVector3D & p);
 
-	ofPoint projectiveToWorld(const ofPoint & p);
-	ofPoint projectiveToWorld(const XnVector3D & p);
+	ofPoint getConvertedProjectiveToWorld(const ofPoint & p);
+	ofPoint getConvertedProjectiveToWorld(const XnVector3D & p);
+	void convertProjectiveToWorld(ofVec3f* p, int n);
 
 	ofPoint cameraToWorld(const ofVec2f& c);
 	void cameraToWorld(const vector<ofVec2f>& c, vector<ofVec3f>& w);
