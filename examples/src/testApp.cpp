@@ -34,7 +34,11 @@ void testApp::setup() {
 		// (ofxOpenNIROI OR) int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, 
 		// bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, 
 		// int _pointCloudDrawSize = 2, int _pointCloudResolution = 2
+		depthThreshold.setUsePointCloud(true);
+		depthThreshold.setPointCloudDrawSize(2);
+
 		openNIDevice.addDepthThreshold(depthThreshold);
+
 	}
 
 	openNIDevice.start();
@@ -50,7 +54,6 @@ void testApp::update(){
 	openNIDevice.update();
 
 	if(openNIDevice.isNewFrame()) {
-
 		tracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
 	}
 
@@ -100,8 +103,6 @@ void testApp::draw(){
 		ofScale(5,5,5);
 		tracker.getObjectMesh().drawWireframe();
 		ofDrawBitmapString(ofToString(tracker.getPosition()), 10, 20);
-
-		
 	}
 
 	// iterate through users
@@ -121,9 +122,7 @@ void testApp::draw(){
 		ofxOpenNIDepthThreshold & depthThreshold = openNIDevice.getDepthThreshold(i); // we just use hand index for the depth threshold index
 		depthThreshold.drawROI();
 
-		depthThreshold.setUsePointCloud(true);
-		depthThreshold.setPointCloudDrawSize(2);
-
+		
 		ofMesh& pc = depthThreshold.getPointCloud();
 
 		vector<ofVec3f> v = pc.getVertices();
