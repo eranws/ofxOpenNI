@@ -44,7 +44,7 @@ void testApp::setup() {
 	openNIDevice.start();
 
 	cam.setDistance(10);
-	tracker.setup();
+	faceTracker.setup();
 
 	verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
 }
@@ -54,7 +54,7 @@ void testApp::update(){
 	openNIDevice.update();
 
 	if(openNIDevice.isNewFrame()) {
-		tracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
+		faceTracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
 	}
 
 	// reset all depthThresholds to 0,0,0
@@ -98,11 +98,11 @@ void testApp::draw(){
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
-	if(tracker.getFound()) {
-		ofxCv::applyMatrix(tracker.getRotationMatrix());
+	if(faceTracker.getFound()) {
+		ofxCv::applyMatrix(faceTracker.getRotationMatrix());
 		ofScale(5,5,5);
-		tracker.getObjectMesh().drawWireframe();
-		ofDrawBitmapString(ofToString(tracker.getPosition()), 10, 20);
+		faceTracker.getObjectMesh().drawWireframe();
+		ofDrawBitmapString(ofToString(faceTracker.getPosition()), 10, 20);
 	}
 
 	// iterate through users
@@ -185,8 +185,8 @@ void testApp::handEvent(ofxOpenNIHandEvent & event){
 //--------------------------------------------------------------
 void testApp::exit(){
 
-	tracker.stopThread();
-	tracker.waitForThread();
+	faceTracker.stopThread();
+	faceTracker.waitForThread();
 
 	openNIDevice.stop();
 }
