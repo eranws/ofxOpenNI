@@ -1,5 +1,6 @@
 #include "testApp.h"
 #include <string>
+#include "ofxCv\Utilities.h"
 
 //--------------------------------------------------------------
 void testApp::setup() {
@@ -39,6 +40,7 @@ void testApp::setup() {
 	openNIDevice.start();
 
 	cam.setDistance(10);
+	tracker.setup();
 
 	verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
 }
@@ -46,6 +48,11 @@ void testApp::setup() {
 //--------------------------------------------------------------
 void testApp::update(){
 	openNIDevice.update();
+
+	if(openNIDevice.isNewFrame()) {
+
+		tracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
+	}
 
 	// reset all depthThresholds to 0,0,0
 	for(int i = 0; i < openNIDevice.getMaxNumHands(); i++){
@@ -88,6 +95,15 @@ void testApp::draw(){
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
+	if(tracker.getFound()) {
+		ofxCv::applyMatrix(tracker.getRotationMatrix());
+		ofScale(5,5,5);
+		tracker.getObjectMesh().drawWireframe();
+		ofDrawBitmapString(ofToString(tracker.getPosition()), 10, 20);
+
+		
+	}
+
 	// iterate through users
 	for (int i = 0; i < openNIDevice.getNumTrackedHands(); i++){
 
@@ -114,9 +130,6 @@ void testApp::draw(){
 
 		if (v.size() > 0)
 		{
-
-
-
 			ofVec3f minV = v[0];
 			for (int iv=1; iv < v.size(); iv++)
 			{
@@ -172,6 +185,10 @@ void testApp::handEvent(ofxOpenNIHandEvent & event){
 
 //--------------------------------------------------------------
 void testApp::exit(){
+
+	tracker.stopThread();
+	tracker.waitForThread();
+
 	openNIDevice.stop();
 }
 

@@ -3,6 +3,7 @@
 
 #include "ofxOpenNI.h"
 #include "ofMain.h"
+#include "ofxFaceTrackerThreaded.h"
 
 #define MAX_DEVICES 2
 
@@ -29,6 +30,8 @@ private:
     
 	ofxOpenNI openNIDevice;
     ofTrueTypeFont verdana;
+
+	ofxFaceTrackerThreaded tracker;
 
 	ofEasyCam cam;
 
