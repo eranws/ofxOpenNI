@@ -26,7 +26,7 @@ void testApp::setup() {
 	// prints to console and/or you can use the returned vector
 	//openNIDevice.addHandFocusGesture("Wave");
 
-	openNIDevice.setMaxNumHands(4);
+	openNIDevice.setMaxNumHands(MAX_HANDS);
 
 	for(int i = 0; i < openNIDevice.getMaxNumHands(); i++){
 		ofxOpenNIDepthThreshold depthThreshold = ofxOpenNIDepthThreshold(0, 0, false, true, true, true, true); 
@@ -66,8 +66,13 @@ void testApp::update(){
 		depthThreshold.setROI(roi);
 	}
 
+	for (int i = 0; i < MAX_HANDS; i++)
+	{
+		fingers[i].isTracked = false;
+	}
 	// iterate through users
-	for (int i = 0; i < openNIDevice.getNumTrackedHands(); i++){
+	for (int i = 0; i < openNIDevice.getNumTrackedHands(); i++)
+	{
 
 		// get a reference to this user
 		ofxOpenNIHand & hand = openNIDevice.getTrackedHand(i);
@@ -82,6 +87,21 @@ void testApp::update(){
 
 		ofxOpenNIROI roi = ofxOpenNIROI(leftBottomNearWorld, rightTopFarWorld);
 		depthThreshold.setROI(roi);
+
+
+		ofMesh& pc = depthThreshold.getPointCloud();
+		vector<ofVec3f> v = pc.getVertices();
+		if (v.size() > 0)
+		{
+			fingers[i].isTracked = true;
+			ofVec3f& minV = fingers[i].position;
+			minV = v[0];
+			for (int iv=1; iv < v.size(); iv++)
+			{
+				if (v[iv].y - v[iv].z > minV.y - minV.z ) minV = v[iv];
+			}
+		}
+
 
 	}
 }
@@ -123,18 +143,8 @@ void testApp::draw(){
 		depthThreshold.drawROI();
 
 		
-		ofMesh& pc = depthThreshold.getPointCloud();
-
-		vector<ofVec3f> v = pc.getVertices();
-
-		if (v.size() > 0)
+		if (fingers[i].isTracked)
 		{
-			ofVec3f minV = v[0];
-			for (int iv=1; iv < v.size(); iv++)
-			{
-				if (v[iv].y - v[iv].z > minV.y - minV.z ) minV = v[iv];
-			}
-
 			// draw ROI over the depth image
 			ofSetColor(255,255,255);
 			cam.setGlobalPosition(0,0,handPosition.z + 400);
@@ -146,7 +156,7 @@ void testApp::draw(){
 			depthThreshold.drawPointCloud();
 
 			ofSetColor(ofColor::red, 128);
-			ofSphere(minV, 5);
+			ofSphere(fingers[i].position, 5);
 
 			cam.end();
 		}

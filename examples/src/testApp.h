@@ -6,16 +6,17 @@
 #include "ofxFaceTrackerThreaded.h"
 
 #define MAX_DEVICES 2
+#define MAX_HANDS 4
 
 class testApp : public ofBaseApp{
 
 public:
-    
+
 	void setup();
 	void update();
 	void draw();
-    void exit();
-    
+	void exit();
+
 	void keyPressed  (int key);
 	void keyReleased(int key);
 	void mouseMoved(int x, int y );
@@ -25,17 +26,25 @@ public:
 	void windowResized(int w, int h);
 
 private:
-    
-    void handEvent(ofxOpenNIHandEvent & event);
-    
-	ofxOpenNI openNIDevice;
-    ofTrueTypeFont verdana;
 
-	ofxFaceTrackerThreaded tracker;
+	void handEvent(ofxOpenNIHandEvent & event);
+
+	ofxOpenNI openNIDevice;
+	ofTrueTypeFont verdana;
+
+	ofxFaceTrackerThreaded faceTracker;
 
 	ofEasyCam cam;
 
-    
+	struct Finger
+	{
+		ofVec3f position;
+		bool isTracked;
+		Finger() : isTracked(false){}
+	};
+
+	Finger fingers[MAX_HANDS];
+
 };
 
 #endif
