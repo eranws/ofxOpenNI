@@ -2936,7 +2936,7 @@ float ofxOpenNI::getFrameRate(){
 #else
     if(bIsThreaded) Poco::ScopedLock<ofMutex> lock();
 #endif
-    // this returns a calcualted frame rate based on threaded/normal updates NOT the device target frame rate
+    // this returns a calculated frame rate based on threaded/normal updates NOT the device target frame rate
     return frameRate;
 }
 
@@ -3684,7 +3684,7 @@ void ofxOpenNI::cameraToWorld(const vector<ofVec2f>& c, vector<ofVec3f>& w){
 	//XnPoint3D *out = &projective[0];
 
 	//lock();
-	const XnDepthPixel* d = currentDepthRawPixels->getPixels();
+	const ofShortPixels d = getDepthRawPixels();//currentDepthRawPixels->getPixels();
 	unsigned int pixel;
 	for (int i = 0; i < nPoints; ++i){
 		pixel = (int)c[i].x + (int)c[i].y * g_DepthMD.XRes();
@@ -3693,7 +3693,7 @@ void ofxOpenNI::cameraToWorld(const vector<ofVec2f>& c, vector<ofVec3f>& w){
 
 		projective[i].X = c[i].x;
 		projective[i].Y = c[i].y;
-		projective[i].Z = float(d[pixel]) / 1000.0f;
+		projective[i].Z = float(d[pixel]);
 	}
 	//unlock();
 

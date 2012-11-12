@@ -12,6 +12,8 @@ void testApp::setup() {
 
 	openNIDevice.addImageGenerator();
 	openNIDevice.addDepthGenerator();
+	openNIDevice.setUseDepthRawPixels(true);
+
 	openNIDevice.setRegister(true);
 	openNIDevice.setMirror(true);
 
@@ -115,39 +117,61 @@ void testApp::update(){
 void testApp::draw(){
 	ofBackground(0);
 
-	//ofSetColor(255, 255, 255);
+	ofPushMatrix();
+	openNIDevice.drawDebug(); // draw debug (ie., image, depth, skeleton)
+	ofPopMatrix();
 
 	sceneCam.begin();
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
-	sceneCam.end();
+	
+	stringstream camString;
 
-	stringstream ss;
-
-#define camlog(x) {ss<<#x<<" : "<<sceneCam.x() << endl;}
+#define camlog(x) {camString<<#x<<" : "<<sceneCam.x() << endl;}
 	camlog(getDistance);
 	camlog(getPosition);
 	camlog(getOrientationEuler);
 	camlog(getFarClip);
 #undef camlog
 
-	ofSetColor(ofColor::green);
-	ofDrawBitmapString(ss.str(), 10, 20);
-	return;
-
-	ofPushMatrix();
-	// draw debug (ie., image, depth, skeleton)
-	openNIDevice.drawDebug();
-	ofPopMatrix();
-
+	
+	
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
+	ofVec3f facePos;
 	if(faceTracker.getFound()) {
+
+		//faceTracker.getFeatureIndices(ofxFaceTracker::Feature::LEFT_EYE);
+		
+		ofVec3f leftEye =  openNIDevice.cameraToWorld(faceTracker.getObjectPoint(36));
+		ofVec3f rightEye =  openNIDevice.cameraToWorld(faceTracker.getObjectPoint(42));
+
+		ofSetColor(ofColor::blue);
+		ofSphere(leftEye, 10);
+		ofSetColor(ofColor::red);
+		ofSphere(rightEye, 10);
+
+
+		ofPushMatrix();
+
+		facePos = openNIDevice.cameraToWorld(faceTracker.getPosition());
+		
+		ofSetColor(ofColor::green);
+		ofSphere(facePos, 5);
+
+		ofTranslate(facePos);
+		camString << "facePos" << facePos;
+		
 		ofxCv::applyMatrix(faceTracker.getRotationMatrix());
-		ofScale(5,5,5);
+		ofRotateY(180.0);
 		faceTracker.getObjectMesh().drawWireframe();
-		ofDrawBitmapString(ofToString(faceTracker.getPosition()), 10, 20);
+
+		ofPopMatrix();
+
+		
+
+		
 	}
 
 	// iterate through users
@@ -161,7 +185,7 @@ void testApp::draw(){
 
 		// draw a rect at the position
 		ofSetColor(255,0,0);
-		ofRect(handPosition.x, handPosition.y, 2, 2);
+		//ofRect(handPosition.x, handPosition.y, 2, 2);
 		ofDrawBitmapString("hand" + ofToString(i), handPosition.x, handPosition.y);
 		// set depthThresholds based on handPosition
 		ofxOpenNIDepthThreshold & depthThreshold = openNIDevice.getDepthThreshold(i); // we just use hand index for the depth threshold index
@@ -172,18 +196,26 @@ void testApp::draw(){
 		{
 			// draw ROI over the depth image
 			ofSetColor(255,255,255);
-			handCam.setGlobalPosition(0,0,handPosition.z + 400);
-			handCam.begin();
-
+			//handCam.setGlobalPosition(0,0,handPosition.z + 400);
+			//handCam.begin();
 			//cam.lookAt(handPosition);//, ofVec3f(0, -1, 0));
-
 			depthThreshold.getPointCloud().disableColors();
 			depthThreshold.drawPointCloud();
-
 			ofSetColor(ofColor::red, 128);
 			ofSphere(fingers[i].position, 5);
+			//handCam.end();
 
-			handCam.end();
+
+			if(faceTracker.getFound())
+			{
+				ofPushStyle();
+				ofSetLineWidth(3);
+				ofDrawArrow(facePos, fingers[i].position);
+				ofSetLineWidth(1);
+				ofLine(facePos, fingers[i].position.interpolated(facePos, -3));
+				ofPopStyle();
+
+			}
 		}
 		// draw depth and mask textures below the depth image at 0.5 scale
 		// you could instead just do pixel maths here for finger tracking etc
@@ -204,9 +236,14 @@ void testApp::draw(){
 	ofDisableBlendMode();
 	ofPopMatrix();
 
+	sceneCam.end();
+
 	// draw some info regarding frame counts etc
 	ofSetColor(0, 255, 0);
 	string msg = " MILLIS: " + ofToString(ofGetElapsedTimeMillis()) + " FPS: " + ofToString(ofGetFrameRate()) + " Device FPS: " + ofToString(openNIDevice.getFrameRate());
+
+	ofSetColor(ofColor::green);
+	ofDrawBitmapString(camString.str(), 10, 20);
 
 	verdana.drawString(msg, 20, 480 - 20);
 }
