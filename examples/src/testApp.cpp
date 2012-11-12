@@ -210,10 +210,16 @@ void testApp::draw(){
 			{
 				ofPushStyle();
 				ofSetLineWidth(3);
+				ofSetColor(ofColor::green);
 				ofDrawArrow(facePos, fingers[i].position);
 				ofSetLineWidth(1);
+				ofSetColor(ofColor::yellow);
 				ofLine(facePos, fingers[i].position.interpolated(facePos, -3));
 				ofPopStyle();
+
+				ofSetColor(ofColor::magenta);
+
+				ofSphere(scene.screen.getIntersectionPointWithLine(facePos, fingers[i].position), 10);
 
 			}
 		}

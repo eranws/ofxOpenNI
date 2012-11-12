@@ -27,9 +27,14 @@ class Screen: public SceneItem
 public:
 	Screen(void)
 	{
-		setScale(559.7, 493.0, 201.5);
+		//setScale(559.7, 366.0, 201.5); //physical
+		setScale(520.0, 326.0, 20); // visual
+
 	}
-	//virtual ~Screen(void){}
+
+	ofPoint getIntersectionPointWithLine(ofPoint p1, ofPoint p2);
+	ofVec2f getScreenPointFromWorld(ofPoint);
+
 
 };
 
