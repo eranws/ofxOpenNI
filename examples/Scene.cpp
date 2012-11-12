@@ -3,10 +3,10 @@
 
 Scene::Scene(void)
 {
-	screen.setGlobalPosition(0,0,0);
+	screen.setGlobalPosition(0, -250,0);
 	screen.color = ofColor::red; 
 
-	sensor.setGlobalPosition(0, 250, 0);
+	sensor.setGlobalPosition(0, 0, 0);
 	sensor.color = ofColor::yellow; 
 
 }
