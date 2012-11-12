@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "ofAppRunner.h"
 
 
 Scene::Scene(void)
@@ -62,6 +63,17 @@ ofPoint Screen::getIntersectionPointWithLine( ofPoint p4, ofPoint p5 )
 		).determinant();
 
 	ofPoint res = p4 + (p5-p4) * t;
+
+	return res;
+}
+
+ofVec2f Screen::getScreenPointFromWorld(ofPoint p)
+{
+	ofPoint hs = getScale() / 2; //= halfScale 
+	ofPoint dp = getPosition() + ofPoint(+hs.x, +hs.y, 0);
+	
+	ofVec2f res((dp.x + p.x) * ofGetScreenWidth()  / getScale().x,
+		(dp.y - p.y) * ofGetScreenHeight() / getScale().y);
 
 	return res;
 }
