@@ -46,6 +46,7 @@
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\libs\FaceTracker\src\lib\FTracker.cc">
       <Filter>addons\ofxFaceTracker\libs\FaceTracker\src</Filter>
     </ClCompile>
+    <ClCompile Include="Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxOpenNI\include\openni\Android-Arm\XnPlatformAndroid-Arm.h">
@@ -480,6 +481,7 @@
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\libs\FaceTracker\include\FaceTracker\FTracker.h">
       <Filter>addons\ofxFaceTracker\libs\FaceTracker\include</Filter>
     </ClInclude>
+    <ClInclude Include="Scene.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ofxOpenNI">

@@ -43,8 +43,13 @@ void testApp::setup() {
 
 	openNIDevice.start();
 
-	cam.setDistance(10);
+	handCam.setDistance(10);
 	faceTracker.setup();
+
+	
+	//sceneCam.setGlobalOrientation(ofQuaternion()
+	sceneCam.setGlobalPosition(0,0,1000);
+	//sceneCam.setDistance(1000);
 
 	verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
 }
@@ -108,7 +113,27 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw(){
-	ofSetColor(255, 255, 255);
+	ofBackground(0);
+
+	//ofSetColor(255, 255, 255);
+
+	sceneCam.begin();
+	ofEnableBlendMode(OF_BLENDMODE_ADD);
+	scene.draw();
+	sceneCam.end();
+
+	stringstream ss;
+
+#define camlog(x) {ss<<#x<<" : "<<sceneCam.x() << endl;}
+	camlog(getDistance);
+	camlog(getPosition);
+	camlog(getOrientationEuler);
+	camlog(getFarClip);
+#undef camlog
+
+	ofSetColor(ofColor::green);
+	ofDrawBitmapString(ss.str(), 10, 20);
+	return;
 
 	ofPushMatrix();
 	// draw debug (ie., image, depth, skeleton)
@@ -147,8 +172,8 @@ void testApp::draw(){
 		{
 			// draw ROI over the depth image
 			ofSetColor(255,255,255);
-			cam.setGlobalPosition(0,0,handPosition.z + 400);
-			cam.begin();
+			handCam.setGlobalPosition(0,0,handPosition.z + 400);
+			handCam.begin();
 
 			//cam.lookAt(handPosition);//, ofVec3f(0, -1, 0));
 
@@ -158,7 +183,7 @@ void testApp::draw(){
 			ofSetColor(ofColor::red, 128);
 			ofSphere(fingers[i].position, 5);
 
-			cam.end();
+			handCam.end();
 		}
 		// draw depth and mask textures below the depth image at 0.5 scale
 		// you could instead just do pixel maths here for finger tracking etc

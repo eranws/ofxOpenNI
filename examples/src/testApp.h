@@ -4,6 +4,7 @@
 #include "ofxOpenNI.h"
 #include "ofMain.h"
 #include "ofxFaceTrackerThreaded.h"
+#include "..\Scene.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -34,7 +35,9 @@ private:
 
 	ofxFaceTrackerThreaded faceTracker;
 
-	ofEasyCam cam;
+	ofEasyCam handCam;
+	ofEasyCam sceneCam;
+
 
 	struct Finger
 	{
@@ -44,6 +47,7 @@ private:
 	};
 
 	Finger fingers[MAX_HANDS];
+	Scene scene;
 
 };
 
