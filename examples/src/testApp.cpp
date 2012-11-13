@@ -271,6 +271,13 @@ void testApp::draw(){
 
 				const float b = (screenPoint==ofVec2f()) ? 0 : 0.5;
 				screenPoint = (b*screenPoint) + (1-b) * scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
+				
+				screenPointHistory.push_front(screenPoint);
+				if (screenPointHistory.size() > 10)
+				{
+					screenPointHistory.pop_back();
+				}
+
 			}
 
 		}
@@ -287,18 +294,42 @@ void testApp::draw(){
 		ofFill();
 		ofSetColor(255);
 		ofCircle(screenPoint, 10);
+		ofNoFill();
+		for (int i=0; i<screenPointHistory.size();i++)
+		{
+			int ri = screenPointHistory.size() - i - 1;
+			ofSetColor(255,255,255,1 - 0.1*i);
+			ofCircle(screenPointHistory[ri], 11 - ri);
+		}
 		camString << "screenPoint: " << screenPoint << endl;
 	}
 
+
+	static float timeThen = 0;
+	static float timeNow = 0;
+	static float frameRate = 0;
+
+	timeNow = ofGetElapsedTimef();
+	double diff = timeNow-timeThen;	
+	if( diff  > 0.00001 ){
+		float fps = 1.0 / diff;
+		frameRate	*= 0.9f;
+		frameRate	+= 0.1f*fps;
+	}
+	timeThen = timeNow;
+
 	// draw some info regarding frame counts etc
 	ofSetColor(0, 255, 0);
-	string msg = " MILLIS: " + ofToString(ofGetElapsedTimeMillis()) + " FPS: " + ofToString(ofGetFrameRate()) + " Device FPS: " + ofToString(openNIDevice.getFrameRate());
+	camString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
+	camString << "frameRate: " << frameRate << endl;
+	camString << "fps: " << ofGetFrameRate() << endl;
+	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
 
 	if (drawDebugString)
 	{
 		ofSetColor(ofColor::green);
 		ofDrawBitmapString(camString.str(), 10, 20);
-		verdana.drawString(msg, 20, 480 - 20);
+		//verdana.drawString(msg, 20, 480 - 20);
 	}
 
 }

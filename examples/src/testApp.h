@@ -60,6 +60,8 @@ private:
 
 	ofVec3f facePos;
 	ofVec2f screenPoint;
+	deque<ofVec2f> screenPointHistory;
+
 
 
 
