@@ -44,7 +44,7 @@ private:
 		std::deque<ofVec3f> position;
 		bool isTracked;
 		Finger() : isTracked(false){ position.push_front(ofVec3f());}
-		ofVec3f getFilteredPosition(float a = 0.9f);
+		ofVec3f getFilteredPosition(float a = 0.5f);
 
 		static const int historySize = 10;
 	};
@@ -55,6 +55,10 @@ private:
 
 	bool drawDebugString;
 	bool drawOpenNiDebug;
+
+	stringstream camString;
+
+	ofVec3f facePos;
 
 
 

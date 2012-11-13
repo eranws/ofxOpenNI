@@ -58,10 +58,16 @@ void testApp::setup() {
 
 //--------------------------------------------------------------
 void testApp::update(){
+	
+	camString = stringstream();
+	
+
 	openNIDevice.update();
 
 	if(openNIDevice.isNewFrame()) {
 		faceTracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
+		if(!faceTracker.getFound()) { facePos = ofVec3f();}
+
 	}
 
 	// reset all depthThresholds to 0,0,0
@@ -114,8 +120,23 @@ void testApp::update(){
 			}
 
 			//get finger center of mass
+			ofVec3f fingerCoM;
+			int count;
+			for (int iv=0; iv < v.size(); iv++)
+			{
+				
+				if (minV.distanceSquared(v[iv]) < 100)
+				{
+					fingerCoM += v[iv];
+					count++;
+				}
 
-			fingers[i].position.push_front(minV);
+			}
+			fingerCoM /= count;
+			camString << "count" << count;
+
+
+			fingers[i].position.push_front(fingerCoM);
 			if (fingers[i].position.size() > Finger::historySize)
 			{
 				fingers[i].position.pop_back();
@@ -148,7 +169,6 @@ void testApp::draw(){
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
 
-	stringstream camString;
 
 #define camlog(x) {camString<<#x<<" : "<<sceneCam.x() << endl;}
 	camlog(getDistance);
@@ -162,25 +182,14 @@ void testApp::draw(){
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
-	ofVec3f facePos;
 	ofVec2f screenPoint;
 
 	if(faceTracker.getFound()) {
 
-		//faceTracker.getFeatureIndices(ofxFaceTracker::Feature::LEFT_EYE);
-
-		ofVec3f leftEye =  openNIDevice.cameraToWorld(faceTracker.getObjectPoint(36));
-		ofVec3f rightEye =  openNIDevice.cameraToWorld(faceTracker.getObjectPoint(42));
-
-		ofSetColor(ofColor::blue);
-		ofSphere(leftEye, 10);
-		ofSetColor(ofColor::red);
-		ofSphere(rightEye, 10);
-
-
 		ofPushMatrix();
 
-		facePos = openNIDevice.cameraToWorld(faceTracker.getPosition());
+		const float b = (facePos==ofVec3f()) ? 0 : 0.5;
+		facePos = (b*facePos) + (1-b) * openNIDevice.cameraToWorld(faceTracker.getPosition());
 
 		ofSetColor(ofColor::green);
 		ofSphere(facePos, 5);
@@ -193,10 +202,6 @@ void testApp::draw(){
 		//faceTracker.getObjectMesh().drawWireframe();
 
 		ofPopMatrix();
-
-
-
-
 	}
 
 	// iterate through users
@@ -229,15 +234,17 @@ void testApp::draw(){
 			
 			ofNoFill();
 			
+			/*
 			const int N = 5;
 			for (int j = 1; j < N+1; j++)
 			{
 				ofSetColor(ofColor::fromHsb(float(j) * 1.0/N, 1, 1, 1));
 				ofSphere(fingers[i].getFilteredPosition(1.0-0.1*j), 3 + j*3);
 			}
-			
+			*/
+
 			ofSetColor(ofColor::blue, 128);
-			ofSphere(fingers[i].position.front(), 5);
+			ofSphere(fingers[i].getFilteredPosition(0.5), 5);
 
 			//handCam.end();
 
