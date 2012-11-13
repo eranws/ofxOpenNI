@@ -66,7 +66,11 @@ void testApp::update(){
 
 	if(openNIDevice.isNewFrame()) {
 		faceTracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
-		if(!faceTracker.getFound()) { facePos = ofVec3f();}
+		if(!faceTracker.getFound())
+		{
+			facePos = ofVec3f();
+			screenPoint = ofVec2f();
+		}
 
 	}
 
@@ -182,8 +186,7 @@ void testApp::draw(){
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
-	ofVec2f screenPoint;
-
+	
 	if(faceTracker.getFound()) {
 
 		ofPushMatrix();
@@ -205,8 +208,16 @@ void testApp::draw(){
 	}
 
 	// iterate through users
-	for (int i = 0; i < openNIDevice.getNumTrackedHands(); i++){
+	int oldestHandIndex = 0;
+	for (int h = 0; h < openNIDevice.getNumTrackedHands(); h++)
+	{
+		 if (openNIDevice.getTrackedHand(h).getBirthTime() < openNIDevice.getTrackedHand(oldestHandIndex).getBirthTime())
+			 oldestHandIndex = h;
+	}
 
+	int i=oldestHandIndex;
+	if(openNIDevice.getNumTrackedHands() > 0)
+	{
 		// get a reference to this user
 		ofxOpenNIHand & hand = openNIDevice.getTrackedHand(i);
 
@@ -234,14 +245,6 @@ void testApp::draw(){
 			
 			ofNoFill();
 			
-			/*
-			const int N = 5;
-			for (int j = 1; j < N+1; j++)
-			{
-				ofSetColor(ofColor::fromHsb(float(j) * 1.0/N, 1, 1, 1));
-				ofSphere(fingers[i].getFilteredPosition(1.0-0.1*j), 3 + j*3);
-			}
-			*/
 
 			ofSetColor(ofColor::blue, 128);
 			ofSphere(fingers[i].getFilteredPosition(0.5), 5);
@@ -265,24 +268,12 @@ void testApp::draw(){
 				ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, fingers[i].getFilteredPosition());
 
 				ofSphere(screenIntersectionPoint, 10);
-				screenPoint = scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
 
+				const float b = (screenPoint==ofVec2f()) ? 0 : 0.5;
+				screenPoint = (b*screenPoint) + (1-b) * scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
 			}
+
 		}
-
-		// draw depth and mask textures below the depth image at 0.5 scale
-		// you could instead just do pixel maths here for finger tracking etc
-		// by using depthThreshold.getDepthPixels() and/or depthThreshold.getMaskPixels()
-		// and turn off the textures in the initial setup/addDepthTexture calls
-
-		ofPushMatrix();
-		ofTranslate(320 * i, 480);
-		ofScale(0.5, 0.5);
-		depthThreshold.drawDepth();
-		depthThreshold.drawMask();
-		ofPopMatrix();
-
-		// i think this is pretty good but might be a frame behind???
 
 	}
 

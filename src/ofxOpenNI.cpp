@@ -3362,6 +3362,7 @@ void XN_CALLBACK_TYPE ofxOpenNI::HandsCB_handleHandCreate(xn::HandsGenerator& ha
         ofPoint p = ofPoint(pPosition->X, pPosition->Y, pPosition->Z);
         hand.position = openNI->worldToProjective(p);
         hand.worldPosition = p;
+		hand.birthTime = fTime;
         ofxOpenNIHandEvent handEvent = ofxOpenNIHandEvent(openNI->getDeviceID(), HAND_TRACKING_STARTED, nID, hand.position, hand.worldPosition, ofGetElapsedTimeMillis());
         ofNotifyEvent(openNI->handEvent, handEvent);
     }else{

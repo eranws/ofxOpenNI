@@ -861,6 +861,7 @@ public:
 		bForceRestart = false;
 		forcedResetTimeout = 1000;
 		resetCount = 0;
+		birthTime = 0;
 	};
     
     XnUserID getID(){return id;};
@@ -894,6 +895,8 @@ public:
 		return bForceReset;
 	}
 
+	float getBirthTime() const {return birthTime;}
+
 private:
     
     friend class ofxOpenNI;
@@ -908,7 +911,8 @@ private:
     int resetCount;
 
     bool bIsTracking;
-    
+	float birthTime;
+
     //    // block copy ctor and assignment operator
     //    ofxOpenNIHand(const ofxOpenNIHand& other);
     //    ofxOpenNIHand& operator=(const ofxOpenNIHand&);

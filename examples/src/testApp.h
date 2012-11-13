@@ -59,6 +59,8 @@ private:
 	stringstream camString;
 
 	ofVec3f facePos;
+	ofVec2f screenPoint;
+
 
 
 
