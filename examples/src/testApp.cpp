@@ -2,70 +2,45 @@
 #include <string>
 #include "ofxCv\Utilities.h"
 
+#define PROFILE
+#include "src\ofxProfile.h"
+
+
 //--------------------------------------------------------------
 void testApp::setup() {
 
+	
 	ofSetLogLevel(OF_LOG_VERBOSE);
+	ofSetFrameRate(100);
 
-	openNIDevice.setup();
-	//openNIDevice.setupFromONI("C:/f/q.oni");
-
-	openNIDevice.addImageGenerator();
-	openNIDevice.addDepthGenerator();
-	openNIDevice.setUseDepthRawPixels(true);
-
-	openNIDevice.setRegister(true);
-	openNIDevice.setMirror(true);
-
-	// setup the hand generator
-	openNIDevice.addHandsGenerator();
-
-	// add all focus gestures (ie., wave, click, raise arm)
-	openNIDevice.addAllHandFocusGestures();
-
-	// or you can add them one at a time
-	//vector<string> gestureNames = openNIDevice.getAvailableGestures(); // you can use this to get a list of gestures
-	// prints to console and/or you can use the returned vector
-	//openNIDevice.addHandFocusGesture("Wave");
-
-	openNIDevice.setMaxNumHands(MAX_HANDS);
-
-	for(int i = 0; i < openNIDevice.getMaxNumHands(); i++){
-		ofxOpenNIDepthThreshold depthThreshold = ofxOpenNIDepthThreshold(0, 0, false, true, true, true, true); 
-		// ofxOpenNIDepthThreshold is overloaded, has defaults and can take a lot of different parameters, eg:
-		// (ofxOpenNIROI OR) int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, 
-		// bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, 
-		// int _pointCloudDrawSize = 2, int _pointCloudResolution = 2
-		depthThreshold.setUsePointCloud(true);
-		depthThreshold.setPointCloudDrawSize(2);
-
-		openNIDevice.addDepthThreshold(depthThreshold);
-
-	}
-
-	openNIDevice.start();
-
+	setupOpenNiDevice();
+	
 	handCam.setDistance(10);
 	faceTracker.setup();
 
-
-	//sceneCam.setGlobalOrientation(ofQuaternion()
 	sceneCam.setGlobalPosition(0,0,1000);
-	//sceneCam.setDistance(1000);
 
 	verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
-	
+	ofxProfileThisFunction();
+
 	camString = stringstream();
 	
-
+	ofxProfileSectionPush("openNIDevice update");
 	openNIDevice.update();
+	ofxProfileSectionPop();
+
+
+	return;
 
 	if(openNIDevice.isNewFrame()) {
+		ofxProfileSectionPush("faceTracker update");
 		faceTracker.update(ofxCv::toCv(openNIDevice.getImagePixels()));
+		ofxProfileSectionPop();
+
 		if(!faceTracker.getFound())
 		{
 			facePos = ofVec3f();
@@ -88,9 +63,10 @@ void testApp::update(){
 		fingers[i].isTracked = false;
 	}
 	// iterate through users
+
+	ofxProfileSectionPush("iterate hands");
 	for (int i = 0; i < openNIDevice.getNumTrackedHands(); i++)
 	{
-
 		// get a reference to this user
 		ofxOpenNIHand & hand = openNIDevice.getTrackedHand(i);
 
@@ -106,8 +82,12 @@ void testApp::update(){
 		depthThreshold.setROI(roi);
 
 
+		openNIDevice.lock();
 		ofMesh& pc = depthThreshold.getPointCloud();
-		vector<ofVec3f> v = pc.getVertices();
+		vector<ofVec3f> vRef = pc.getVertices();
+		vector<ofVec3f> v(vRef.begin(), vRef.end());
+		openNIDevice.unlock();
+
 		if (v.size() > 0)
 		{
 			fingers[i].isTracked = true;
@@ -125,7 +105,7 @@ void testApp::update(){
 
 			//get finger center of mass
 			ofVec3f fingerCoM;
-			int count;
+			int count = 0;
 			for (int iv=0; iv < v.size(); iv++)
 			{
 				
@@ -150,24 +130,40 @@ void testApp::update(){
 		}
 		else
 		{
-		  // bezier?
 			fingers[i].position.clear();
 		}
 
 	}
+	ofxProfileSectionPop();
+
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
+	ofxProfileThisFunction();
+
 	ofBackground(0);
 
 
 	if (drawOpenNiDebug)
 	{
 		ofPushMatrix();
+		ofPushStyle();
+
 		openNIDevice.drawDebug(); // draw debug (ie., image, depth, skeleton)
 		ofPopMatrix();
 	}
+
+
+
+	
+	stringstream ss;
+	ss << ofGetFrameRate() << endl << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
+	ss << ofxProfile::describe();
+	ofDrawBitmapString(ss.str(), 10, 10);
+
+
+	return;
 
 	sceneCam.begin();
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
@@ -392,6 +388,49 @@ void testApp::mouseReleased(int x, int y, int button){
 void testApp::windowResized(int w, int h){
 
 }
+
+void testApp::setupOpenNiDevice()
+{
+	openNIDevice.setup();
+	//openNIDevice.setupFromONI("C:/f/q.oni");
+
+	openNIDevice.addImageGenerator();
+	openNIDevice.addDepthGenerator();
+	openNIDevice.setUseDepthRawPixels(true);
+	openNIDevice.setUseBackBuffer(false);
+
+	openNIDevice.setRegister(true);
+	openNIDevice.setMirror(true);
+
+	// setup the hand generator
+	openNIDevice.addHandsGenerator();
+
+	// add all focus gestures (ie., wave, click, raise arm)
+	openNIDevice.addAllHandFocusGestures();
+
+	// or you can add them one at a time
+	//vector<string> gestureNames = openNIDevice.getAvailableGestures(); // you can use this to get a list of gestures
+	// prints to console and/or you can use the returned vector
+	//openNIDevice.addHandFocusGesture("Wave");
+
+	openNIDevice.setMaxNumHands(MAX_HANDS);
+
+	for(int i = 0; i < openNIDevice.getMaxNumHands(); i++){
+		ofxOpenNIDepthThreshold depthThreshold = ofxOpenNIDepthThreshold(0, 0, false, true, true, true, true); 
+		// ofxOpenNIDepthThreshold is overloaded, has defaults and can take a lot of different parameters, eg:
+		// (ofxOpenNIROI OR) int _nearThreshold, int _farThreshold, bool _bUsePointCloud = false, bool _bUseMaskPixels = true, 
+		// bool _bUseMaskTexture = true, bool _bUseDepthPixels = false, bool _bUseDepthTexture = false, 
+		// int _pointCloudDrawSize = 2, int _pointCloudResolution = 2
+		depthThreshold.setUsePointCloud(true);
+		depthThreshold.setPointCloudDrawSize(2);
+
+		openNIDevice.addDepthThreshold(depthThreshold);
+
+	}
+
+	openNIDevice.start();
+}
+
 
 ofVec3f testApp::Finger::getFilteredPosition(float a)
 {

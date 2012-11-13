@@ -47,6 +47,9 @@
       <Filter>addons\ofxFaceTracker\libs\FaceTracker\src</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="..\..\ofxProfile\src\ofxProfile.cpp">
+      <Filter>addons\ofxProfile</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxOpenNI\include\openni\Android-Arm\XnPlatformAndroid-Arm.h">
@@ -482,6 +485,9 @@
       <Filter>addons\ofxFaceTracker\libs\FaceTracker\include</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="..\..\ofxProfile\src\ofxProfile.h">
+      <Filter>addons\ofxProfile</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ofxOpenNI">
@@ -498,6 +504,9 @@
     </Filter>
     <Filter Include="ofxOpenNI\src">
       <UniqueIdentifier>{6987e6f5-e30f-4327-90a9-1d5daa3b8918}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\ofxProfile">
+      <UniqueIdentifier>{be8582b0-0483-4565-a581-2b3548ef8a27}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

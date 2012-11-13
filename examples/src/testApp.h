@@ -29,6 +29,7 @@ public:
 private:
 
 	void handEvent(ofxOpenNIHandEvent & event);
+	void setupOpenNiDevice();
 
 	ofxOpenNI openNIDevice;
 	ofTrueTypeFont verdana;
