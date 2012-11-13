@@ -48,7 +48,7 @@ void testApp::setup() {
 	handCam.setDistance(10);
 	faceTracker.setup();
 
-	
+
 	//sceneCam.setGlobalOrientation(ofQuaternion()
 	sceneCam.setGlobalPosition(0,0,1000);
 	//sceneCam.setDistance(1000);
@@ -101,14 +101,33 @@ void testApp::update(){
 		if (v.size() > 0)
 		{
 			fingers[i].isTracked = true;
-			ofVec3f& minV = fingers[i].position;
-			minV = v[0];
-			for (int iv=1; iv < v.size(); iv++)
-			{
-				if (v[iv].y - v[iv].z > minV.y - minV.z ) minV = v[iv];
-			}
 		}
 
+		//TODO: export to finger tracker module
+		if (fingers[i].isTracked)
+		{
+			ofVec3f minV = v[0];
+			for (int iv=1; iv < v.size(); iv++)
+			{
+				// closest topmost
+				if (v[iv].y - v[iv].z > minV.y - minV.z) minV = v[iv];
+			}
+
+			//get finger center of mass
+
+			fingers[i].position.push_front(minV);
+			if (fingers[i].position.size() > Finger::historySize)
+			{
+				fingers[i].position.pop_back();
+			}
+
+
+		}
+		else
+		{
+		  // bezier?
+			fingers[i].position.clear();
+		}
 
 	}
 }
@@ -117,14 +136,18 @@ void testApp::update(){
 void testApp::draw(){
 	ofBackground(0);
 
-	ofPushMatrix();
-	openNIDevice.drawDebug(); // draw debug (ie., image, depth, skeleton)
-	ofPopMatrix();
+
+	if (drawOpenNiDebug)
+	{
+		ofPushMatrix();
+		openNIDevice.drawDebug(); // draw debug (ie., image, depth, skeleton)
+		ofPopMatrix();
+	}
 
 	sceneCam.begin();
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
-	
+
 	stringstream camString;
 
 #define camlog(x) {camString<<#x<<" : "<<sceneCam.x() << endl;}
@@ -134,16 +157,18 @@ void testApp::draw(){
 	camlog(getFarClip);
 #undef camlog
 
-	
-	
+
+
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
 	ofVec3f facePos;
+	ofVec2f screenPoint;
+
 	if(faceTracker.getFound()) {
 
 		//faceTracker.getFeatureIndices(ofxFaceTracker::Feature::LEFT_EYE);
-		
+
 		ofVec3f leftEye =  openNIDevice.cameraToWorld(faceTracker.getObjectPoint(36));
 		ofVec3f rightEye =  openNIDevice.cameraToWorld(faceTracker.getObjectPoint(42));
 
@@ -156,22 +181,22 @@ void testApp::draw(){
 		ofPushMatrix();
 
 		facePos = openNIDevice.cameraToWorld(faceTracker.getPosition());
-		
+
 		ofSetColor(ofColor::green);
 		ofSphere(facePos, 5);
 
 		ofTranslate(facePos);
 		camString << "facePos" << facePos;
-		
+
 		ofxCv::applyMatrix(faceTracker.getRotationMatrix());
-		ofRotateY(180.0);
-		faceTracker.getObjectMesh().drawWireframe();
+		//ofRotateY(180.0);
+		//faceTracker.getObjectMesh().drawWireframe();
 
 		ofPopMatrix();
 
-		
 
-		
+
+
 	}
 
 	// iterate through users
@@ -186,12 +211,12 @@ void testApp::draw(){
 		// draw a rect at the position
 		ofSetColor(255,0,0);
 		//ofRect(handPosition.x, handPosition.y, 2, 2);
-		ofDrawBitmapString("hand" + ofToString(i), handPosition.x, handPosition.y);
+
 		// set depthThresholds based on handPosition
 		ofxOpenNIDepthThreshold & depthThreshold = openNIDevice.getDepthThreshold(i); // we just use hand index for the depth threshold index
-		depthThreshold.drawROI();
+		//depthThreshold.drawROI();
 
-		
+
 		if (fingers[i].isTracked)
 		{
 			// draw ROI over the depth image
@@ -201,8 +226,19 @@ void testApp::draw(){
 			//cam.lookAt(handPosition);//, ofVec3f(0, -1, 0));
 			depthThreshold.getPointCloud().disableColors();
 			depthThreshold.drawPointCloud();
-			ofSetColor(ofColor::red, 128);
-			ofSphere(fingers[i].position, 5);
+			
+			ofNoFill();
+			
+			const int N = 5;
+			for (int j = 1; j < N+1; j++)
+			{
+				ofSetColor(ofColor::fromHsb(float(j) * 1.0/N, 1, 1, 1));
+				ofSphere(fingers[i].getFilteredPosition(1.0-0.1*j), 3 + j*3);
+			}
+			
+			ofSetColor(ofColor::blue, 128);
+			ofSphere(fingers[i].position.front(), 5);
+
 			//handCam.end();
 
 
@@ -211,18 +247,22 @@ void testApp::draw(){
 				ofPushStyle();
 				ofSetLineWidth(3);
 				ofSetColor(ofColor::green);
-				ofDrawArrow(facePos, fingers[i].position);
+				ofDrawArrow(facePos, fingers[i].getFilteredPosition());
 				ofSetLineWidth(1);
 				ofSetColor(ofColor::yellow);
-				ofLine(facePos, fingers[i].position.interpolated(facePos, -3));
+				ofLine(facePos, fingers[i].getFilteredPosition().interpolated(facePos, -3));
 				ofPopStyle();
 
 				ofSetColor(ofColor::magenta);
 
-				ofSphere(scene.screen.getIntersectionPointWithLine(facePos, fingers[i].position), 10);
+				ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, fingers[i].getFilteredPosition());
+
+				ofSphere(screenIntersectionPoint, 10);
+				screenPoint = scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
 
 			}
 		}
+
 		// draw depth and mask textures below the depth image at 0.5 scale
 		// you could instead just do pixel maths here for finger tracking etc
 		// by using depthThreshold.getDepthPixels() and/or depthThreshold.getMaskPixels()
@@ -244,14 +284,25 @@ void testApp::draw(){
 
 	sceneCam.end();
 
+	if(faceTracker.getFound())
+	{
+		ofFill();
+		ofSetColor(255);
+		ofCircle(screenPoint, 10);
+		camString << "screenPoint: " << screenPoint << endl;
+	}
+
 	// draw some info regarding frame counts etc
 	ofSetColor(0, 255, 0);
 	string msg = " MILLIS: " + ofToString(ofGetElapsedTimeMillis()) + " FPS: " + ofToString(ofGetFrameRate()) + " Device FPS: " + ofToString(openNIDevice.getFrameRate());
 
-	ofSetColor(ofColor::green);
-	ofDrawBitmapString(camString.str(), 10, 20);
+	if (drawDebugString)
+	{
+		ofSetColor(ofColor::green);
+		ofDrawBitmapString(camString.str(), 10, 20);
+		verdana.drawString(msg, 20, 480 - 20);
+	}
 
-	verdana.drawString(msg, 20, 480 - 20);
 }
 
 //--------------------------------------------------------------
@@ -271,6 +322,15 @@ void testApp::exit(){
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
+	switch (key)
+	{
+	case '1': drawDebugString = !drawDebugString; break;
+	case '2': drawOpenNiDebug = !drawOpenNiDebug; break;
+
+	case 'f': ofToggleFullscreen(); break;
+	default:
+		break;
+	}
 
 }
 
@@ -302,4 +362,16 @@ void testApp::mouseReleased(int x, int y, int button){
 //--------------------------------------------------------------
 void testApp::windowResized(int w, int h){
 
+}
+
+ofVec3f testApp::Finger::getFilteredPosition(float a)
+{
+	ofVec3f res;
+	
+	for (int i = 0; i < position.size(); i++)
+	{
+		res += pow(1-a,i) * position[i];
+	}
+	res *= a;
+	return res;
 }

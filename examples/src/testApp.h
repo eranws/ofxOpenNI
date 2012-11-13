@@ -41,13 +41,22 @@ private:
 
 	struct Finger
 	{
-		ofVec3f position;
+		std::deque<ofVec3f> position;
 		bool isTracked;
-		Finger() : isTracked(false){}
+		Finger() : isTracked(false){ position.push_front(ofVec3f());}
+		ofVec3f getFilteredPosition(float a = 0.9f);
+
+		static const int historySize = 10;
 	};
 
 	Finger fingers[MAX_HANDS];
 	Scene scene;
+
+
+	bool drawDebugString;
+	bool drawOpenNiDebug;
+
+
 
 };
 
