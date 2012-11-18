@@ -89,6 +89,7 @@ void testApp::draw(){
 	bgImage.draw(400,400);
 	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
+	ofCircle(ofPoint(headScreenPos), 10);
 
 	ofSetHexColor(0x333333);
 	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
@@ -238,7 +239,11 @@ void testApp::onNewFrame( VideoStream& stream )
 		{
 			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
 			if (head.getPositionConfidence() > .5)
+			{
+				userTracker.convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
 				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
+			}
+
 		}
 	}
 }
@@ -255,7 +260,7 @@ void testApp::exit(){
 	depthStream.destroy();
 	device.close();
 
-	abort(); //TODO remove
+	abort(); //avoid crash in tite tracker. TODO remove
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
 
