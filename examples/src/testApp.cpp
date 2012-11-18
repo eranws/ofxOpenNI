@@ -1,7 +1,11 @@
 #include "testApp.h"
 
+#include <stdlib.h>
 #include "OpenNI.h"
 using namespace openni;
+
+
+void updateUserState(const nite::UserData& user, unsigned long long ts);
 
 //--------------------------------------------------------------
 void testApp::setup(){	
@@ -62,6 +66,7 @@ void testApp::draw(){
 	}
 
 
+<<<<<<< HEAD
 	const nite::Array<nite::HandData>& hands = handTrackerFrame[0].getHands();
 	for (int i = 0; i < hands.getSize(); ++i)
 	{
@@ -209,33 +214,33 @@ void testApp::onNewFrame( VideoStream& stream )
 	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
-<<<<<<< HEAD
-=======
-	onNewFrame();
-
 }
->>>>>>> 123c6cb... removed faceTracker, opencv, and more
 
-	nite::Status niteRc = handTracker.readFrame(&handTrackerFrame[1]);
+	
+	nite::Status niteRc = userTracker.readFrame(&userTrackerFrame);
+
 	if (niteRc != NITE_STATUS_OK)
 	{
 		printf("Get next frame failed\n");
 	}
 
 
-	const nite::Array<nite::GestureData>& gestures = handTrackerFrame[1].getGestures();
-	for (int i = 0; i < gestures.getSize(); ++i)
+	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+	for (int i = 0; i < users.getSize(); ++i)
 	{
-		if (gestures[i].getState() == NITE_GESTURE_STATE_COMPLETED)
+		const nite::UserData& user = users[i];
+		updateUserState(user,userTrackerFrame.getTimestamp());
+		if (user.getState() == nite::USER_STATE_NEW)
 		{
-			nite::HandId newId;
-			handTracker.startHandTracking(gestures[i].getCurrentPosition(), &newId);
+			userTracker.startSkeletonTracking(user.getId());
+		}
+		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
+		{
+			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
+			if (head.getPositionConfidence() > .5)
+				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
 		}
 	}
-	handTrackerFrame[0] = handTrackerFrame[1];
-
-
-	//notify face?
 }
 
 
@@ -250,6 +255,7 @@ void testApp::exit(){
 	depthStream.destroy();
 	device.close();
 
+	abort(); //TODO remove
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
 
@@ -266,7 +272,7 @@ int testApp::setupNite()
 		return 1;
 	}
 
-	niteRc = handTracker.create();
+	niteRc = userTracker.create();
 	if (niteRc != NITE_STATUS_OK)
 	{
 		printf("Couldn't create user tracker\n");
@@ -292,10 +298,6 @@ int testApp::start()
 		printf("Couldn't register listener for the depth stream\n%s\n", OpenNI::getExtendedError());
 	}
 
-
-	handTracker.startGestureDetection(nite::GESTURE_HAND_RAISE);
-	handTracker.startGestureDetection(nite::GESTURE_WAVE);
-	printf("\nWave your hand to start tracking it...\n");
 
 	return 0;
 
@@ -411,5 +413,50 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 		}        
 		string output = textinput->getTextString(); 
 		cout << output << endl; 
+	}
+}
+
+
+
+#define MAX_USERS 10
+nite::UserState g_userStates[MAX_USERS] = {(nite::UserState)-1};
+nite::SkeletonState g_skeletonStates[MAX_USERS] = {nite::SKELETON_NONE};
+
+#define USER_MESSAGE(msg) \
+{printf("[%08llu] User #%d:\t%s\n",ts, user.getId(),msg); break;}
+
+void updateUserState(const nite::UserData& user, unsigned long long ts)
+{
+	if(g_userStates[user.getId()] != user.getState())
+	{
+		switch(g_userStates[user.getId()] = user.getState())
+		{
+		case nite::USER_STATE_NEW:
+			USER_MESSAGE("New")
+		case nite::USER_STATE_VISIBLE:
+			USER_MESSAGE("Visible")
+		case nite::USER_STATE_OUT_OF_SCENE:
+			USER_MESSAGE("Out of scene...")
+		case nite::USER_STATE_LOST:
+			USER_MESSAGE("Lost.")
+		}
+	}
+	if(g_skeletonStates[user.getId()] != user.getSkeleton().getState())
+	{
+		switch(g_skeletonStates[user.getId()] = user.getSkeleton().getState())
+		{
+		case nite::SKELETON_NONE:
+			USER_MESSAGE("Stopped tracking.")
+		case nite::SKELETON_CALIBRATING:
+			USER_MESSAGE("Calibrating...")
+		case nite::SKELETON_TRACKED:
+			USER_MESSAGE("Tracking!")
+		case nite::SKELETON_CALIBRATION_ERROR_NOT_IN_POSE:
+		case nite::SKELETON_CALIBRATION_ERROR_HANDS:
+		case nite::SKELETON_CALIBRATION_ERROR_LEGS:
+		case nite::SKELETON_CALIBRATION_ERROR_HEAD:
+		case nite::SKELETON_CALIBRATION_ERROR_TORSO:
+			USER_MESSAGE("Calibration Failed... :-|")
+		}
 	}
 }

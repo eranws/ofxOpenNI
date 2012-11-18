@@ -85,6 +85,9 @@ private:
 	ofTexture texScreen;
 	int counter;
 
+	nite::UserTracker userTracker;
+
+	Scene scene;
 
 	void setGUI4(); 	    
 	ofxUIScrollableCanvas *gui4;
@@ -94,7 +97,7 @@ private:
 	
 	float red, green, blue; 
 
-	nite::HandTrackerFrameRef handTrackerFrame[2];
+	nite::UserTrackerFrameRef userTrackerFrame;
 
 
 };
