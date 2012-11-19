@@ -8,7 +8,7 @@ void testApp::setup(){
 
 	ofSetCircleResolution(100);
 	//ofSetFrameRate(300);
-//	ofSetFullscreen(true);
+	//	ofSetFullscreen(true);
 	ofSetVerticalSync(true);
 
 	setupOpenNi();
@@ -35,7 +35,7 @@ void testApp::update(){
 	camString = stringstream();
 	mg->addPoint(ofGetFrameRate());
 
-//	onNewFrame(depthStream);
+	//	onNewFrame(depthStream);
 }
 
 
@@ -59,9 +59,11 @@ void testApp::draw(){
 
 	depthTexture.loadData(colorPixels);
 
-
-	ofSetHexColor(0xffffff);
-	depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
+	if (drawDebug && drawOpenNiDebug)
+	{
+		ofSetHexColor(0xffffff);
+		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
+	}
 
 
 	const nite::Array<nite::HandData>& hands = handTrackerFrame[0].getHands();
@@ -71,17 +73,21 @@ void testApp::draw(){
 		if (hand.getState() != NITE_HAND_STATE_LOST)
 		{
 
-			ofVec2f handScreenPos;
-			handTracker.convertHandCoordinatesToDepth(hand.getPosition().x,hand.getPosition().y,hand.getPosition().z,&handScreenPos.x, &handScreenPos.y);
-			ofCircle(ofPoint(handScreenPos), 10);
-			ofDrawBitmapStringHighlight(ofToString(hand.getId()), handScreenPos);
+			if (drawDebug && drawOpenNiDebug)
+			{
+				ofVec2f handScreenPos;
+				handTracker.convertHandCoordinatesToDepth(hand.getPosition().x,hand.getPosition().y,hand.getPosition().z,&handScreenPos.x, &handScreenPos.y);
+				ofCircle(ofPoint(handScreenPos), 10);
+				ofDrawBitmapStringHighlight(ofToString(hand.getId()), handScreenPos);
+			}
+
 			//		printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
 		}
 	}
 
 
 	ofCircle(mouseX, mouseY,20);
-	
+
 	ofSetHexColor(0x333333);
 	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
 
@@ -89,6 +95,11 @@ void testApp::draw(){
 
 //--------------------------------------------------------------
 void testApp::keyPressed  (int key){ 
+
+	switch (key) 
+	{	
+		case 'g': gui4->toggleVisible(); break;
+	}
 
 }
 
@@ -98,8 +109,11 @@ void testApp::keyReleased(int key){
 }
 
 //--------------------------------------------------------------
-void testApp::mouseMoved(int x, int y ){
-
+void testApp::mouseMoved(int x, int y )
+{
+	if (x < 30 && y < 30) gui4->setVisible(true);
+	if (gui4->isVisible() && !gui4->isHit(x,y)) gui4->setVisible(false);
+	
 }
 
 //--------------------------------------------------------------
@@ -157,16 +171,16 @@ int testApp::setupOpenNi()
 		}
 	}
 
-	
-//	stream.readFrame(&frame);
+
+	//	stream.readFrame(&frame);
 
 
 	int w = depthStream.getVideoMode().getResolutionX();
 	int h = depthStream.getVideoMode().getResolutionY();
-	
+
 	depthTexture.allocate(w, h, GL_RGB);
 
-	
+
 	for (int i=0 ; i<2; i++)
 	{
 		depthPixelsDoubleBuffer[i] = new ofShortPixels();
@@ -174,7 +188,7 @@ int testApp::setupOpenNi()
 	}
 	colorPixels.allocate(w, h, OF_IMAGE_COLOR);
 
-//	onNewFrame(depthStream);
+	//	onNewFrame(depthStream);
 
 	return 0;
 
@@ -198,14 +212,14 @@ void testApp::onNewFrame( VideoStream& stream )
 	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
-	
+
 	nite::Status niteRc = handTracker.readFrame(&handTrackerFrame[1]);
 	if (niteRc != NITE_STATUS_OK)
 	{
 		printf("Get next frame failed\n");
 	}
 
-	
+
 	const nite::Array<nite::GestureData>& gestures = handTrackerFrame[1].getGestures();
 	for (int i = 0; i < gestures.getSize(); ++i)
 	{
@@ -218,7 +232,7 @@ void testApp::onNewFrame( VideoStream& stream )
 	handTrackerFrame[0] = handTrackerFrame[1];
 
 
-		//notify face?
+	//notify face?
 }
 
 
@@ -238,7 +252,7 @@ void testApp::exit(){
 
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
-	
+
 }
 
 int testApp::setupNite()
@@ -294,11 +308,12 @@ void testApp::setGUI4()
 	float dim = 16; 
 	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 
 	float length = 255-xInit; 
-	gui4 = new ofxUIScrollableCanvas(length*3+xInit*3+6, 0, length+xInit, ofGetHeight());     
+	gui4 = new ofxUIScrollableCanvas(0, 0, length+xInit, ofGetHeight());     
 	gui4->addWidgetDown(new ofxUILabel("PANEL 4: SCROLLABLE", OFX_UI_FONT_LARGE)); 	
 
 	gui4->addSpacer(length-xInit, 2);
 
+	/*
 	gui4->addWidgetDown(new ofxUILabel("BILABEL SLIDER", OFX_UI_FONT_MEDIUM)); 				
 	gui4->addWidgetDown(new ofxUIBiLabelSlider(length-xInit, 0, 100, 50, "BILABEL", "HOT", "COLD", OFX_UI_FONT_MEDIUM));
 
@@ -309,7 +324,7 @@ void testApp::setGUI4()
 
 	gui4->addWidgetDown(new ofxUILabel("CIRCLE SLIDER", OFX_UI_FONT_MEDIUM)); 				
 	gui4->addWidgetDown(new ofxUICircleSlider((length-xInit)*.5, 0, 100, 50.0, "NORTH SOUTH", OFX_UI_FONT_MEDIUM));    
-
+	*/
 	gui4->addSpacer(length-xInit, 2);
 	gui4->addWidgetDown(new ofxUILabel("FPS SLIDER", OFX_UI_FONT_MEDIUM)); 				
 	gui4->addFPSSlider("FPS SLIDER", length-xInit, dim);
@@ -323,12 +338,19 @@ void testApp::setGUI4()
 	gui4->addWidgetDown(new ofxUILabel("MOVING GRAPH", OFX_UI_FONT_MEDIUM)); 				    
 	mg = (ofxUIMovingGraph *) gui4->addWidgetDown(new ofxUIMovingGraph(length-xInit, 120, buffer, 256, 0, 400, "MOVING GRAPH"));
 
+	/*
 	gui4->addSpacer(length-xInit, 2);
 	gui4->addWidgetDown(new ofxUILabel("IMAGE SAMPLER", OFX_UI_FONT_MEDIUM)); 				
 	gui4->addWidgetDown(new ofxUIImageSampler(img->getWidth(), img->getHeight(), img, "SAMPLER"));
-	
+
 	gui4->addWidgetDown(new ofxUIMultiImageButton(dim*2, dim*2, false, "GUI/toggle.png", "IMAGE BUTTON"));
 	gui4->addWidgetDown(new ofxUIMultiImageToggle(dim*2, dim*2, false, "GUI/toggle.png", "IMAGE BUTTON"));
+	*/
+
+	//gui4->addWidgetDown(new ofxUILabel("BUTTONS", OFX_UI_FONT_MEDIUM)); 
+	gui4->addToggle("DRAW DEBUG", false, dim, dim);
+	//gui4->addWidgetDown(new ofxUILabel("TOGGLES", OFX_UI_FONT_MEDIUM)); 
+	gui4->addToggle( "DRAW DEBUG OpenNI", false, dim, dim);
 
 
 	ofAddListener(gui4->newGUIEvent,this,&testApp::guiEvent);
@@ -360,15 +382,15 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 		cout << "BLUE " << slider->getScaledValue() << endl; 
 		blue = slider->getScaledValue(); 		
 	}
-	else if(name == "DRAW GRID")
+	else if(name == "DRAW DEBUG")
 	{
 		ofxUIButton *button = (ofxUIButton *) e.widget; 
-		bdrawGrid = button->getValue(); 
+		drawDebug = button->getValue(); 
 	}
-	else if(name == "D_GRID")
+	else if(name == "DRAW DEBUG OpenNI")
 	{
 		ofxUIToggle *toggle = (ofxUIToggle *) e.widget; 
-		bdrawGrid = toggle->getValue(); 
+		drawOpenNiDebug = toggle->getValue(); 
 	}
 	else if(name == "TEXT INPUT")
 	{

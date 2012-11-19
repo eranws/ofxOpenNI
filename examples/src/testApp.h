@@ -66,6 +66,7 @@ private:
 
 	Finger fingers[MAX_HANDS];
 
+	bool drawDebug;
 	bool drawDebugString;
 	bool drawOpenNiDebug;
 
@@ -103,8 +104,6 @@ private:
 	ofImage *img; 
 	
 	float red, green, blue; 
-	bool bdrawGrid; 
-	bool bdrawPadding; 
 
 	nite::HandTrackerFrameRef handTrackerFrame[2];
 
