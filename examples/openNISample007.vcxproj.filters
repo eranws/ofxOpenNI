@@ -46,16 +46,16 @@
     <ClCompile Include="..\..\..\..\..\git\github\ofxVirtualScreen\ofxVirtualScreen.cpp">
       <Filter>addons\ofxVirtualScreen</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ofxXmlSettings\tinyxml.cpp">
+    <ClCompile Include="..\..\ofxXmlSettings\src\ofxXmlSettings.cpp">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ofxXmlSettings\tinyxmlerror.cpp">
+    <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxml.cpp">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ofxXmlSettings\tinyxmlparser.cpp">
+    <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlerror.cpp">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ofxXmlSettings\ofxXmlSettings.cpp">
+    <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlparser.cpp">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClCompile>
   </ItemGroup>
@@ -231,10 +231,10 @@
     <ClInclude Include="..\..\ofxUI\src\ofxUIWidgetWithLabel.h">
       <Filter>addons\ofxUI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ofxXmlSettings\tinyxml.h">
+    <ClInclude Include="..\..\ofxXmlSettings\src\ofxXmlSettings.h">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ofxXmlSettings\ofxXmlSettings.h">
+    <ClInclude Include="..\..\ofxXmlSettings\libs\tinyxml.h">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClInclude>
   </ItemGroup>
