@@ -1,0 +1,1 @@
+FOR %%G IN (C:\git\Research\ComputerVision\Common\EVAFingerTracker\Release\*.lib) DO copy %%G .

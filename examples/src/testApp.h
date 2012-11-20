@@ -6,11 +6,12 @@
 
 
 #include "ofMain.h"
-#include "ofxFaceTrackerThreaded.h"
+//#include "ofxFaceTrackerThreaded.h"
 
 #include "..\..\..\git\github\ofxVirtualScreen\ofxVirtualScreen.h"
 
 #include "ofxUI\src\ofxUI.h"
+#include "..\FingerTracker.h"
 
 
 #define MAX_DEVICES 2
@@ -48,7 +49,7 @@ private:
 
 
 
-	ofxFaceTrackerThreaded faceTracker;
+	//ofxFaceTrackerThreaded faceTracker;
 
 	ofEasyCam handCam;
 	ofEasyCam sceneCam;
@@ -107,6 +108,8 @@ private:
 
 	nite::HandTrackerFrameRef handTrackerFrame[2];
 
+
+	FingerTracker FingerTracker;
 
 };
 

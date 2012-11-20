@@ -22,7 +22,7 @@ void testApp::setup(){
 	for(int i = 0; i < 256; i++) { buffer[i] = ofNoise(i/100.0); }
 	setGUI4();
 
-	faceTracker.setup();
+	//faceTracker.setup();
 
 	start();
 
@@ -242,8 +242,8 @@ void testApp::exit(){
 
 	delete gui4; 
 
-	faceTracker.stopThread();
-	faceTracker.waitForThread();
+	//faceTracker.stopThread();
+	//faceTracker.waitForThread();
 
 	depthStream.removeListener(this);
 	depthStream.stop();
