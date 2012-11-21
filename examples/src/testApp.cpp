@@ -15,15 +15,18 @@ void testApp::setup(){
 	//	ofSetFullscreen(true);
 	ofSetVerticalSync(true);
 
-	setupOpenNi();
-	setupNite();
+	//	setupOpenNi();
+	//	setupNite();
 
-	img = new ofImage(); 
-	img->getTextureReference().allocate(640,480, GL_DEPTH);
-	img->setColor(320,240, ofColor::white);
-	buffer = new float[256];     
 
-	for(int i = 0; i < 256; i++) { buffer[i] = ofNoise(i/100.0); }
+
+
+	item.loadImage("graphics/falafel.png");
+	itemSize = ofVec2f(item.getWidth(), item.getHeight());
+	itemSizeFactor = 1.0f;
+
+	bgImage.loadImage("graphics/bg.jpg"); //depends on resolution
+
 	setGUI4();
 
 	start();
@@ -35,27 +38,38 @@ void testApp::update(){
 	camString = stringstream();
 	mg->addPoint(ofGetFrameRate());
 
-	//	onNewFrame(depthStream);
+	itemPos = ofVec2f(mouseX, mouseY);
 }
 
 
 //--------------------------------------------------------------
-void testApp::draw(){
 
-	ofShortPixels* depthPixels = depthPixelsDoubleBuffer[0];
+void testApp::draw()
+{
 
-	unsigned short* p = depthPixels->getPixels();
-	for (int i=0; i < depthPixels->size(); i++)
+	if (depthStream.isValid())
 	{
-		unsigned short& k = p[i];
 
+		ofShortPixels* depthPixels = depthPixelsDoubleBuffer[0];
+
+		unsigned short* p = depthPixels->getPixels();
+		for (int i=0; i < depthPixels->size(); i++)
 		{
-			colorPixels[3*i + 0] = (k >> 5) & 0xff;
-			colorPixels[3*i + 1] = (k >> 3) & 0xff;
-			colorPixels[3*i + 2] = k & 0xff;// & 0xff;
+			unsigned short& k = p[i];
 
+			{
+				colorPixels[3*i + 0] = (k >> 5) & 0xff;
+				colorPixels[3*i + 1] = (k >> 3) & 0xff;
+				colorPixels[3*i + 2] = k & 0xff;// & 0xff;
+
+			}
 		}
+
+		depthTexture.loadData(colorPixels);
+		ofSetHexColor(0xffffff);
+		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
 	}
+
 
 	depthTexture.loadData(colorPixels);
 
@@ -70,6 +84,40 @@ void testApp::draw(){
 
 	ofCircle(ofPoint(headScreenPos), 10);
 
+	userTrackerFrame = userTrackerFrameDeque.front();
+
+	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+	for (int i = 0; i < users.getSize(); ++i)
+	{
+		const nite::UserData& user = users[i];
+		updateUserState(user,userTrackerFrame.getTimestamp());
+		if (user.getState() == nite::USER_STATE_NEW)
+		{
+			userTracker.startSkeletonTracking(user.getId());
+		}
+		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
+		{
+			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
+			if (head.getPositionConfidence() > .5)
+			{
+
+				ofVec2f headScreenPos;
+				userTracker.convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
+				ofCircle(ofPoint(headScreenPos), 10);
+				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
+			}
+		}
+	}
+
+
+	bgImage.draw(0,0);
+
+
+	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+
+	ofCircle(mouseX, mouseY,20);
+
+
 	ofSetHexColor(0x333333);
 	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
 
@@ -80,7 +128,7 @@ void testApp::keyPressed  (int key){
 
 	switch (key) 
 	{	
-		case 'g': gui4->toggleVisible(); break;
+	case 'g': gui4->toggleVisible(); break;
 	}
 
 }
@@ -95,7 +143,7 @@ void testApp::mouseMoved(int x, int y )
 {
 	if (x < 30 && y < 30) gui4->setVisible(true);
 	if (gui4->isVisible() && !gui4->isHit(x,y)) gui4->setVisible(false);
-	
+
 }
 
 //--------------------------------------------------------------
@@ -135,8 +183,9 @@ int testApp::setupOpenNi()
 	{
 		printf("Couldn't open device\n%s\n", OpenNI::getExtendedError());
 
-		printf("opening file");
-		rc = device.open("C:\\f\\q.oni");
+		const string fn = "C:\\f\\q.oni";
+		cout << ("opening file ") << fn;
+		rc = device.open(fn.c_str());
 		if (rc != ONI_STATUS_OK)
 		{
 			return 2;
@@ -152,10 +201,6 @@ int testApp::setupOpenNi()
 			printf("Couldn't create depth stream\n%s\n", OpenNI::getExtendedError());
 		}
 	}
-
-
-	//	stream.readFrame(&frame);
-
 
 	int w = depthStream.getVideoMode().getResolutionX();
 	int h = depthStream.getVideoMode().getResolutionY();
