@@ -22,11 +22,7 @@ void testApp::setup(){
 	for(int i = 0; i < 256; i++) { buffer[i] = ofNoise(i/100.0); }
 	setGUI4();
 
-	faceTracker.setup();
-
 	start();
-
-
 }
 
 
@@ -85,8 +81,9 @@ void testApp::draw(){
 		}
 	}
 
+	bgImage.draw(400,400);
+	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
-	ofCircle(mouseX, mouseY,20);
 
 	ofSetHexColor(0x333333);
 	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
@@ -212,6 +209,12 @@ void testApp::onNewFrame( VideoStream& stream )
 	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
+<<<<<<< HEAD
+=======
+	onNewFrame();
+
+}
+>>>>>>> 123c6cb... removed faceTracker, opencv, and more
 
 	nite::Status niteRc = handTracker.readFrame(&handTrackerFrame[1]);
 	if (niteRc != NITE_STATUS_OK)
@@ -241,9 +244,6 @@ void testApp::onNewFrame( VideoStream& stream )
 void testApp::exit(){
 
 	delete gui4; 
-
-	faceTracker.stopThread();
-	faceTracker.waitForThread();
 
 	depthStream.removeListener(this);
 	depthStream.stop();

@@ -6,9 +6,6 @@
 
 
 #include "ofMain.h"
-#include "ofxFaceTrackerThreaded.h"
-
-#include "..\..\..\git\github\ofxVirtualScreen\ofxVirtualScreen.h"
 
 #include "ofxUI\src\ofxUI.h"
 
@@ -46,9 +43,6 @@ private:
 	int setupNite();
 	int start();
 
-
-
-	ofxFaceTrackerThreaded faceTracker;
 
 	ofEasyCam handCam;
 	ofEasyCam sceneCam;
@@ -90,11 +84,6 @@ private:
 
 	ofTexture texScreen;
 	int counter;
-
-	nite::HandTracker handTracker;
-
-	Scene scene;
-
 
 
 	void setGUI4(); 	    
