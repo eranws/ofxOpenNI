@@ -65,27 +65,6 @@ void testApp::draw(){
 		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
 	}
 
-
-<<<<<<< HEAD
-	const nite::Array<nite::HandData>& hands = handTrackerFrame[0].getHands();
-	for (int i = 0; i < hands.getSize(); ++i)
-	{
-		const nite::HandData& hand = hands[i];
-		if (hand.getState() != NITE_HAND_STATE_LOST)
-		{
-
-			if (drawDebug && drawOpenNiDebug)
-			{
-				ofVec2f handScreenPos;
-				handTracker.convertHandCoordinatesToDepth(hand.getPosition().x,hand.getPosition().y,hand.getPosition().z,&handScreenPos.x, &handScreenPos.y);
-				ofCircle(ofPoint(handScreenPos), 10);
-				ofDrawBitmapStringHighlight(ofToString(hand.getId()), handScreenPos);
-			}
-
-			//		printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
-		}
-	}
-
 	bgImage.draw(400,400);
 	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
@@ -215,9 +194,6 @@ void testApp::onNewFrame( VideoStream& stream )
 	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
-}
-
-	
 	nite::Status niteRc = userTracker.readFrame(&userTrackerFrame);
 
 	if (niteRc != NITE_STATUS_OK)

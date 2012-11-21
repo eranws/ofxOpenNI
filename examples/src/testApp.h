@@ -87,8 +87,6 @@ private:
 
 	nite::UserTracker userTracker;
 
-	Scene scene;
-
 	void setGUI4(); 	    
 	ofxUIScrollableCanvas *gui4;
 	ofxUIMovingGraph *mg; 
