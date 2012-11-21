@@ -24,55 +24,28 @@ public:
 	void exit();
 
 	void keyPressed(int key);
-	void keyReleased(int key);
-	void mouseMoved(int x, int y );
-	void mouseDragged(int x, int y, int button);
-	void mousePressed(int x, int y, int button);
-	void mouseReleased(int x, int y, int button);
+	void mouseMoved(int x, int y);
 	void windowResized(int w, int h);
 
 	void guiEvent(ofxUIEventArgs &e);
 
 	virtual void onNewFrame( openni::VideoStream& stream);
 
-
 private:
-
-//	void handEvent(ofxOpenNIHandEvent & event);
 	int setupOpenNi();
 	int setupNite();
 	int start();
-
-
-	ofEasyCam handCam;
-	ofEasyCam sceneCam;
-
-
-	struct Finger
-	{
-		std::deque<ofVec3f> position;
-		bool isTracked;
-		Finger() : isTracked(false){ position.push_front(ofVec3f());}
-		ofVec3f getFilteredPosition(float a = 0.5f);
-
-		static const int historySize = 10;
-	};
-
-	Finger fingers[MAX_HANDS];
 
 	bool drawDebug;
 	bool drawDebugString;
 	bool drawOpenNiDebug;
 
-	stringstream camString;
+	stringstream debugString;
 
-	ofVec3f facePos;
-	ofVec2f screenPoint;
-	deque<ofVec2f> screenPointHistory;
+	openni::VideoFrameRef colorFrame;
+	openni::VideoFrameRef depthFrame;
 
-private:
-	openni::VideoFrameRef frame;
-
+	openni::VideoStream colorStream;
 	openni::VideoStream depthStream;
 	openni::Device device;
 
@@ -82,17 +55,13 @@ private:
 
 	ofTexture depthTexture;
 
-	ofTexture texScreen;
-
 	void setGUI4(); 	    
 	ofxUIScrollableCanvas *gui4;
 	ofxUIMovingGraph *mg; 
 	float buffer[256]; 
 
 	ofImage bgImage;
-
-
-	//set of these...
+	//TODO: make a collection of these...
 	ofImage item;
 	ofPoint itemPos;
 	ofVec2f itemSize;
@@ -101,8 +70,7 @@ private:
 	float red, green, blue; 
 
 	ofVec2f headScreenPos;
-	//ofVec2f headScreenPos;
-	deque<nite::UserTrackerFrameRef> userTrackerFrameDeque;
+
 	nite::UserTrackerFrameRef userTrackerFrame;
 	nite::UserTracker userTracker;
 

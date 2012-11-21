@@ -4,28 +4,20 @@
 #include "OpenNI.h"
 using namespace openni;
 
-
-void updateUserState(const nite::UserData& user, unsigned long long ts);
-
 //--------------------------------------------------------------
 void testApp::setup(){	
 
 	ofSetCircleResolution(100);
 	//ofSetFrameRate(300);
-	//	ofSetFullscreen(true);
 	ofSetVerticalSync(true);
+	
+	setupOpenNi();
+	setupNite();
 
-	//	setupOpenNi();
-	//	setupNite();
-
-
-
-
+	bgImage.loadImage("graphics/bg.jpg"); //depends on resolution
 	item.loadImage("graphics/falafel.png");
 	itemSize = ofVec2f(item.getWidth(), item.getHeight());
 	itemSizeFactor = 1.0f;
-
-	bgImage.loadImage("graphics/bg.jpg"); //depends on resolution
 
 	setGUI4();
 
@@ -35,7 +27,7 @@ void testApp::setup(){
 
 //--------------------------------------------------------------
 void testApp::update(){
-	camString = stringstream();
+	debugString = stringstream();
 	mg->addPoint(ofGetFrameRate());
 
 	itemPos = ofVec2f(mouseX, mouseY);
@@ -46,7 +38,6 @@ void testApp::update(){
 
 void testApp::draw()
 {
-
 	if (depthStream.isValid())
 	{
 
@@ -68,10 +59,9 @@ void testApp::draw()
 		depthTexture.loadData(colorPixels);
 		ofSetHexColor(0xffffff);
 		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
+		depthTexture.loadData(colorPixels);
 	}
 
-
-	depthTexture.loadData(colorPixels);
 
 	if (drawDebug && drawOpenNiDebug)
 	{
@@ -79,44 +69,10 @@ void testApp::draw()
 		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
 	}
 
-	bgImage.draw(400,400);
-	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
-
 	ofCircle(ofPoint(headScreenPos), 10);
 
-	userTrackerFrame = userTrackerFrameDeque.front();
-
-	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
-	for (int i = 0; i < users.getSize(); ++i)
-	{
-		const nite::UserData& user = users[i];
-		updateUserState(user,userTrackerFrame.getTimestamp());
-		if (user.getState() == nite::USER_STATE_NEW)
-		{
-			userTracker.startSkeletonTracking(user.getId());
-		}
-		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
-		{
-			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
-			if (head.getPositionConfidence() > .5)
-			{
-
-				ofVec2f headScreenPos;
-				userTracker.convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
-				ofCircle(ofPoint(headScreenPos), 10);
-				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
-			}
-		}
-	}
-
-
-	bgImage.draw(0,0);
-
-
+	bgImage.draw(400,400);
 	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
-
-	ofCircle(mouseX, mouseY,20);
-
 
 	ofSetHexColor(0x333333);
 	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
@@ -128,38 +84,20 @@ void testApp::keyPressed  (int key){
 
 	switch (key) 
 	{	
+	case 'f': ofToggleFullscreen(); break;
 	case 'g': gui4->toggleVisible(); break;
 	}
 
 }
 
-//--------------------------------------------------------------
-void testApp::keyReleased(int key){ 
-
-}
 
 //--------------------------------------------------------------
 void testApp::mouseMoved(int x, int y )
 {
 	if (x < 30 && y < 30) gui4->setVisible(true);
 	if (gui4->isVisible() && !gui4->isHit(x,y)) gui4->setVisible(false);
-
 }
 
-//--------------------------------------------------------------
-void testApp::mouseDragged(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void testApp::mousePressed(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void testApp::mouseReleased(int x, int y, int button){
-
-}
 
 //--------------------------------------------------------------
 void testApp::windowResized(int w, int h){
@@ -167,7 +105,6 @@ void testApp::windowResized(int w, int h){
 }
 
 
-//TODO: exception?
 int testApp::setupOpenNi()
 {
 	Status rc = OpenNI::initialize();
@@ -223,35 +160,32 @@ int testApp::setupOpenNi()
 
 void testApp::onNewFrame( VideoStream& stream )
 {
-	stream.readFrame(&frame);
-	const unsigned short* data = (const unsigned short*)frame.getData();
+	stream.readFrame(&depthFrame);
+	const unsigned short* data = (const unsigned short*)depthFrame.getData();
 
 	bool debugPrintMiddlePixel = false;
 	if (debugPrintMiddlePixel) //TODO: move to Utils
 	{
-		int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
-		DepthPixel* pDepth = (DepthPixel*)frame.getData();
-		printf("[%08llu] %8d\n", frame.getTimestamp(), pDepth[middleIndex]);
+		int middleIndex = (depthFrame.getHeight()+1)*depthFrame.getWidth()/2;
+		DepthPixel* pDepth = (DepthPixel*)depthFrame.getData();
+		printf("[%08llu] %8d\n", depthFrame.getTimestamp(), pDepth[middleIndex]);
 	}
 
-	depthPixelsDoubleBuffer[1]->setFromPixels(data, frame.getWidth(), frame.getHeight(), OF_IMAGE_GRAYSCALE);
+	depthPixelsDoubleBuffer[1]->setFromPixels(data, depthFrame.getWidth(), depthFrame.getHeight(), OF_IMAGE_GRAYSCALE);
 
 	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
 	nite::Status niteRc = userTracker.readFrame(&userTrackerFrame);
-
 	if (niteRc != NITE_STATUS_OK)
 	{
 		printf("Get next frame failed\n");
 	}
 
-
 	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
 	for (int i = 0; i < users.getSize(); ++i)
 	{
 		const nite::UserData& user = users[i];
-		updateUserState(user,userTrackerFrame.getTimestamp());
 		if (user.getState() == nite::USER_STATE_NEW)
 		{
 			userTracker.startSkeletonTracking(user.getId());
@@ -281,7 +215,7 @@ void testApp::exit(){
 	depthStream.destroy();
 	device.close();
 
-	abort(); //avoid crash in tite tracker. TODO remove
+	std::exit(1); //avoid crash in nite tracker. TODO remove
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
 
@@ -443,46 +377,3 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 }
 
 
-
-#define MAX_USERS 10
-nite::UserState g_userStates[MAX_USERS] = {(nite::UserState)-1};
-nite::SkeletonState g_skeletonStates[MAX_USERS] = {nite::SKELETON_NONE};
-
-#define USER_MESSAGE(msg) \
-{printf("[%08llu] User #%d:\t%s\n",ts, user.getId(),msg); break;}
-
-void updateUserState(const nite::UserData& user, unsigned long long ts)
-{
-	if(g_userStates[user.getId()] != user.getState())
-	{
-		switch(g_userStates[user.getId()] = user.getState())
-		{
-		case nite::USER_STATE_NEW:
-			USER_MESSAGE("New")
-		case nite::USER_STATE_VISIBLE:
-			USER_MESSAGE("Visible")
-		case nite::USER_STATE_OUT_OF_SCENE:
-			USER_MESSAGE("Out of scene...")
-		case nite::USER_STATE_LOST:
-			USER_MESSAGE("Lost.")
-		}
-	}
-	if(g_skeletonStates[user.getId()] != user.getSkeleton().getState())
-	{
-		switch(g_skeletonStates[user.getId()] = user.getSkeleton().getState())
-		{
-		case nite::SKELETON_NONE:
-			USER_MESSAGE("Stopped tracking.")
-		case nite::SKELETON_CALIBRATING:
-			USER_MESSAGE("Calibrating...")
-		case nite::SKELETON_TRACKED:
-			USER_MESSAGE("Tracking!")
-		case nite::SKELETON_CALIBRATION_ERROR_NOT_IN_POSE:
-		case nite::SKELETON_CALIBRATION_ERROR_HANDS:
-		case nite::SKELETON_CALIBRATION_ERROR_LEGS:
-		case nite::SKELETON_CALIBRATION_ERROR_HEAD:
-		case nite::SKELETON_CALIBRATION_ERROR_TORSO:
-			USER_MESSAGE("Calibration Failed... :-|")
-		}
-	}
-}
