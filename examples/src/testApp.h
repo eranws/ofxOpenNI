@@ -101,7 +101,15 @@ private:
 	ofxUIMovingGraph *mg; 
 	float *buffer; 
 	ofImage *img; 
-	
+
+	ofImage bgImage;
+
+	//set of these...
+	ofImage item;
+	ofPoint itemPos;
+	ofVec2f itemSize;
+	float itemSizeFactor; //according to head distance
+
 	float red, green, blue; 
 	bool bdrawGrid; 
 	bool bdrawPadding; 
