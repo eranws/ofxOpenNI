@@ -15,8 +15,8 @@ void testApp::setup(){
 	//	ofSetFullscreen(true);
 	ofSetVerticalSync(true);
 
-//	setupOpenNi();
-//	setupNite();
+	setupOpenNi();
+	setupNite();
 
 	img = new ofImage(); 
 	img->getTextureReference().allocate(640,480, GL_DEPTH);
@@ -35,11 +35,7 @@ void testApp::setup(){
 	for(int i = 0; i < 256; i++) { buffer[i] = ofNoise(i/100.0); }
 	setGUI4();
 
-//	faceTracker.setup();
-
 	start();
-
-
 }
 
 
@@ -108,12 +104,11 @@ void testApp::draw()
 		}
 	}
 
-	bgImage.draw(0,0);
 
 
+	bgImage.draw(400,400);
 	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
-	ofCircle(mouseX, mouseY,20);
 
 	ofSetHexColor(0x333333);
 	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
@@ -228,7 +223,8 @@ void testApp::onNewFrame( VideoStream& stream )
 	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
-	//notify face?
+	onNewFrame();
+
 }
 
 void testApp::onNewFrame()
@@ -254,9 +250,6 @@ void testApp::onNewFrame()
 void testApp::exit(){
 
 	delete gui4; 
-
-	faceTracker.stopThread();
-	faceTracker.waitForThread();
 
 	depthStream.removeListener(this);
 	depthStream.stop();
