@@ -51,7 +51,8 @@ private:
 
 	
 	ofShortPixels* depthPixelsDoubleBuffer[2];
-	ofPixels colorPixels;
+	ofImage sensorImage;
+
 
 	ofTexture depthTexture;
 

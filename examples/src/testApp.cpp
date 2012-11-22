@@ -31,17 +31,14 @@ void testApp::update(){
 	mg->addPoint(ofGetFrameRate());
 
 	itemPos = ofVec2f(mouseX, mouseY);
-}
 
 
-//--------------------------------------------------------------
-
-void testApp::draw()
-{
 	if (depthStream.isValid())
 	{
-
 		ofShortPixels* depthPixels = depthPixelsDoubleBuffer[0];
+
+		ofPixels colorPixels;
+		colorPixels.allocate(depthPixels->getWidth(), depthPixels->getHeight(), OF_IMAGE_COLOR);
 
 		unsigned short* p = depthPixels->getPixels();
 		for (int i=0; i < depthPixels->size(); i++)
@@ -52,35 +49,36 @@ void testApp::draw()
 				colorPixels[3*i + 0] = (k >> 5) & 0xff;
 				colorPixels[3*i + 1] = (k >> 3) & 0xff;
 				colorPixels[3*i + 2] = k & 0xff;// & 0xff;
-
 			}
 		}
-
-		depthTexture.loadData(colorPixels);
-		ofSetHexColor(0xffffff);
-		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
 		depthTexture.loadData(colorPixels);
 	}
 
+}
 
-	if (drawDebug && drawOpenNiDebug)
-	{
-		ofSetHexColor(0xffffff);
-		depthTexture.draw(0,0, depthTexture.getWidth(), depthTexture.getHeight());
-	}
 
+//--------------------------------------------------------------
+
+void testApp::draw()
+{
 	ofCircle(ofPoint(headScreenPos), 10);
 
 	bgImage.draw(400,400);
 	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
-	ofSetHexColor(0x333333);
-	ofDrawBitmapString("fps:" + ofToString(ofGetFrameRate()), 10,10);
+	if (drawDebug && drawOpenNiDebug)
+	{
+		ofSetHexColor(0xffffff);
+		depthTexture.draw(0,0);
+
+		ofSetHexColor(0x333333);
+		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
+	}
 
 }
 
 //--------------------------------------------------------------
-void testApp::keyPressed  (int key){ 
+void testApp::keyPressed(int key){ 
 
 	switch (key) 
 	{	
@@ -138,10 +136,8 @@ int testApp::setupOpenNi()
 			printf("Couldn't create depth stream\n%s\n", OpenNI::getExtendedError());
 		}
 	}
-
 	int w = depthStream.getVideoMode().getResolutionX();
 	int h = depthStream.getVideoMode().getResolutionY();
-
 	depthTexture.allocate(w, h, GL_RGB);
 
 
@@ -150,12 +146,8 @@ int testApp::setupOpenNi()
 		depthPixelsDoubleBuffer[i] = new ofShortPixels();
 		depthPixelsDoubleBuffer[i]->allocate(w, h, OF_IMAGE_GRAYSCALE);
 	}
-	colorPixels.allocate(w, h, OF_IMAGE_COLOR);
-
-	//	onNewFrame(depthStream);
 
 	return 0;
-
 }
 
 void testApp::onNewFrame( VideoStream& stream )
@@ -173,8 +165,8 @@ void testApp::onNewFrame( VideoStream& stream )
 
 	depthPixelsDoubleBuffer[1]->setFromPixels(data, depthFrame.getWidth(), depthFrame.getHeight(), OF_IMAGE_GRAYSCALE);
 
-	depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
-	//InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
+	//depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
+	InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
 	nite::Status niteRc = userTracker.readFrame(&userTrackerFrame);
 	if (niteRc != NITE_STATUS_OK)
@@ -260,7 +252,6 @@ int testApp::start()
 
 
 	return 0;
-
 }
 
 
