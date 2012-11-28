@@ -34,6 +34,10 @@ NITE_API bool niteIsSkeletonTracking(NiteUserTrackerHandle, NiteUserId);
 NITE_API NiteStatus niteSetSkeletonSmoothing(NiteUserTrackerHandle, float);
 NITE_API NiteStatus niteGetSkeletonSmoothing(NiteUserTrackerHandle, float*);
 
+NITE_API NiteStatus niteStartPoseDetection(NiteUserTrackerHandle, NiteUserId, NitePoseType);
+NITE_API void niteStopPoseDetection(NiteUserTrackerHandle, NiteUserId, NitePoseType);
+NITE_API void niteStopAllPoseDetection(NiteUserTrackerHandle, NiteUserId);
+
 NITE_API NiteStatus niteRegisterUserTrackerCallbacks(NiteUserTrackerHandle, NiteUserTrackerCallbacks*, void*);
 NITE_API void niteUnregisterUserTrackerCallbacks(NiteUserTrackerHandle, NiteUserTrackerCallbacks*);
 

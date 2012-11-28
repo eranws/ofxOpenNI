@@ -44,8 +44,6 @@ public:
 	StreamBase() {}
 	virtual ~StreamBase() {}
 
-	virtual void destroy() = 0;
-
 	virtual OniStatus setProperty(int /*propertyId*/, const void* /*data*/, int /*dataSize*/) {return ONI_STATUS_NOT_IMPLEMENTED;}
 	virtual OniStatus getProperty(int /*propertyId*/, void* /*data*/, int* /*pDataSize*/) {return ONI_STATUS_NOT_IMPLEMENTED;}
 	virtual OniBool isPropertySupported(int /*propertyId*/) {return FALSE;}
@@ -82,11 +80,10 @@ public:
 	DeviceBase() {}
 	virtual ~DeviceBase() {}
 
-	virtual void close() = 0;
-
 	virtual OniStatus getSensorInfoList(OniSensorInfo** pSensorInfos, int* numSensors) = 0;
 
 	virtual StreamBase* createStream(OniSensorType) = 0;
+	virtual void destroyStream(StreamBase* pStream) = 0;
 
 	virtual OniStatus setProperty(int /*propertyId*/, const void* /*data*/, int /*dataSize*/) {return ONI_STATUS_NOT_IMPLEMENTED;}
 	virtual OniStatus getProperty(int /*propertyId*/, void* /*data*/, int* /*pDataSize*/) {return ONI_STATUS_NOT_IMPLEMENTED;}
@@ -153,6 +150,7 @@ public:
 	}
 
 	virtual DeviceBase* deviceOpen(const char* uri) = 0;
+	virtual void deviceClose(DeviceBase* pDevice) = 0;
 
 	virtual void shutdown() = 0;
 
@@ -205,7 +203,6 @@ ONI_C_API_EXPORT OniStatus oniDriverTryDevice(const char* uri)																\
 	return g_pDriver->tryDevice(uri);																						\
 }																															\
 																															\
-																															\
 /* As Device */																												\
 ONI_C_API_EXPORT oni::driver::DeviceBase* oniDriverDeviceOpen(const char* uri)												\
 {																															\
@@ -213,19 +210,24 @@ ONI_C_API_EXPORT oni::driver::DeviceBase* oniDriverDeviceOpen(const char* uri)		
 }																															\
 ONI_C_API_EXPORT void oniDriverDeviceClose(oni::driver::DeviceBase* pDevice)												\
 {																															\
-	pDevice->close();																										\
+	g_pDriver->deviceClose(pDevice);																						\
 }																															\
 																															\
 ONI_C_API_EXPORT OniStatus oniDriverDeviceGetSensorInfoList(oni::driver::DeviceBase* pDevice, OniSensorInfo** pSensorInfos,	\
 															int* numSensors)												\
 {																															\
-	return pDevice->getSensorInfoList(pSensorInfos, numSensors);																\
+	return pDevice->getSensorInfoList(pSensorInfos, numSensors);															\
 }																															\
 																															\
 ONI_C_API_EXPORT oni::driver::StreamBase* oniDriverDeviceCreateStream(oni::driver::DeviceBase* pDevice,						\
 																		OniSensorType sensorType)							\
 {																															\
 	return pDevice->createStream(sensorType);																				\
+}																															\
+																															\
+ONI_C_API_EXPORT void oniDriverDeviceDestroyStream(oni::driver::DeviceBase* pDevice, oni::driver::StreamBase* pStream)		\
+{																															\
+	return pDevice->destroyStream(pStream);																					\
 }																															\
 																															\
 ONI_C_API_EXPORT OniStatus oniDriverDeviceSetProperty(oni::driver::DeviceBase* pDevice, int propertyId,						\
@@ -271,11 +273,6 @@ ONI_C_API_EXPORT OniBool oniDriverDeviceIsImageRegistrationModeSupported(oni::dr
 }																															\
 																															\
 /* As Stream */																												\
-ONI_C_API_EXPORT void oniDriverStreamDestroy(oni::driver::StreamBase* pStream)												\
-{																															\
-	pStream->destroy();																										\
-	XN_DELETE(pStream);																										\
-}																															\
 ONI_C_API_EXPORT OniStatus oniDriverStreamSetProperty(oni::driver::StreamBase* pStream, int propertyId,						\
 													const void* data, int dataSize)											\
 {																															\

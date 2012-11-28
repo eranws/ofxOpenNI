@@ -97,9 +97,6 @@ ONI_C_API void oniStreamDestroy(OniStreamHandle stream);
 /** Get the OniSourceInfo of the certain stream. */
 ONI_C_API const OniSensorInfo* oniStreamGetSensorInfo(OniStreamHandle stream);
 
-/** Get a handle to the device to which this stream belongs. */
-ONI_C_API OniStatus oniStreamGetDeviceHandle(OniStreamHandle stream, OniDeviceHandle* pDevice);
-
 /** Start generating data from the stream. */
 ONI_C_API OniStatus oniStreamStart(OniStreamHandle stream);
 /** Stop generating data from the stream. */

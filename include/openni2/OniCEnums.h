@@ -17,27 +17,29 @@
 *  See the License for the specific language governing permissions and       *
 *  limitations under the License.                                            *
 *                                                                            *
-*****************************************************************************/#ifndef _ONI_C_ENUMS_H_
+*****************************************************************************/
+#ifndef _ONI_C_ENUMS_H_
 #define _ONI_C_ENUMS_H_
 
 /** Possible failure values */
 typedef enum
 {
-	ONI_STATUS_OK,
-	ONI_STATUS_ERROR,
-	ONI_STATUS_NOT_IMPLEMENTED,
-	ONI_STATUS_NOT_SUPPORTED,
-	ONI_STATUS_BAD_PARAMETER,
-	ONI_STATUS_OUT_OF_FLOW,
-	ONI_STATUS_NO_DEVICE
+	ONI_STATUS_OK = 0,
+	ONI_STATUS_ERROR = 1,
+	ONI_STATUS_NOT_IMPLEMENTED = 2,
+	ONI_STATUS_NOT_SUPPORTED = 3,
+	ONI_STATUS_BAD_PARAMETER = 4,
+	ONI_STATUS_OUT_OF_FLOW = 5,
+	ONI_STATUS_NO_DEVICE = 6,
+	ONI_STATUS_TIME_OUT = 102,
 } OniStatus;
 
 /** The source of the stream */
 typedef enum
 {
 	ONI_SENSOR_IR = 1,
-	ONI_SENSOR_COLOR,
-	ONI_SENSOR_DEPTH
+	ONI_SENSOR_COLOR = 2,
+	ONI_SENSOR_DEPTH = 3,
 
 } OniSensorType;
 
@@ -60,15 +62,16 @@ typedef enum
 
 typedef enum
 {
-	DEVICE_STATE_OK,
-	DEVICE_STATE_ERROR,
-	DEVICE_STATE_NOT_READY
+	ONI_DEVICE_STATE_OK 		= 0,
+	ONI_DEVICE_STATE_ERROR		= 1,
+	ONI_DEVICE_STATE_NOT_READY 	= 2,
+	ONI_DEVICE_STATE_EOF 		= 3
 } OniDeviceState;
 
 typedef enum
 {
 	ONI_IMAGE_REGISTRATION_OFF				= 0,
-	ONI_IMAGE_REGISTRATION_DEPTH_TO_COLOR,
+	ONI_IMAGE_REGISTRATION_DEPTH_TO_COLOR	= 1,
 } OniImageRegistrationMode;
 
 static const int ONI_TIMEOUT_NONE = 0;

@@ -53,14 +53,12 @@ typedef enum
 /** Possible states of the user */
 typedef enum
 {
-	/** User is new - this is the first time the user is available */
-	NITE_USER_STATE_NEW,
 	/** User is visible and already known */
-	NITE_USER_STATE_VISIBLE,
-	/** Known user is currently out of scene, but not lost */
-	NITE_USER_STATE_OUT_OF_SCENE,
+	NITE_USER_STATE_VISIBLE = 1,
+	/** User is new - this is the first time the user is available */
+	NITE_USER_STATE_NEW = 2,
 	/** User is lost. This is the last time this user will be seen */
-	NITE_USER_STATE_LOST
+	NITE_USER_STATE_LOST = 4,
 } NiteUserState;
 
 /** Possible failure values */
@@ -70,10 +68,21 @@ typedef enum
 	NITE_STATUS_ERROR,
 	NITE_STATUS_BAD_USER_ID
 } NiteStatus;
-/*
-	NOT_INITIALIZED
-	BAD_USER_ID
-*/
+
+typedef enum
+{
+	NITE_POSE_PSI,
+	NITE_POSE_CROSSED_HANDS
+} NitePoseType;
+
+typedef enum
+{
+	NITE_POSE_STATE_DETECTING = 1,
+	NITE_POSE_STATE_IN_POSE = 2,
+	NITE_POSE_STATE_ENTER = 4,
+	NITE_POSE_STATE_EXIT = 8
+
+} NitePoseState;
 
 /** Available gestures types */
 typedef enum
@@ -86,21 +95,22 @@ typedef enum
 /** Possible state of a gesture. Currently only 'Complete' is used. */
 typedef enum
 {
-	NITE_GESTURE_STATE_NEW,			// Unused
-	NITE_GESTURE_STATE_IN_PROGRESS,	// Unused
-	NITE_GESTURE_STATE_ABORTED,		// Unused
-	NITE_GESTURE_STATE_COMPLETED
+	NITE_GESTURE_STATE_NEW = 1,				// Future
+	NITE_GESTURE_STATE_IN_PROGRESS = 2,		// Future
+	NITE_GESTURE_STATE_COMPLETED = 4
 } NiteGestureState;
 
 /** Possible state of a hand */
 typedef enum
 {
+ 	/** This hand was lost. It is the last frame in which it will be provided */
+	NITE_HAND_STATE_LOST = 0,
 	/** This is a new hand - it is the first frame in which it is available*/
-	NITE_HAND_STATE_NEW,
-	/** This is a known hand */
-	NITE_HAND_STATE_TRACKED,
-	/** This hand was lost. It is the last frame in which it will provided */
-	NITE_HAND_STATE_LOST,
+	NITE_HAND_STATE_NEW = 1,
+ 	/** This is a known hand */
+	NITE_HAND_STATE_TRACKED = 2,
+ 	/** This is a known hand, and in this frame it's very near the edge of the field of view */
+	NITE_HAND_STATE_TOUCHING_FOV = 4,
 } NiteHandState;
 
 #endif // _NITE_C_ENUM_H_

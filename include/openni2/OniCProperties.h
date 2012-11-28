@@ -51,6 +51,10 @@ enum
 	ONI_STREAM_PROPERTY_MIRRORING			= 7, // OniBool
 
 	ONI_STREAM_PROPERTY_NUMBER_OF_FRAMES		= 8, // int
+
+	// Camera
+	ONI_STREAM_PROPERTY_AUTO_WHITE_BALANCE		= 100, // OniBool
+	ONI_STREAM_PROPERTY_AUTO_EXPOSURE			= 101, // OniBool
 };
 
 // Device commands (for Invoke)

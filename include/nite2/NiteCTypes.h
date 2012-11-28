@@ -16,6 +16,7 @@ typedef short int NiteUserId;
 typedef struct NiteUserTracker* NiteUserTrackerHandle;
 
 #define NITE_JOINT_COUNT 15
+#define NITE_POSE_COUNT 2
 
 /** 3D Point */
 typedef struct
@@ -51,6 +52,12 @@ typedef struct
 	NitePoint3f max;
 } NiteBoundingBox;
 
+typedef struct
+{
+	NitePoseType type;
+	int state;
+} NitePoseData;
+
 /** Skeleton - a set of joints */
 typedef struct  
 {
@@ -65,9 +72,11 @@ typedef struct
 	NiteBoundingBox boundingBox;
 	NitePoint3f centerOfMass;
 
-	NiteUserState state;
+	int state;
 
 	NiteSkeleton skeleton;
+
+	NitePoseData poses[NITE_POSE_COUNT];
 } NiteUserData;
 
 /** Snapshot of the scene segmentation*/
@@ -116,14 +125,14 @@ typedef struct
 } NiteUserTrackerCallbacks;
 
 
-typedef short NiteHandId;
+typedef short int NiteHandId;
 
 /** A snapshot of a specific hand */
 typedef struct
 {
 	NiteHandId id;
 	NitePoint3f position;
-	NiteHandState state;
+	int state;
 } NiteHandData;
 
 /** A snapshot of a specific gesture */
@@ -131,7 +140,7 @@ typedef struct
 {
 	NiteGestureType type;
 	NitePoint3f currentPosition;
-	NiteGestureState state;
+	int state;
 } NiteGestureData;
 
 /** Output snapshot of the Hand Tracker algorithm */
@@ -160,14 +169,24 @@ typedef struct
 	OniGeneralCallback readyForNextFrame;
 } NiteHandTrackerCallbacks;
 
-/** Hold a version */
-typedef struct  
-{
-	int major;
-	int minor;
-	int maintenance;
-	int build;
-} NiteVersion;
+#define _NITE_DECLARE_VERSION(name)																\
+/** Holds a NiTEversion number, which consists of four separate numbers in the format: major.minor.maintenance.build*/  \
+																								\
+typedef struct																					\
+{																								\
+	/** Major version number, incremented for major API restructuring. */						\
+	int major;																					\
+	/** Minor version number, incremented when significant new features added. */				\
+	int minor;																					\
+	/** Maintenance build number, incremented for new releases that primarily 					\
+        provide minor bug fixes. */																\
+	int maintenance;																			\
+	/** Build number. Incremented for each new API build. Generally not shown					\
+	on the installer and download site. */														\
+	int build;																					\
+} name;
+
+_NITE_DECLARE_VERSION(NiteVersion);
 
 
 typedef struct NiteHandTracker* NiteHandTrackerHandle;

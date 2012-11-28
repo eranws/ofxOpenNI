@@ -50,19 +50,6 @@ typedef enum
 
 } SkeletonState;
 
-/** Possible states of the user */
-typedef enum
-{
-	/** User is new - this is the first time the user is available */
-	USER_STATE_NEW,
-	/** User is visible and already known */
-	USER_STATE_VISIBLE,
-	/** Known user is currently out of scene, but not lost */
-	USER_STATE_OUT_OF_SCENE,
-	/** User is lost. This is the last time this user will be seen */
-	USER_STATE_LOST
-} UserState;
-
 /** Possible failure values */
 typedef enum
 {
@@ -70,10 +57,12 @@ typedef enum
 	STATUS_ERROR,
 	STATUS_BAD_USER_ID
 } Status;
-/*
-	NOT_INITIALIZED
-	BAD_USER_ID
-*/
+
+typedef enum
+{
+	POSE_PSI,
+	POSE_CROSSED_HANDS
+} PoseType;
 
 /** Available gestures types */
 typedef enum
@@ -82,25 +71,5 @@ typedef enum
 	GESTURE_CLICK,
 	GESTURE_HAND_RAISE
 } GestureType;
-
-/** Possible state of a gesture. Currently only 'Complete' is used. */
-typedef enum
-{
-	GESTURE_STATE_NEW,			// Unused
-	GESTURE_STATE_IN_PROGRESS,	// Unused
-	GESTURE_STATE_ABORTED,		// Unused
-	GESTURE_STATE_COMPLETED
-} GestureState;
-
-/** Possible state of a hand */
-typedef enum
-{
-	/** This is a new hand - it is the first frame in which it is available*/
-	HAND_STATE_NEW,
-	/** This is a known hand */
-	HAND_STATE_TRACKED,
-	/** This hand was lost. It is the last frame in which it will provided */
-	HAND_STATE_LOST,
-} HandState;
 
 #endif // _NITE_ENUMS_H_

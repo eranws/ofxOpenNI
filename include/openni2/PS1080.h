@@ -72,6 +72,9 @@ enum
 	XN_MODULE_PROPERTY_DEPTH_CONTROL = 0x1080E004, // "DepthControl"
 	/** XnAHBData */
 	XN_MODULE_PROPERTY_AHB = 0x1080E005, // "AHB"
+	/** XnLedState */
+	XN_MODULE_PROPERTY_LED_STATE = 0x1080E006, // "LedState"
+
 
 	/*******************************************************************/
 	/* Common stream properties                                        */
@@ -138,6 +141,7 @@ typedef enum
 	XN_SENSOR_FW_VER_5_5 = 11,
 	XN_SENSOR_FW_VER_5_6 = 12,
 	XN_SENSOR_FW_VER_5_7 = 13,
+	XN_SENSOR_FW_VER_5_8 = 14,
 } XnFWVer;
 
 typedef enum {
@@ -292,6 +296,12 @@ typedef struct XnPixelRegistration
 	unsigned int nImageX; // out
 	unsigned int nImageY; // out
 } XnPixelRegistration;
+
+typedef struct XnLedState
+{
+	uint16_t nLedID;
+	uint16_t nState;
+} XnLedState;
 
 #pragma pack (pop)
 

@@ -17,7 +17,7 @@ namespace nite {
 #include "NiteEnums.h"
 
 // General
-typedef NiteVersion Version;
+_NITE_DECLARE_VERSION(Version);
 
 class Point3f : public NitePoint3f
 {
@@ -117,7 +117,17 @@ private:
 };
 
 // UserTracker
-typedef NiteUserId UserId;
+typedef short int UserId;
+
+class PoseData : protected NitePoseData
+{
+public:
+	PoseType getType() const {return (PoseType)type;}
+
+	bool isInPose() const {return (state & NITE_POSE_STATE_IN_POSE) != 0;}
+	bool isEnterPose() const {return (state & NITE_POSE_STATE_ENTER) != 0;}
+	bool isExitPose() const {return (state & NITE_POSE_STATE_EXIT) != 0;}
+};
 
 class UserMap : private NiteUserMap
 {
@@ -149,18 +159,23 @@ class UserData : private NiteUserData
 {
 public:
 	UserId getId() const {return id;}
-	const BoundingBox& getBoundingBox() const {return (BoundingBox&)boundingBox;}
-	const Point3f& getCenterOfMass() const {return (Point3f&)centerOfMass;}
-	UserState getState() const {return (UserState)state;}
+	const BoundingBox& getBoundingBox() const {return (const BoundingBox&)boundingBox;}
+	const Point3f& getCenterOfMass() const {return (const Point3f&)centerOfMass;}
 
-	const Skeleton& getSkeleton() const {return (Skeleton&)skeleton;}
+	bool isNew() const {return (state & NITE_USER_STATE_NEW) != 0;}
+	bool isVisible() const {return (state & NITE_USER_STATE_VISIBLE) != 0;}
+	bool isLost() const {return (state & NITE_USER_STATE_LOST) != 0;}
+
+	const Skeleton& getSkeleton() const {return (const Skeleton&)skeleton;}
+
+	const PoseData& getPose(PoseType type) const {return (const PoseData&)poses[type];}
 };
 
 /** Snapshot of the User Tracker algorithm. It holds all the users identified at this time, including their position, skeleton and such, as well as the floor plane */
 class UserTrackerFrameRef
 {
 public:
-	UserTrackerFrameRef() : m_pFrame(NULL), m_scene(NULL)
+	UserTrackerFrameRef() : m_pFrame(NULL), m_userTrackerHandle(NULL)
 	{}
 	~UserTrackerFrameRef()
 	{
@@ -173,10 +188,32 @@ public:
 	}
 	UserTrackerFrameRef& operator=(const UserTrackerFrameRef& other)
 	{
-		setReference(other.m_scene, other.m_pFrame);
-		niteUserTrackerFrameAddRef(m_scene, m_pFrame);
+		setReference(other.m_userTrackerHandle, other.m_pFrame);
+		niteUserTrackerFrameAddRef(m_userTrackerHandle, m_pFrame);
 
 		return *this;
+	}
+
+	void release()
+	{
+		if (m_pFrame != NULL)
+		{
+			niteUserTrackerFrameRelease(m_userTrackerHandle, m_pFrame);
+		}
+		m_pFrame = NULL;
+		m_userTrackerHandle = NULL;
+	}
+
+	const UserData* getUserById(UserId id) const
+	{
+		for (int i = 0; i < m_users.getSize(); ++i)
+		{
+			if (m_users[i].getId() == id)
+			{
+				return &m_users[i];
+			}
+		}
+		return NULL;
 	}
 
 	const Array<UserData>& getUsers() const {return m_users;}
@@ -194,27 +231,18 @@ private:
 
 	Array<UserData> m_users;
 
-	void setReference(NiteUserTrackerHandle scene, NiteUserTrackerFrame* pFrame)
+	void setReference(NiteUserTrackerHandle userTrackerHandle, NiteUserTrackerFrame* pFrame)
 	{
 		release();
-		m_scene = scene;
+		m_userTrackerHandle = userTrackerHandle;
 		m_pFrame = pFrame;
 		m_depthFrame._setFrame(pFrame->pDepthFrame);
 		m_users.setData(m_pFrame->userCount, (UserData*)m_pFrame->pUser);
 		
 	}
-	void release()
-	{
-		if (m_pFrame != NULL)
-		{
-			niteUserTrackerFrameRelease(m_scene, m_pFrame);
-		}
-		m_pFrame = NULL;
-		m_scene = NULL;
-	}
 
 	NiteUserTrackerFrame* m_pFrame;
-	NiteUserTrackerHandle m_scene;
+	NiteUserTrackerHandle m_userTrackerHandle;
 	openni::VideoFrameRef m_depthFrame;
 };
 
@@ -228,77 +256,86 @@ public:
 	class Listener
 	{
 	public:
-		Listener() : m_pScene(NULL)
+		Listener() : m_pUserTracker(NULL)
 		{
-			m_sceneCallbacks.readyForNextFrame = newFrameCallback;
+			m_userTrackerCallbacks.readyForNextFrame = newFrameCallback;
 		}
 
 		// SAme name as in OPenNI. Not abstract - make sure OPenNI is the same
-		virtual void onNewFrame() {}
+		virtual void onNewFrame(UserTracker&) {}
 
 	private:
-		NiteUserTrackerCallbacks m_sceneCallbacks;
+		NiteUserTrackerCallbacks m_userTrackerCallbacks;
 
-		NiteUserTrackerCallbacks& getCallbacks() {return m_sceneCallbacks;}
+		NiteUserTrackerCallbacks& getCallbacks() {return m_userTrackerCallbacks;}
 
 		static void ONI_CALLBACK_TYPE newFrameCallback(void* pCookie)
 		{
 			Listener* pListener = (Listener*)pCookie;
-			pListener->onNewFrame();
+			pListener->onNewFrame(*pListener->m_pUserTracker);
 		}
 
 
 		friend class UserTracker;
-		void setScene(UserTracker* pScene)
+		void setUserTracker(UserTracker* pUserTracker)
 		{
-			m_pScene = pScene;
+			m_pUserTracker = pUserTracker;
 		}
 
-		UserTracker* m_pScene;
+		UserTracker* m_pUserTracker;
 	};
 
-	UserTracker() : m_sceneHandle(NULL)
+	UserTracker() : m_userTrackerHandle(NULL)
 	{}
 
 
 	~UserTracker()
 	{
-		niteShutdownUserTracker(m_sceneHandle);
+		destroy();
 	}
 
 	Status create(openni::Device* pDevice = NULL)
 	{
 		if (pDevice == NULL)
 		{
-			return (Status)niteInitializeUserTracker(&m_sceneHandle);
+			return (Status)niteInitializeUserTracker(&m_userTrackerHandle);
 		}
-		return (Status)niteInitializeUserTrackerByDevice(pDevice, &m_sceneHandle);
+		return (Status)niteInitializeUserTrackerByDevice(pDevice, &m_userTrackerHandle);
+	}
+
+	void destroy()
+	{
+		if (isValid())
+		{
+			niteShutdownUserTracker(m_userTrackerHandle);
+			m_userTrackerHandle = NULL;
+		}
 	}
 
 	/** Get the next snapshot of the algorithm */
 	Status readFrame(UserTrackerFrameRef* pFrame)
 	{
 		NiteUserTrackerFrame *pNiteFrame = NULL;
-		Status rc = (Status)niteReadUserTrackerFrame(m_sceneHandle, &pNiteFrame);
-		pFrame->setReference(m_sceneHandle, pNiteFrame);
+		Status rc = (Status)niteReadUserTrackerFrame(m_userTrackerHandle, &pNiteFrame);
+		pFrame->setReference(m_userTrackerHandle, pNiteFrame);
 
 		return rc;
 	}
 
 	bool isValid() const
 	{
-		return m_sceneHandle != NULL;
+		return m_userTrackerHandle != NULL;
 	}
 
 	/** Control the smoothing factor of the skeleton joints */
 	Status setSkeletonSmoothingFactor(float factor)
 	{
-		return (Status)niteSetSkeletonSmoothing(m_sceneHandle, factor);
+		return (Status)niteSetSkeletonSmoothing(m_userTrackerHandle, factor);
 	}
 	float getSkeletonSmoothingFactor() const
 	{
 		float factor;
-		Status rc = (Status)niteGetSkeletonSmoothing(m_sceneHandle, &factor);
+		Status rc = (Status)niteGetSkeletonSmoothing(m_userTrackerHandle, &factor);
 		if (rc != STATUS_OK)
 		{
 			factor = 0;
@@ -309,23 +346,39 @@ public:
 	/** Request a skeleton for a specific user */
 	Status startSkeletonTracking(UserId id)
 	{
-		return (Status)niteStartSkeletonTracking(m_sceneHandle, id);
+		return (Status)niteStartSkeletonTracking(m_userTrackerHandle, id);
 	}
 	/** Inform the algorithm that a skeleton is no longer required for a specific user */
 	void stopSkeletonTracking(UserId id)
 	{
-		niteStopSkeletonTracking(m_sceneHandle, id);
+		niteStopSkeletonTracking(m_userTrackerHandle, id);
 	}
+
+	/** Start detecting a specific gesture */
+	Status startPoseDetection(UserId user, PoseType type)
+	{
+		return (Status)niteStartPoseDetection(m_userTrackerHandle, (NiteUserId)user, (NitePoseType)type);
+	}
+	/** Stop detecting a specific gesture */
+	void stopPoseDetection(UserId user, PoseType type)
+	{
+		niteStopPoseDetection(m_userTrackerHandle, (NiteUserId)user, (NitePoseType)type);
+	}
+	void stopPoseDetection(UserId user)
+	{
+		niteStopAllPoseDetection(m_userTrackerHandle, (NiteUserId)user);
+	}
+
 
 	void addListener(Listener* pListener)
 	{
-		niteRegisterUserTrackerCallbacks(m_sceneHandle, &pListener->getCallbacks(), pListener);
-		pListener->setScene(this);
+		niteRegisterUserTrackerCallbacks(m_userTrackerHandle, &pListener->getCallbacks(), pListener);
+		pListener->setUserTracker(this);
 	}
 	void removeListener(Listener* pListener)
 	{
-		niteUnregisterUserTrackerCallbacks(m_sceneHandle, &pListener->getCallbacks());
-		pListener->setScene(NULL);
+		niteUnregisterUserTrackerCallbacks(m_userTrackerHandle, &pListener->getCallbacks());
+		pListener->setUserTracker(NULL);
 	}
 
 	/**
@@ -335,7 +388,7 @@ public:
 	*/
 	Status convertJointCoordinatesToDepth(float x, float y, float z, float* pOutX, float* pOutY)
 	{
-		return (Status)niteConvertJointCoordinatesToDepth(m_sceneHandle, x, y, z, pOutX, pOutY);
+		return (Status)niteConvertJointCoordinatesToDepth(m_userTrackerHandle, x, y, z, pOutX, pOutY);
 	}
 	/**
 	Skeleton joint position is provided in a different set of coordinates than the depth coordinates.
@@ -344,23 +397,25 @@ public:
 	*/
 	Status convertDepthCoordinatesToJoint(int x, int y, int z, float* pOutX, float* pOutY)
 	{
-		return (Status)niteConvertDepthCoordinatesToJoint(m_sceneHandle, x, y, z, pOutX, pOutY);
+		return (Status)niteConvertDepthCoordinatesToJoint(m_userTrackerHandle, x, y, z, pOutX, pOutY);
 	}
 
 private:
-	NiteUserTrackerHandle m_sceneHandle;
+	NiteUserTrackerHandle m_userTrackerHandle;
 };
 
 
 // HandTracker
-typedef NiteHandId HandId;
+typedef short int HandId;
 
 class GestureData : protected NiteGestureData
 {
 public:
 	GestureType getType() const {return (GestureType)type;}
 	const Point3f& getCurrentPosition() const {return (Point3f&)currentPosition;}
-	GestureState getState() const {return (GestureState)state;}
+
+	bool isComplete() const {return (state & NITE_GESTURE_STATE_COMPLETED) != 0;}
+	bool isInProgress() const {return (state & NITE_GESTURE_STATE_IN_PROGRESS) != 0;}
 };
 
 class HandData : protected NiteHandData
@@ -368,7 +423,11 @@ class HandData : protected NiteHandData
 public:
 	HandId getId() const {return id;}
 	const Point3f& getPosition() const {return (Point3f&)position;}
-	HandState getState() const {return (HandState)state;}
+
+	bool isNew() const {return (state & NITE_HAND_STATE_NEW) != 0;}
+	bool isLost() const {return state == NITE_HAND_STATE_LOST;}
+	bool isTracking() const {return (state & NITE_HAND_STATE_TRACKED) != 0;}
+	bool isTouchingFov() const {return (state & NITE_HAND_STATE_TOUCHING_FOV) != 0;}
 };
 
 /** Snapshot of the Hand Tracker algorithm. It holds all the hands identified at this time, as well as the detected gestures */
@@ -392,6 +451,16 @@ public:
 		niteHandTrackerFrameAddRef(m_handTracker, m_pFrame);
 
 		return *this;
+	}
+
+	void release()
+	{
+		if (m_pFrame != NULL)
+		{
+			niteHandTrackerFrameRelease(m_handTracker, m_pFrame);
+		}
+		m_pFrame = NULL;
+		m_handTracker = NULL;
 	}
 
 	const Array<HandData>& getHands() const {return m_hands;}
@@ -418,16 +487,6 @@ private:
 		m_gestures.setData(m_pFrame->gestureCount, (GestureData*)m_pFrame->pGestures);
 	}
 
-	void release()
-	{
-		if (m_pFrame != NULL)
-		{
-			niteHandTrackerFrameRelease(m_handTracker, m_pFrame);
-		}
-		m_pFrame = NULL;
-		m_handTracker = NULL;
-	}
-
 	NiteHandTrackerFrame* m_pFrame;
 	NiteHandTrackerHandle m_handTracker;
 	openni::VideoFrameRef m_depthFrame;
@@ -450,7 +509,7 @@ public:
 		{
 			m_handTrackerCallbacks.readyForNextFrame = newFrameCallback;
 		}
-		virtual void onNewFrame() {}
+		virtual void onNewFrame(HandTracker&) {}
 	private:
 		friend class HandTracker;
 		NiteHandTrackerCallbacks m_handTrackerCallbacks;
@@ -460,7 +519,7 @@ public:
 		static void ONI_CALLBACK_TYPE newFrameCallback(void* pCookie)
 		{
 			Listener* pListener = (Listener*)pCookie;
-			pListener->onNewFrame();
+			pListener->onNewFrame(*pListener->m_pHandTracker);
 		}
 
 		void setHandTracker(HandTracker* pHandTracker)
@@ -474,7 +533,7 @@ public:
 	{}
 	~HandTracker()
 	{
-		niteShutdownHandTracker(m_handTrackerHandle);
+		destroy();
 	}
 
 	Status create(openni::Device* pDevice = NULL)
@@ -485,6 +544,15 @@ public:
 			// Pick a device
 		}
 		return (Status)niteInitializeHandTrackerByDevice(pDevice, &m_handTrackerHandle);
+	}
+
+	void destroy()
+	{
+		if (isValid())
+		{
+			niteShutdownHandTracker(m_handTrackerHandle);
+			m_handTrackerHandle = NULL;
+		}
 	}
 
 	/** Get the next snapshot of the algorithm */
@@ -595,7 +663,14 @@ public:
 
 	static Version getVersion()
 	{
-		return niteGetVersion();
+		NiteVersion version = niteGetVersion();
+		union
+		{
+			NiteVersion* pC;
+			Version* pCpp;
+		} a;
+		a.pC = &version;
+		return *a.pCpp;
 	}
 private:
 	NiTE();

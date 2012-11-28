@@ -33,27 +33,73 @@ openni is the namespace of the entire C++ API of OpenNI
 */
 namespace openni
 {
-// primitives
-typedef OniDepthPixel				DepthPixel;
-typedef OniGrayscale16Pixel			Grayscale16Pixel;
+
+/** Pixel type used to store depth images. */
+typedef uint16_t				DepthPixel;
+/** Pixel type used to store IR images. */
+typedef uint16_t				Grayscale16Pixel;
 
 // structs
-typedef OniVersion					Version;
-typedef OniRGB888Pixel				RGB888Pixel;
-typedef OniYUV422DoublePixel		YUV422DoublePixel;
+_ONI_DECLARE_VERSION(Version);
+_ONI_DECLARE_RGB888_PIXEL(RGB888Pixel);
+_ONI_DECLARE_YUV422_PIXEL(YUV422DoublePixel);
 
+/** This special URI can be passed to @ref Device::open() when the application has no concern for a specific device. */
+static const char* ANY_DEVICE = NULL;
+
+/**
+Provides a simple array class used throughout the API. Wraps a primitive array
+of objects, holding the elements and their count.
+*/
 template<class T>
 class Array
 {
 public:
+	/**
+	Default constructor.  Creates an empty Array and sets the element count to zero.
+	*/
 	Array() : m_data(NULL), m_count(0), m_owner(false) {}
-	Array(const T* data, int count) : m_owner(false) { setData(data, count); }
+
+	/**
+	Constructor.  Creates new Array from an existing primitive array of known size.  The
+	Array created by this function will not be considered the owner of the data it wraps.
+
+	@tparam [in] T Object type this Array will contain.
+	@param [in] data Pointer to a primitive array of objects of type T.
+	@param [in] count Number of elements in the primitive array pointed to by data.
+	*/
+	Array(const T* data, int count) : m_owner(false) { _setData(data, count); }
+
+	/**
+	Destructor.  Destroys the Array object.
+	*/
 	~Array()
 	{
 		clear();
 	}
 
-	void setData(const T* data, int count, bool isOwner = false)
+	/**
+	Getter function for the Array size.
+	@returns Current number of elements in the Array.
+	*/
+	int getSize() const { return m_count; }
+
+	/**
+	Implements the array indexing operator for the Array class.
+	*/
+	const T& operator[](int index) const {return m_data[index];}
+
+	/**
+	@internal
+	Setter function for data.  Causes this array to wrap an existing primitive array
+	of specified type.  The optional data ownership flag controls whether the primitive
+	array this Array wraps will be destroyed when this Array is deconstructed.
+	@param [in] T Type of objects array will contain.
+	@param [in] data Pointer to first object in list.
+	@param [in] count Number of objects in list.
+	@param [in] isOwner Optional flag to indicate data ownership
+	*/
+	void _setData(const T* data, int count, bool isOwner = false)
 	{
 		clear();
 		m_count = count;
@@ -69,8 +115,6 @@ public:
 		}
 	}
 
-	int getSize() const { return m_count; }
-	const T& operator[](int index) const {return m_data[index];}
 private:
 	Array(const Array<T>&);
 	Array<T>& operator=(const Array<T>&);
@@ -89,15 +133,45 @@ private:
 	bool m_owner;
 };
 
+/**
+Encapsulates a group of settings for a @ref VideoStream.  Settings stored include
+frame rate, resolution, and pixel format.
+
+This class is used as an input for changing the settings of a @ref VideoStream,
+as well as an output for reporting the current settings of that class.  It is also used
+by @ref SensorInfo to report available video modes of a stream.
+
+Recommended practice is to use @ref SensorInfo::getSupportedVideoModes()
+to obtain a list of valid video modes, and then to use items from that list to pass
+new settings to @ref VideoStream.  This is much less likely to produce an
+invalid video mode than instantiating and manually changing objects of this
+class.
+*/
 class VideoMode : private OniVideoMode
 {
 public:
+	/**
+	Default constructor, creates an empty VideoMode object.
+	*/
 	VideoMode()
 	{}
+
+	/**
+	Copy constructor, creates a new VideoMode identical to an existing VideoMode.
+
+	@param [in] other Existing VideoMode to copy.
+	*/
 	VideoMode(const VideoMode& other)
 	{
 		*this = other;
 	}
+
+	/**
+	Assignment operator.  Sets the pixel format, frame rate, and resolution of this
+	VideoMode to equal that of a different VideoMode.
+
+	@param [in] other Existing VideoMode to copy settings from.
+	*/
 	VideoMode& operator=(const VideoMode& other)
 	{
 		setPixelFormat(other.getPixelFormat());
@@ -107,17 +181,57 @@ public:
 		return *this;
 	}
 
+	/**
+	Getter function for the pixel format of this VideoMode.
+	@returns Current pixel format setting of this VideoMode.
+	*/
 	PixelFormat getPixelFormat() const { return (PixelFormat)pixelFormat; }
+
+	/**
+	Getter function for the X resolution of this VideoMode.
+	@returns Current horizontal resolution of this VideoMode, in pixels.
+	*/
 	int getResolutionX() const { return resolutionX; }
+
+	/**
+	Getter function for the Y resolution of this VideoMode.
+	@returns Current vertical resolution of this VideoMode, in pixels.
+	*/
 	int getResolutionY() const {return resolutionY;}
+
+	/**
+	Getter function for the frame rate of this VideoMode.
+	@returns Current frame rate, measured in frames per second.
+	*/
 	int getFps() const { return fps; }
 
+	/**
+	Setter function for the pixel format of this VideoMode.  Application use of this
+	function is not recommended.  Instead, use @ref SensorInfo::getSupportedVideoModes()
+	to obtain a list of valid video modes.
+	@param [in] format Desired new pixel format for this VideoMode.
+	*/
 	void setPixelFormat(PixelFormat format) { this->pixelFormat = (OniPixelFormat)format; }
-	void setResolution(int resolutionX, int resolutionY) 
-	{ 
+
+	/**
+	Setter function for the resolution of this VideoMode.  Application use of this
+	function is not recommended.  Instead, use @ref SensorInfo::getSupportedVideoModes() to
+	obtain a list of valid video modes.
+	@param [in] resolutionX Desired new horizontal resolution in pixels.
+	@param [in] resolutionY Desired new vertical resolution in pixels.
+	*/
+	void setResolution(int resolutionX, int resolutionY)
+	{
 		this->resolutionX = resolutionX;
 		this->resolutionY = resolutionY;
 	}
+
+	/**
+	Setter function for the frame rate.  Application use of this function is not recommended.
+	Instead, use @ref SensorInfo::getSupportedVideoModes() to obtain a list of valid
+	video modes.
+	@param [in] fps Desired new frame rate, measured in frames per second.
+	*/
 	void setFps(int fps) { this->fps = fps; }
 
 	friend class SensorInfo;
@@ -125,10 +239,36 @@ public:
 	friend class VideoFrameRef;
 };
 
+/**
+The SensorInfo class encapsulates all info related to a specific sensor in a specific
+device.  
+A @ref Device object holds a SensorInfo object for each sensor it contains.
+A @ref VideoStream object holds one SensorInfo object, describing the sensor used to produce that stream.
+
+A given SensorInfo object will contain the type of the sensor (Depth, IR or Color), and
+a list of all video modes that the sensor can support.  Each available video mode will have a single
+VideoMode object that can be queried to get the details of that mode.
+
+Application programs will never directly instantiate objects of type SensorInfo.  In fact, no
+public constructors are provided.  SensorInfo objects should be obtained either from a Device or @ref VideoStream,
+and in turn be used to provide available video modes for that sensor.
+*/
 class SensorInfo
 {
 public:
+	/**
+	Provides the sensor type of the sensor this object is associated with.
+	@returns Type of the sensor.
+	*/
 	SensorType getSensorType() const { return (SensorType)m_pInfo->sensorType; }
+
+	/**
+	Provides a list of video modes that this sensor can support. This function is the
+	recommended method to be used by applications to obtain @ref VideoMode objects.
+
+	@returns Reference to an array of @ref VideoMode objects, one for each supported
+	video mode.
+	*/
 	const Array<VideoMode>& getSupportedVideoModes() const { return m_videoModes; }
 
 private:
@@ -136,20 +276,22 @@ private:
 	SensorInfo& operator=(const SensorInfo&);
 
 	SensorInfo() : m_pInfo(NULL), m_videoModes(NULL, 0) {}
+
 	SensorInfo(const OniSensorInfo* pInfo) : m_pInfo(NULL), m_videoModes(NULL, 0)
 	{
 		_setInternal(pInfo);
 	}
+
 	void _setInternal(const OniSensorInfo* pInfo)
 	{
 		m_pInfo = pInfo;
 		if (pInfo == NULL)
 		{
-			m_videoModes.setData(NULL, 0);
+			m_videoModes._setData(NULL, 0);
 		}
 		else
 		{
-			m_videoModes.setData(static_cast<VideoMode*>(pInfo->pSupportedVideoModes), pInfo->numSupportedVideoModes);
+			m_videoModes._setData(static_cast<VideoMode*>(pInfo->pSupportedVideoModes), pInfo->numSupportedVideoModes);
 		}
 	}
 
@@ -160,117 +302,230 @@ private:
 	friend class Device;
 };
 
+/**
+The DeviceInfo class encapsulates info related to a specific device.
+
+Applications will generally obtain objects of this type via calls to @ref OpenNI::enumerateDevices() or
+@ref openni::Device::getDeviceInfo(), and then use the various accessor functions to obtain specific
+information on that device.
+
+There should be no reason for application code to instantiate this object directly.
+*/
 class DeviceInfo : private OniDeviceInfo
 {
 public:
+	/** 
+	Returns the device URI.  URI can be used by @ref Device::open to open a specific device. 
+	The URI string format is determined by the driver.
+	*/
 	const char* getUri() const { return uri; }
+	/** Returns a the vendor name for this device. */
 	const char* getVendor() const { return vendor; }
+	/** Returns the device name for this device. */
 	const char* getName() const { return name; }
+	/** Returns the USB VID code for this device. */
 	uint16_t getUsbVendorId() const { return usbVendorId; }
+	/** Returns the USB PID code for this device. */
 	uint16_t getUsbProductId() const { return usbProductId; }
 
-	friend class DeviceInfoList;
 	friend class Device;
 	friend class OpenNI;
 };
 
 /**
-The Frame class encapsulates a specific frame - the output of a Stream at a specific time.
+The @ref VideoFrameRef class encapsulates a single video frame - the output of a @ref VideoStream at a specific time.
+The data contained will be a single frame of color, IR, or depth video, along with associated meta data.
+
+An object of type @ref VideoFrameRef does not actually hold the data of the frame, but only a reference to it. The
+reference can be released by destroying the @ref VideoFrameRef object, or by calling the @ref release() method. The
+actual data of the frame is freed when the last reference to it is released.
+
+The usual way to obtain @ref VideoFrameRef objects is by a call to @ref VideoStream.:readFrame().
+
+All data references by a @ref VideoFrameRef is stored as a primitive array of pixels.  Each pixel will be
+of a type according to the configured pixel format (see @ref VideoMode).
 */
 class VideoFrameRef
 {
 public:
-	/** Create a new Frame object. This object will be invalid, until initialized by a Stream object.*/
+	/**
+	Default constructor.  Creates a new empty @ref VideoFrameRef object.
+	This object will be invalid until initialized by a call to @ref VideoStream::readFrame().
+	*/
 	VideoFrameRef()
 	{
 		m_pFrame = NULL;
 	}
 
-	/** Destroy this frame. Release the internal OniFrame, if it is valid. */
+	/**
+	Destroy this object and release the reference to the frame.
+	*/
 	~VideoFrameRef()
 	{
-		release();	
+		release();
 	}
 
+	/**
+	Copy constructor.  Creates a new @ref VideoFrameRef object. The newly created
+	object will reference the same frame current object references.
+	@param [in] other Another @ref VideoFrameRef object.
+	*/
 	VideoFrameRef(const VideoFrameRef& other) : m_pFrame(NULL)
 	{
 		_setFrame(other.m_pFrame);
 	}
 
-	/** Make this Frame object refer to the same internal OniFrame as another Frame object */
+	/**
+	Make this @ref VideoFrameRef object reference the same frame that the @c other frame references.
+	If this object referenced another frame before calling this method, the previous frame will be released.
+	@param [in] other Another @ref VideoFrameRef object.
+	*/
 	VideoFrameRef& operator=(const VideoFrameRef& other)
 	{
 		_setFrame(other.m_pFrame);
 		return *this;
 	}
 
+	/**
+	Getter function for the size of the data contained by this object.  Useful primarily
+	when allocating buffers.
+	@returns Current size of data pointed to by this object, measured in bytes.
+	*/
 	inline int getDataSize() const
 	{
 		return m_pFrame->dataSize;
 	}
 
-	inline void* getData() const
+	/**
+	Getter function for the array of data pointed to by this object.
+	@returns Pointer to the actual frame data array.  Type of data
+	pointed to can be determined according to the pixel format (can be obtained by calling @ref getVideoMode()).
+	*/
+	inline const void* getData() const
 	{
 		return m_pFrame->data;
 	}
 
+	/**
+	Getter function for the sensor type used to produce this frame.  Used to determine whether
+	this is an IR, Color or Depth frame.  See the @ref SensorType enumeration for all possible return
+	values from this function.
+	@returns The type of sensor used to produce this frame.
+	*/
 	inline SensorType getSensorType() const
 	{
 		return (SensorType)m_pFrame->sensorType;
 	}
 
+	/**
+	Returns a reference to the @ref VideoMode object assigned to this frame.  This object describes
+	the video mode the sensor was configured to when the frame was produced and can be used
+	to determine the pixel format and resolution of the data.  It will also provide the frame rate
+	that the sensor was running at when it recorded this frame.
+	@returns Reference to the @ref VideoMode assigned to this frame.
+	*/
 	inline const VideoMode& getVideoMode() const
 	{
 		return static_cast<const VideoMode&>(m_pFrame->videoMode);
 	}
 
-	inline uint64_t getTimestamp() const 
+	/**
+	Provides a timestamp for the frame.  The 'zero' point for this stamp
+	is implementation specific, but all streams from the same device are guaranteed to use the same zero.
+	This value can therefore be used to compute time deltas between frames from the same device,
+	regardless of whether they are from the same stream.
+	@returns Timestamp of frame, measured in microseconds from an arbitrary zero
+	*/
+	inline uint64_t getTimestamp() const
 	{
 		return m_pFrame->timestamp;
 	}
 
+	/**
+	Frames are provided sequential frame ID numbers by the sensor that produced them.  If frame
+	synchronization has been enabled for a device via @ref Device::setDepthColorSyncEnabled(), then frame
+	numbers for corresponding frames of depth and color are guaranteed to match.
+
+	If frame synchronization is not enabled, then there is no guarantee of matching frame indexes between
+	@ref VideoStream "VideoStreams".  In the latter case, applications should use timestamps instead of frame indexes to
+	align frames in time.
+	@returns Index number for this frame.
+	*/
 	inline int getFrameIndex() const
 	{
 		return m_pFrame->frameIndex;
 	}
 
+	/**
+	Gives the current width of this frame, measured in pixels.  If cropping is enabled, this will be
+	the width of the cropping window.  If cropping is not enabled, then this will simply be equal to
+	the X resolution of the @ref VideoMode used to produce this frame.
+	@returns Width of this frame in pixels.
+	*/
 	inline int getWidth() const
 	{
 		return m_pFrame->width;
 	}
 
+	/**
+	Gives the current height of this frame, measured in pixels.  If cropping is enabled, this will
+	be the length of the cropping window.  If cropping is not enabled, then this will simply be equal
+	to the Y resolution of the @ref VideoMode used to produce this frame.
+	*/
 	inline int getHeight() const
 	{
 		return m_pFrame->height;
 	}
 
+	/**
+	Indicates whether cropping was enabled when the frame was produced.
+	@return true if cropping is enabled, false otherwise
+	*/
 	inline bool getCroppingEnabled() const
 	{
 		return m_pFrame->croppingEnabled == TRUE;
 	}
 
+	/**
+	Indicates the X coordinate of the upper left corner of the crop window.
+	@return Distance of crop origin from left side of image, in pixels.
+	*/
 	inline int getCropOriginX() const
 	{
 		return m_pFrame->cropOriginX;
 	}
 
+	/**
+	Indicates the Y coordinate of the upper left corner of the crop window.
+	@return Distance of crop origin from top of image, in pixels.
+	*/
 	inline int getCropOriginY() const
 	{
 		return m_pFrame->cropOriginY;
 	}
 
+	/**
+	Gives the length of one row of pixels, measured in bytes.  Primarily useful
+	for indexing the array which contains the data.
+	@returns Stride of the array which contains the image for this frame, in bytes
+	*/
 	inline int getStrideInBytes() const
 	{
 		return m_pFrame->stride;
 	}
 
-	/** Check if internal frame is valid - if it actually points to any OniFrame object */
+	/**
+	Check if this object references an actual frame.
+	*/
 	inline bool isValid() const
 	{
 		return m_pFrame != NULL;
 	}
 
-	/** Invalidate this Frame object */
+	/** 
+	Release the reference to the frame. Once this method is called, the object becomes invalid, and no method
+	should be called other than the assignment operator, or passing this object to a @ref VideoStream::readFrame() call.
+	*/
 	void release()
 	{
 		if (m_pFrame != NULL)
@@ -280,6 +535,7 @@ public:
 		}
 	}
 
+	/** @internal */
 	void _setFrame(OniFrame* pFrame)
 	{
 		setReference(pFrame);
@@ -288,6 +544,8 @@ public:
 			oniFrameAddRef(pFrame);
 		}
 	}
+
+	/** @internal */
 	OniFrame* _getFrame()
 	{
 		return m_pFrame;
@@ -305,29 +563,55 @@ private:
 	OniFrame* m_pFrame; // const!!?
 };
 
-/**
-The Stream object encapsulates a specific stream.
-This stream has a specific video mode (see VideoMode), and one can get Frame objects from it when the device has them.
-*/
+
 class Device;
+
+/**
+The @ref VideoStream object encapsulates a single video stream from a device.  Once created, it is used to start data flow
+from the device, and to read individual frames of data.  This is the central class used to obtain data in OpenNI.  It
+provides the ability to manually read data in a polling loop, as well as providing events and a Listener class that can be
+used to implement event-driven data acquisition.
+
+Aside from the video data frames themselves, the class offers a number of functions used for obtaining information about a
+@ref VideoStream.  Field of view, available video modes, and minimum and maximum valid pixel values can all be obtained.
+
+In addition to obtaining data, the @ref VideoStream object is used to set all configuration properties that apply to a specific
+stream (rather than to an entire device).  In particular, it is used to control cropping, mirroring, and video modes.
+
+A pointer to a valid, initialized device that provides the desired stream type is required to create a stream.
+
+Several video streams can be created to stream data from the same sensor. This is useful if several components of an application
+need to read frames separately.
+
+While some device might allow different streams
+from the same sensor to have different configurations, most devices will have a single configuration for the sensor, 
+shared by all streams.
+*/
+class CameraSettings;
+
 class VideoStream
 {
 public:
 	/**
-	This object allows registering to the events that the Stream object offers.
-	It is intended for users to inherit it and implement the methods matching the events they want to handle.
+	The @ref VideoStream::Listener class is provided to allow the implementation of event driven frame reading.  To use
+	it, create a class that inherits from it and implement override the onNewFrame() method.  Then, register
+	your created class with an active @ref VideoStream using the @ref VideoStream::addListener() function.  Once this is done, the
+	event handler function you implemented will be called whenever a new frame becomes available. You may call 
+	@ref VideoStream::readFrame() from within the event handler.
 	*/
 	class Listener
 	{
 	public:
+		/**
+		Default constructor.
+		*/
 		Listener()
 		{
 			m_newFrameCallback = newFrame_Callback;
 		}
 
-
 		/**
-		Handle the event that the Stream object has a new Frame available
+		Derived classes should implement this function to handle new frames.
 		*/
 		virtual void onNewFrame(VideoStream&) {}
 
@@ -359,18 +643,24 @@ public:
 	};
 
 	/**
-	Create a Stream object. This object will be invalid, until it is initialized by the Device object, using its CreateStream API
+	Default constructor.  Creates a new, non-valid @ref VideoStream object.  The object created will be invalid until its create() function
+	is called with a valid Device.
 	*/
-	VideoStream() : m_stream(NULL), m_sensorInfo()
+	VideoStream() : m_stream(NULL), m_sensorInfo(), m_pCameraSettings(NULL)
 	{}
 
+	/**
+	Destructor.  The destructor calls the destroy() function, but it is considered a best practice for applications to
+	call destroy() manually on any @ref VideoStream that they run create() on.
+	*/
 	~VideoStream()
 	{
 		destroy();
 	}
 
 	/**
-	Check if this object currently points to a valid stream
+	Checks to see if this object has been properly initialized and currently points to a valid stream.
+	@returns true if this object has been previously initialized, false otherwise.
 	*/
 	bool isValid() const
 	{
@@ -378,34 +668,38 @@ public:
 	}
 
 	/**
-	Create a new stream from a device, using a specific source type.
+	Creates a stream of frames from a specific sensor type of a specific device.  You must supply a reference to a
+	Device that supplies the sensor type requested.  You can use @ref Device::hasSensor() to check whether a
+	given sensor is available on your target device before calling create().
+
+	@param [in] device A reference to the @ref Device you want to create the stream on.
+	@param [in] sensorType The type of sensor the stream should produce data from.
+	@returns Status code indicating success or failure for this operation.
 	*/
 	inline Status create(const Device& device, SensorType sensorType);
 
 	/**
-	Destroy this stream.
+	Destroy this stream.  This function is currently called automatically by the destructor, but it is
+	considered a best practice for applications to manually call this function on any @ref VideoStream that they
+	call create() for.
 	*/
-	void destroy()
-	{
-		if (!isValid())
-		{
-			return;
-		}
+	inline void destroy();
 
-		if (m_stream != NULL)
-		{
-			oniStreamDestroy(m_stream);
-			m_stream = NULL;
-		}
-	}
+	/**
+	Provides the @ref SensorInfo object associated with the sensor that is producing this @ref VideoStream.  Note that
+	this function will return NULL if the stream has not yet been initialized with the create() function.
 
+	@ref SensorInfo is useful primarily as a means of learning which video modes are valid for this VideoStream.
+
+	@returns Reference to the SensorInfo object associated with the sensor providing this stream.
+	*/
 	const SensorInfo& getSensorInfo() const
 	{
 		return m_sensorInfo;
 	}
 
 	/**
-	Have the Stream object start generating data
+	Starts data generation from this video stream.
 	*/
 	Status start()
 	{
@@ -418,7 +712,7 @@ public:
 	}
 
 	/**
-	Have the Stream object stop generating data
+	Stops data generation from this video stream.
 	*/
 	void stop()
 	{
@@ -431,9 +725,14 @@ public:
 	}
 
 	/**
-	Get the next frame from this stream.
-	This method will block until a frame is available.
-	To avoid blocking, check out OpenNI::WaitForStreams
+	Read the next frame from this video stream, delivered as a @ref VideoFrameRef.  This is the primary
+	method for manually obtaining frames of video data.  
+	If no new frame is available, the call will block until one is available.
+	To avoid blocking, use @ref VideoStream::Listener to implement an event driven architecture.  Another
+	alternative is to use @ref OpenNI::waitForAnyStream() to wait for new frames from several streams.
+
+	@param [out] pFrame Pointer to a @ref VideoFrameRef object to hold the reference to the new frame.
+	@returns Status code to indicated success or failure of this function.
 	*/
 	Status readFrame(VideoFrameRef* pFrame)
 	{
@@ -450,7 +749,11 @@ public:
 	}
 
 	/**
-	Add a new listener to the this Stream's events
+	Adds a new Listener to recieve this VideoStream onNewFrame event.  See @ref VideoStream::Listener for
+	more information on implementing an event driven frame reading architecture.
+
+	@param [in] pListener Pointer to a @ref VideoStream::Listener object (or a derivative) that will respond to this event.
+	@returns Status code indicating success or failure of the operation.
 	*/
 	Status addListener(Listener* pListener)
 	{
@@ -469,7 +772,8 @@ public:
 	}
 
 	/**
-	Remove a listener from this Stream's events
+	Removes a Listener from this video stream list.  The listener removed will no longer receive new frame events from this stream.
+	@param [in] pListener Pointer to the listener object to be removed.
 	*/
 	void removeListener(Listener* pListener)
 	{
@@ -483,6 +787,7 @@ public:
 	}
 
 	/**
+	@internal
 	Get an internal handle. This handle can be used via the C API.
 	*/
 	OniStreamHandle _getHandle() const
@@ -490,10 +795,21 @@ public:
 		return m_stream;
 	}
 
-	///// Properties
 	/**
-	Get the value of a general property of the stream.
-	There are convenience functions for all the commonly used properties
+	Gets an object through which several camera settings can be configured.
+	@returns NULL if the stream doesn't support camera settings.
+	*/
+	CameraSettings* getCameraSettings() {return m_pCameraSettings;}
+
+	/**
+	General function for obtaining the value of stream specific properties.
+	There are convenience functions available for all commonly used properties, so it is not
+	expected that applications will make direct use of the getProperty function very often.
+
+	@param [in] propertyId The numerical ID of the property to be queried.
+	@param [out] data Place to store the value of the property.
+	@param [in,out] dataSize IN: Size of the buffer passed in the @c data argument. OUT: the actual written size.
+	@returns Status code indicating success or failure of this operation.
 	*/
 	Status getProperty(int propertyId, void* data, int* dataSize) const
 	{
@@ -504,8 +820,16 @@ public:
 
 		return (Status)oniStreamGetProperty(m_stream, propertyId, data, dataSize);
 	}
+
 	/**
-	Set a new value to a general property of the stream
+	General function for setting the value of stream specific properties.
+	There are convenience functions available for all commonly used properties, so it is not
+	expected that applications will make direct use of the setProperty function very often.
+
+	@param [in] propertyId The numerical ID of the property to be set.
+	@param [in] data Place to store the data to be written to the property.
+	@param [in] dataSize Size of the data to be written to the property.
+	@returns Status code indicating success or failure of this operation.
 	*/
 	Status setProperty(int propertyId, const void* data, int dataSize)
 	{
@@ -517,9 +841,11 @@ public:
 		return (Status)oniStreamSetProperty(m_stream, propertyId, data, dataSize);
 	}
 
-	///////////////////////// Properties Convenience Layer
 	/**
-	Get the current video mode of this stream. This includes its resolution, fps and format (See VideoMode)
+	Get the current video mode information for this video stream.
+	This includes its resolution, fps and stream format.
+
+	@returns Current video mode information for this video stream.
 	*/
 	VideoMode getVideoMode() const
 	{
@@ -529,15 +855,22 @@ public:
 	}
 
 	/**
-	Change the current video mode of this stream
+	Changes the current video mode of this stream.  Recommended practice is to use @ref Device::getSensorInfo(), and
+	then @ref SensorInfo::getSupportedVideoModes() to obtain a list of valid video mode settings for this stream.  Then,
+	pass a valid @ref VideoMode to @ref setVideoMode to ensure correct operation.
+
+	@param [in] videoMode Desired new video mode for this stream.
+	returns Status code indicating success or failure of this operation.
 	*/
 	Status setVideoMode(const VideoMode& videoMode)
 	{
 		return setProperty<OniVideoMode>(STREAM_PROPERTY_VIDEO_MODE, static_cast<const OniVideoMode&>(videoMode));
 	}
-	/////
+
 	/**
-	Get the maximum value available in this stream
+	Provides the maximum possible value for pixels obtained by this stream.  This is most useful for
+	getting the maximum possible value of depth streams.
+	@returns Maximum possible pixel value.
 	*/
 	int getMaxPixelValue() const
 	{
@@ -549,9 +882,11 @@ public:
 		}
 		return maxValue;
 	}
-	/////
+
 	/**
-	Get the minimum value available in this stream
+	Provides the smallest possible value for pixels obtains by this VideoStream.  This is most useful
+	for getting the minimum possible value that will be reported by a depth stream.
+	@returns Minimum possible pixel value that can come from this stream.
 	*/
 	int getMinPixelValue() const
 	{
@@ -563,10 +898,10 @@ public:
 		}
 		return minValue;
 	}
-	
-	/////
+
 	/**
-	Check if this stream supported cropping
+	Checks whether this stream supports cropping.
+	@returns true if the stream supports cropping, false if it does not.
 	*/
 	bool isCroppingSupported() const
 	{
@@ -574,7 +909,12 @@ public:
 	}
 
 	/**
-	Get the current cropping configuration
+	Obtains the current cropping settings for this stream.
+	@param [out] pOriginX X coordinate of the upper left corner of the cropping window
+	@param [out] pOriginY Y coordinate of the upper left corner of the cropping window
+	@param [out] pWidth Horizontal width of the cropping window, in pixels
+	@param [out] pHeight Vertical width of the cropping window, in pixels
+	returns true if cropping is currently enabled, false if it is not.
 	*/
 	bool getCropping(int* pOriginX, int* pOriginY, int* pWidth, int* pHeight) const
 	{
@@ -594,8 +934,15 @@ public:
 
 		return enabled;
 	}
+
 	/**
-	Change the cropping configuration to a new configuration
+	Changes the cropping settings for this stream.  You can use the @ref isCroppingSupported()
+	function to make sure cropping is supported before calling this function.
+	@param [in] originX New X coordinate of the upper left corner of the cropping window.
+	@param [in] originY New Y coordinate of the upper left corner of the cropping window.
+	@param [in] width New horizontal width for the cropping window, in pixels.
+	@param [in] height New vertical height for the cropping window, in pixels.
+	@returns Status code indicating success or failure of this operation.
 	*/
 	Status setCropping(int originX, int originY, int width, int height)
 	{
@@ -609,7 +956,8 @@ public:
 	}
 
 	/**
-	Stop cropping
+	Disables cropping.
+	@returns Status code indicating success or failure of this operation.
 	*/
 	Status resetCropping()
 	{
@@ -617,9 +965,10 @@ public:
 		cropping.enabled = false;
 		return setProperty<OniCropping>(STREAM_PROPERTY_CROPPING, cropping);
 	}
-	/////
+
 	/**
-	Check if this stream is currently mirrored
+	Check whether mirroring is currently turned on for this stream.
+	@returns true if mirroring is currently enabled, false otherwise.
 	*/
 	bool getMirroringEnabled() const
 	{
@@ -633,7 +982,9 @@ public:
 	}
 
 	/**
-	Change the mirror state of this stream
+	Enable or disable mirroring for this stream.
+	@param [in] isEnabled true to enable mirroring, false to disable it.
+	@returns Status code indicating the success or failure of this operation.
 	*/
 	Status setMirroringEnabled(bool isEnabled)
 	{
@@ -641,8 +992,8 @@ public:
 	}
 
 	/**
-	Gets the field of view of this stream.
-	The output will be in radians.
+	Gets the horizontal field of view of frames received from this stream.
+	@returns Horizontal field of view, in radians.
 	*/
 	float getHorizontalFieldOfView() const
 	{
@@ -650,6 +1001,11 @@ public:
 		getProperty<float>(STREAM_PROPERTY_HORIZONTAL_FOV, &horizontal);
 		return horizontal;
 	}
+
+	/**
+	Gets the vertical field of view of frames received from this stream.
+	@returns Vertical field of view, in radians.
+	*/
 	float getVerticalFieldOfView() const
 	{
 		float vertical = 0;
@@ -657,21 +1013,42 @@ public:
 		return vertical;
 	}
 
+	/**
+	Function for setting a value of a stream property using an arbitrary input type.
+	There are convenience functions available for all commonly used properties, so it is not
+	expected that applications will make direct use of this function very often.
+	@tparam [in] T Data type of the value to be passed to the property.
+	@param [in] propertyId The numerical ID of the property to be set.
+	@param [in] value Data to be sent to the property.
+	@returns Status code indicating success or failure of this operation.
+	*/
 	template <class T>
 	Status setProperty(int propertyId, const T& value)
 	{
 		return setProperty(propertyId, &value, sizeof(T));
 	}
 
+	/**
+	Function for getting the value from a property using an arbitrary output type.
+	There are convenience functions available for all commonly used properties, so it is not
+	expected that applications will make direct use of this function very often.
+	@tparam [in] T Data type of the value to be read.
+	@param [in] propertyId The numerical ID of the property to be read.
+	@param [in, out] value Pointer to a place to store the value read from the property.
+	@returns Status code indicating success or failure of this operation.
+	*/
 	template <class T>
 	Status getProperty(int propertyId, T* value) const
 	{
 		int size = sizeof(T);
 		return getProperty(propertyId, value, &size);
 	}
-	// Stride
-private:
 
+	/**
+	Checks if a specific property is supported by the video stream.
+	@param [in] propertyId Property to be checked.
+	@returns true if the property is supported, false otherwise.
+	*/
 	bool isPropertySupported(int propertyId) const
 	{
 		if (!isValid())
@@ -682,6 +1059,15 @@ private:
 		return oniStreamIsPropertySupported(m_stream, propertyId) == TRUE;
 	}
 
+	/**
+	Invokes a command that takes an arbitrary data type as its input.  It is not expected that
+	application code will need this function frequently, as all commonly used properties have
+	higher level functions provided.
+	@param [in] commandId Numerical code of the property to be invoked.
+	@param [in] data Data to be passed to the property.
+	@param [in] dataSize size of the buffer passed in @c data.
+	@returns Status code indicating success or failure of this operation.
+	*/
 	Status invoke(int commandId, void* data, int dataSize)
 	{
 		if (!isValid())
@@ -692,6 +1078,26 @@ private:
 		return (Status)oniStreamInvoke(m_stream, commandId, data, dataSize);
 	}
 
+	/**
+	Invokes a command that takes an arbitrary data type as its input.  It is not expected that
+	application code will need this function frequently, as all commonly used properties have
+	higher level functions provided.
+	@tparam [in] T Type of data to be passed to the property.
+	@param [in] commandId Numerical code of the property to be invoked.
+	@param [in] value Data to be passed to the property.
+	@returns Status code indicating success or failure of this operation.
+	*/
+	template <class T>
+	Status invoke(int commandId, const T& value)
+	{
+		return invoke(commandId, &value, sizeof(T));
+	}
+
+	/**
+	Checks if a specific command is supported by the video stream.
+	@param [in] commandId Command to be checked.
+	@returns true if the command is supported, false otherwise.
+	*/
 	bool isCommandSupported(int commandId) const
 	{
 		if (!isValid())
@@ -702,6 +1108,7 @@ private:
 		return (Status)oniStreamIsCommandSupported(m_stream, commandId) == TRUE;
 	}
 
+private:
 	friend class Device;
 
 	void _setHandle(OniStreamHandle stream)
@@ -721,24 +1128,43 @@ private:
 
 	OniStreamHandle m_stream;
 	SensorInfo m_sensorInfo;
+	CameraSettings* m_pCameraSettings;
 };
 
+class PlaybackControl;
+
 /**
-The Device object encapsulates a specific device.
-This device can tell the user of the possible sources it offers.
-It can also create new streams on those sources
+The Device object abstracts a specific device; either a single hardware device, or a file
+device holding a recording from a hardware device.  It offers the ability to connect to
+the device, and obtain information about its configuration and the data streams it can offer.
+
+It provides the means to query and change all configuration parameters that apply to the
+device as a whole.  This includes enabling depth/color image registration and frame
+synchronization.
+
+Devices are used when creating and initializing @ref VideoStream "VideoStreams" -- you will need a valid pointer to
+a Device in order to use the VideoStream.create() function.  This, along with configuration, is
+the primary use of this class for application developers.
+
+Before devices can be created, @ref OpenNI::initialize() must have been run to make the device drivers
+on the system available to the API.
 */
 class Device
 {
 public:
 	/**
-	Create a Device object. This object will be invalid, until it is initialized by the OpenNI, using its OpenDevice API
+	Default constructor. Creates a new empty Device object. This object will be invalid until it is initialized by
+	calling its open() function.
 	*/
-	Device() : m_device(NULL)
+	Device() : m_pPlaybackControl(NULL), m_device(NULL)
 	{
 		clearSensors();
 	}
 
+	/**
+	The destructor calls the @ref close() function, but it is considered a best practice for applications to
+	call @ref close() manually on any @ref Device that they run @ref open() on.
+	*/
 	~Device()
 	{
 		if (m_device != NULL)
@@ -748,47 +1174,68 @@ public:
 	}
 
 	/**
-	Open a device, using its uri. The uri is available from the DeviceInfo object, that is received either in the DeviceConnected event (see OpenNI::Listener), or from the list (available through OpenNI::GetDeviceInfoList)
-	*/
-	Status open(const char* uri)
-	{
-		OniDeviceHandle deviceHandle;
-		Status rc = (Status)oniDeviceOpen(uri, &deviceHandle);
-		if (rc != STATUS_OK)
-		{
-			return rc;
-		}
+	Opens a device.  This can either open a device chosen arbitrarily from all devices
+	on the system, or open a specific device selected by passing this function the device URI.
 
-		_setHandle(deviceHandle);
-		return STATUS_OK;
+	To open any device, simply pass the constant@ref ANY_DEVICE to this function.  If multiple
+	devices are connected to the system, then one of them will be opened.  This procedure is most
+	useful when it is known that exactly one device is (or can be) connected to the system.  In that case,
+	requesting a list of all devices and iterating through it would be a waste of effort.
+
+	If multiple devices are (or may be) connected to a system, then a URI will be required to select
+	a specific device to open.  There are two ways to obtain a URI: from a DeviceConnected event, or
+	by calling @ref OpenNI::enumerateDevices().
+
+	In the case of a DeviceConnected event, the @ref OpenNI::Listener will be provided with a DeviceInfo object
+	as an argument to its @ref OpenNI::Listener::onDeviceConnected "onDeviceConnected()" function.  
+	The DeviceInfo.getUri() function can then be used to obtain the URI.
+
+	If the application is not using event handlers, then it can also call the static function
+	@ref OpenNI::enumerateDevices().  This will return an array of @ref DeviceInfo objects, one for each device
+	currently available to the system.  The application can then iterate through this list and
+	select the desired device.  The URI is again obtained via the @ref DeviceInfo::getUri() function.
+
+	Standard codes of type Status are returned indicating whether opening was successful.
+
+	@param [in] uri String containing the URI of the device to be opened, or @ref ANY_DEVICE.
+	@returns Status code with the outcome of the open operation.
+
+	@remark For opening a recording file, pass the file path as a uri.
+	*/
+	inline Status open(const char* uri);
+
+	/**
+	Closes the device.  This properly closes any files or shuts down hardware, as appropriate.  This
+	function is currently called by the destructor if not called manually by application code, but it
+	is considered a best practice to manually close any device that was opened.
+	*/
+	inline void close();
+
+	/**
+	Provides information about this device in the form of a DeviceInfo object.  This object can
+	be used to access the URI of the device, as well as various USB descriptor strings that might
+	be useful to an application.
+
+	Note that valid device info will not be available if this device has not yet been opened.  If you are
+	trying to obtain a URI to open a device, use OpenNI::enumerateDevices() instead.
+	@returns DeviceInfo object for this Device
+	*/
+	const DeviceInfo& getDeviceInfo() const
+	{
+		return m_deviceInfo;
 	}
 
 	/**
-	Close the device.
-	*/
-	void close()
-	{
-		if (m_device != NULL)
-		{
-			oniDeviceClose(m_device);
-			m_device = NULL;
-		}
-	}
-
-	/**
-	Get the general information about this device
-	*/
-	const DeviceInfo* getDeviceInfo() const
-	{
-		return const_cast<DeviceInfo*>(static_cast<const DeviceInfo*>(&m_deviceInfo));
-	}
-	/**
-	Check if this device supports a specific stream source
+	This function checks to see if one of the specific sensor types defined in @ref SensorType is
+	available on this device.  This allows an application to, for example, query for the presence
+	of a depth sensor, or color sensor.
+	@param [in] sensorType of sensor to query for
+	@returns true if the Device supports the sensor queried, false otherwise.
 	*/
 	bool hasSensor(SensorType sensorType)
 	{
 		int i;
-		for (int i; (i < ONI_MAX_SENSORS) && (m_aSensorInfo[i].m_pInfo != NULL); ++i)
+		for (i = 0; (i < ONI_MAX_SENSORS) && (m_aSensorInfo[i].m_pInfo != NULL); ++i)
 		{
 			if (m_aSensorInfo[i].getSensorType() == sensorType)
 			{
@@ -812,8 +1259,13 @@ public:
 
 		return true;
 	}
+
 	/**
-	Get the possible configurations available for a specific source
+	Get the @ref SensorInfo for a specific sensor type on this device.  The @ref SensorInfo
+	is useful primarily for determining which video modes are supported by the sensor.
+	@param [in] sensorType of sensor to get information about.
+	@returns SensorInfo object corresponding to the sensor type specified, or NULL if such a sensor
+			is not available from this device.
 	*/
 	const SensorInfo* getSensorInfo(SensorType sensorType)
 	{
@@ -843,6 +1295,7 @@ public:
 	}
 
 	/**
+	@internal
 	Get an internal handle. This handle can be used via the C API.
 	*/
 	OniDeviceHandle _getHandle() const
@@ -850,10 +1303,22 @@ public:
 		return m_device;
 	}
 
-	///// Properties
+	/**
+	Gets an object through which playback of a file device can be controlled.
+	@returns NULL if this device is not a file device.
+	*/
+	PlaybackControl* getPlaybackControl() {return m_pPlaybackControl;}
+
 	/**
 	Get the value of a general property of the device.
-	There are convenience functions for all the commonly used properties
+	There are convenience functions for all the commonly used properties, such as
+	image registration and frame synchronization.  It is expected for this reason
+	that this function will rarely be directly used by applications.
+
+	@param [in] propertyId Numerical ID of the property you would like to check.
+	@param [out] data Place to store the value of the property.
+	@param [in,out] dataSize IN: Size of the buffer passed in the @c data argument. OUT: the actual written size.
+	@returns Status code indicating results of this operation.
 	*/
 	Status getProperty(int propertyId, void* data, int* dataSize) const
 	{
@@ -861,15 +1326,27 @@ public:
 	}
 
 	/**
-	Set a new value to a general property of the stream
+	Sets the value of a general property of the device.
+	There are convenience functions for all the commonly used properties, such as
+	image registration and frame synchronization.  It is expected for this reason
+	that this function will rarely be directly used by applications.
+
+	@param [in] propertyId The numerical ID of the property to be set.
+	@param [in] data Place to store the data to be written to the property.
+	@param [in] dataSize Size of the data to be written to the property.
+	@returns Status code indicating results of this operation.
 	*/
 	Status setProperty(int propertyId, const void* data, int dataSize)
 	{
 		return (Status)oniDeviceSetProperty(m_device, propertyId, data, dataSize);
 	}
-	///////////////////////// Properties Convenience Layer
+
 	/**
-	Check if this device can register the image between its different streams
+	Checks to see if this device can support registration of color video and depth video.
+	Image registration is used to properly superimpose two images from cameras located at different
+	points in space.  Please see the OpenNi 2.0 Programmer's Guide for more information about
+	registration.
+	@returns true if image registration is supported by this device, false otherwise.
 	*/
 	bool isImageRegistrationModeSupported(ImageRegistrationMode mode) const
 	{
@@ -877,7 +1354,11 @@ public:
 	}
 
 	/**
-	Get the current image registration mode.
+	Gets the current image registration mode of this device.
+	Image registration is used to properly superimpose two images from cameras located at different
+	points in space.  Please see the OpenNi 2.0 Programmer's Guide for more information about
+	registration.
+	@returns Current image registration mode.  See @ref ImageRegistrationMode for possible return values.
 	*/
 	ImageRegistrationMode getImageRegistrationMode() const
 	{
@@ -891,27 +1372,36 @@ public:
 	}
 
 	/**
-	Change the image registration mode
+	Sets the image registration on this device.
+	Image registration is used to properly superimpose two images from cameras located at different
+	points in space.  Please see the OpenNi 2.0 Programmer's Guide for more information about
+	registration.
+
+	See @ref ImageRegistrationMode for a list of valid settings to pass to this function. 
+	
+	It is a good practice to first check if the mode is supported by calling @ref isImageRegistrationModeSupported().
+
+	@param [in] mode Desired new value for the image registration mode.
+	@returns Status code for the operation.
 	*/
 	Status setImageRegistrationMode(ImageRegistrationMode mode)
 	{
 		return setProperty<ImageRegistrationMode>(DEVICE_PROPERTY_IMAGE_REGISTRATION, mode);
 	}
 
-	// FirmwareVersion
-	// DriverVersion
-	// HardwareVersion
-	// SerialNumber
-	// ErrorState
-
 	/**
-	Does the device object represent an open device.SetHandle
+	Checks whether this Device object is currently connected to an actual file or hardware device.
+	@returns true if the Device is connected, false otherwise.
 	*/
 	bool isValid() const
 	{
 		return m_device != NULL;
 	}
 
+	/**
+	Checks whether this device is a file device (i.e. a recording).
+	@returns true if this is a file device, false otherwise.
+	*/
 	bool isFile() const
 	{
 		return isPropertySupported(DEVICE_PROPERTY_PLAYBACK_SPEED) &&
@@ -919,6 +1409,14 @@ public:
 			isCommandSupported(DEVICE_COMMAND_SEEK);
 	}
 
+	/**
+	Used to turn the depth/color frame synchronization feature on and off.  When frame synchronization
+	is enabled, the device will deliver depth and image frames that are separated in time
+	by some maximum value.  When disabled, the phase difference between depth and image frame
+	generation cannot be guaranteed.
+	@param [in] isEnabled Set to TRUE to enable synchronization, FALSE to disable it
+	@returns Status code indicating success or failure of this operation
+	*/
 	Status setDepthColorSyncEnabled(bool isEnabled)
 	{
 		Status rc = STATUS_OK;
@@ -931,15 +1429,35 @@ public:
 		{
 			oniDeviceDisableDepthColorSync(m_device);
 		}
-		
+
 		return rc;
 	}
 
+	/**
+	Sets a property that takes an arbitrary data type as its input.  It is not expected that
+	application code will need this function frequently, as all commonly used properties have
+	higher level functions provided.
+
+	@tparam T Type of data to be passed to the property.
+	@param [in] propertyId The numerical ID of the property to be set.
+	@param [in] value Place to store the data to be written to the property.
+	@returns Status code indicating success or failure of this operation.
+	*/
 	template <class T>
 	Status setProperty(int propertyId, const T& value)
 	{
 		return setProperty(propertyId, &value, sizeof(T));
 	}
+
+	/**
+	Checks a property that provides an arbitrary data type as its output.  It is not expected that
+	application code will need this function frequently, as all commonly used properties have
+	higher level functions provided.
+	@tparam [in] T Data type of the value to be read.
+	@param [in] propertyId The numerical ID of the property to be read.
+	@param [in, out] value Pointer to a place to store the value read from the property.
+	@returns Status code indicating success or failure of this operation.
+	*/
 	template <class T>
 	Status getProperty(int propertyId, T* value) const
 	{
@@ -947,11 +1465,55 @@ public:
 		return getProperty(propertyId, value, &size);
 	}
 
+	/**
+	Checks if a specific property is supported by the device.
+	@param [in] propertyId Property to be checked.
+	@returns true if the property is supported, false otherwise.
+	*/
+	bool isPropertySupported(int propertyId) const
+	{
+		return oniDeviceIsPropertySupported(m_device, propertyId) == TRUE;
+	}
+
+	/**
+	Invokes a command that takes an arbitrary data type as its input.  It is not expected that
+	application code will need this function frequently, as all commonly used properties have
+	higher level functions provided.
+	@param [in] commandId Numerical code of the property to be invoked.
+	@param [in] data Data to be passed to the property.
+	@param [in] dataSize size of the buffer passed in @c data.
+	@returns Status code indicating success or failure of this operation.
+	*/
+	Status invoke(int commandId, const void* data, int dataSize)
+	{
+		return (Status)oniDeviceInvoke(m_device, commandId, data, dataSize);
+	}
+
+	/**
+	Invokes a command that takes an arbitrary data type as its input.  It is not expected that
+	application code will need this function frequently, as all commonly used properties have
+	higher level functions provided.
+	@tparam [in] T Type of data to be passed to the property.
+	@param [in] propertyId Numerical code of the property to be invoked.
+	@param [in] value Data to be passed to the property.
+	@returns Status code indicating success or failure of this operation.
+	*/
 	template <class T>
 	Status invoke(int propertyId, const T& value)
 	{
 		return invoke(propertyId, &value, sizeof(T));
 	}
+
+	/**
+	Checks if a specific command is supported by the device.
+	@param [in] commandId Command to be checked.
+	@returns true if the command is supported, false otherwise.
+	*/
+	bool isCommandSupported(int commandId) const
+	{
+		return oniDeviceIsCommandSupported(m_device, commandId) == TRUE;
+	}
+
 private:
 	Device(const Device&);
 	Device& operator=(const Device&);
@@ -962,21 +1524,6 @@ private:
 		{
 			m_aSensorInfo[i]._setInternal(NULL);
 		}
-	}
-
-	bool isPropertySupported(int propertyId) const
-	{
-		return oniDeviceIsPropertySupported(m_device, propertyId) == TRUE;
-	}
-
-	Status invoke(int commandId, const void* data, int dataSize)
-	{
-		return (Status)oniDeviceInvoke(m_device, commandId, data, dataSize);
-	}
-
-	bool isCommandSupported(int commandId) const
-	{
-		return oniDeviceIsCommandSupported(m_device, commandId) == TRUE;
 	}
 
 	Status _setHandle(OniDeviceHandle deviceHandle)
@@ -996,36 +1543,19 @@ private:
 	}
 
 private:
+	PlaybackControl* m_pPlaybackControl;
+
 	OniDeviceHandle m_device;
-	OniDeviceInfo m_deviceInfo;
+	DeviceInfo m_deviceInfo;
 	SensorInfo m_aSensorInfo[ONI_MAX_SENSORS];
 };
 
 class PlaybackControl
 {
 public:
-	PlaybackControl() : m_pDevice(NULL)
-	{}
 	~PlaybackControl()
 	{
 		detach();
-	}
-
-	Status attach(Device* device)
-	{
-		if (!device->isValid() || !device->isFile())
-		{
-			return STATUS_ERROR;
-		}
-
-		detach();
-		m_pDevice = device;
-
-		return STATUS_OK;
-	}
-	void detach()
-	{
-		m_pDevice = NULL;
 	}
 
 	/**
@@ -1033,7 +1563,7 @@ public:
 	*/
 	float getSpeed() const
 	{
-		if (m_pDevice == NULL)
+		if (!isValid())
 		{
 			return 0.0f;
 		}
@@ -1050,7 +1580,7 @@ public:
 	*/
 	Status setSpeed(float speed)
 	{
-		if (m_pDevice == NULL)
+		if (!isValid())
 		{
 			return STATUS_NO_DEVICE;
 		}
@@ -1062,7 +1592,7 @@ public:
 	*/
 	bool getRepeatEnabled() const
 	{
-		if (m_pDevice == NULL)
+		if (!isValid())
 		{
 			return false;
 		}
@@ -1079,9 +1609,9 @@ public:
 	/**
 	Change the repeat mode
 	*/
-	Status setRepeateEnabled(bool repeat)
+	Status setRepeatEnabled(bool repeat)
 	{
-		if (m_pDevice == NULL)
+		if (!isValid())
 		{
 			return STATUS_NO_DEVICE;
 		}
@@ -1094,7 +1624,7 @@ public:
 	*/
 	Status seek(const VideoStream& stream, int frameIndex)
 	{
-		if (m_pDevice == NULL)
+		if (!isValid())
 		{
 			return STATUS_NO_DEVICE;
 		}
@@ -1118,9 +1648,94 @@ public:
 		return numOfFrames;
 	}
 
+	bool isValid() const
+	{
+		return m_pDevice != NULL;
+	}
 private:
+	Status attach(Device* device)
+	{
+		if (!device->isValid() || !device->isFile())
+		{
+			return STATUS_ERROR;
+		}
+
+		detach();
+		m_pDevice = device;
+
+		return STATUS_OK;
+	}
+	void detach()
+	{
+		m_pDevice = NULL;
+	}
+
+	friend class Device;
+	PlaybackControl(Device* pDevice) : m_pDevice(NULL)
+	{
+		if (pDevice != NULL)
+		{
+			attach(pDevice);
+		}
+	}
+
 	Device* m_pDevice;
 };
+
+class CameraSettings
+{
+public:
+	// setters
+	Status setAutoExposureEnabled(bool enabled)
+	{
+		return setProperty(STREAM_PROPERTY_AUTO_EXPOSURE, enabled ? TRUE : FALSE);
+	}
+	Status setAutoWhiteBalanceEnabled(bool enabled)
+	{
+		return setProperty(STREAM_PROPERTY_AUTO_WHITE_BALANCE, enabled ? TRUE : FALSE);
+	}
+
+	bool getAutoExposureEnabled() const
+	{
+		OniBool enabled = FALSE;
+
+		Status rc = getProperty(STREAM_PROPERTY_AUTO_EXPOSURE, &enabled);
+		return rc == STATUS_OK && enabled == TRUE;
+	}
+	bool getAutoWhiteBalanceEnabled() const
+	{
+		OniBool enabled = FALSE;
+
+		Status rc = getProperty(STREAM_PROPERTY_AUTO_WHITE_BALANCE, &enabled);
+		return rc == STATUS_OK && enabled == TRUE;
+	}
+
+	bool isValid() const {return m_pStream != NULL;}
+private:
+	template <class T>
+	Status getProperty(int propertyId, T* value) const
+	{
+		if (!isValid()) return STATUS_NOT_SUPPORTED;
+
+		return m_pStream->getProperty<T>(propertyId, value);
+	}
+	template <class T>
+	Status setProperty(int propertyId, const T& value)
+	{
+		if (!isValid()) return STATUS_NOT_SUPPORTED;
+
+		return m_pStream->setProperty<T>(propertyId, value);
+	}
+
+	friend class VideoStream;
+	CameraSettings(VideoStream* pStream)
+	{
+		m_pStream = pStream;
+	}
+
+	VideoStream* m_pStream;
+};
+
 
 /**
 The OpenNI class is a static entry point to the library.
@@ -1144,7 +1759,7 @@ public:
 		}
 
 		/**
-		Handle the event that a device changed its error state
+		Handle the event that a device changed its state.
 		*/
 		virtual void onDeviceStateChanged(const DeviceInfo*, DeviceState /*state*/) {}
 		/**
@@ -1152,7 +1767,8 @@ public:
 		*/
 		virtual void onDeviceConnected(const DeviceInfo*) {}
 		/**
-		Handle the event that a device was disconnected and is no longer available
+		Handle the event that a device was disconnected and is no longer available. If the device was open
+		(you had a @ref Device object connected to it), you should close your @ref Device object.
 		*/
 		virtual void onDeviceDisconnected(const DeviceInfo*) {}
 
@@ -1182,6 +1798,7 @@ public:
 	/**
 	Initialize the library.
 	This will load all available drivers, and see which devices are available
+	It is forbidden to call any other method in OpenNI before calling @ref initialize().
 	*/
 	static Status initialize()
 	{
@@ -1190,6 +1807,7 @@ public:
 
 	/**
 	Stop using the library. Unload all drivers, close all streams and devices.
+	Once @ref shutdown was called, no other calls to OpenNI is allowed.
 	*/
 	static void shutdown()
 	{
@@ -1201,11 +1819,18 @@ public:
 	*/
 	static Version getVersion()
 	{
-		return oniGetVersion();
+		OniVersion version = oniGetVersion();
+		union
+		{
+			OniVersion* pC;
+			Version* pCpp;
+		} a;
+		a.pC = &version;
+		return *a.pCpp;
 	}
 
 	/**
-	Get the internal error string created by the last API call
+	Get the internal error string created by the last API call, or NULL
 	*/
 	static const char* getExtendedError()
 	{
@@ -1213,24 +1838,29 @@ public:
 	}
 
 	/**
-	Initialize a DeviceInfoList object with all the devices that are available
+	Fills up an array of @ref DeviceInfo objects with devices that are available.
+	@param [in,out] deviceInfoList An array to be filled with devices.
 	*/
 	static void enumerateDevices(Array<DeviceInfo>* deviceInfoList)
 	{
 		OniDeviceInfo* m_pDeviceInfos;
 		int m_deviceInfoCount;
 		oniGetDeviceList(&m_pDeviceInfos, &m_deviceInfoCount);
-		deviceInfoList->setData((DeviceInfo*)m_pDeviceInfos, m_deviceInfoCount, true);
+		deviceInfoList->_setData((DeviceInfo*)m_pDeviceInfos, m_deviceInfoCount, true);
 		oniReleaseDeviceList(m_pDeviceInfos);
 	}
 
 	/**
-	Wait for a new frame from any of the streams provided.
-	A timeout is passed so that blocking will be optional
+	Wait for a new frame from any of the streams provided. The function blocks until any of the streams
+	has a new frame available, or the timeout has passed.
+	@param [in] pStreams An array of streams to wait for.
+	@param [in] streamCount The number of streams in @c pStreams
+	@param [out] pReadyStreamIndex The index of the first stream that has new frame available.
+	@param [in] timeout [Optional] A timeout before returning if no stream has new data. Default value is @ref TIMEOUT_FOREVER.
 	*/
-	static const int ONI_MAX_STREAMS = 50;
 	static Status waitForAnyStream(VideoStream** pStreams, int streamCount, int* pReadyStreamIndex, int timeout = TIMEOUT_FOREVER)
 	{
+		static const int ONI_MAX_STREAMS = 50;
 		OniStreamHandle streams[ONI_MAX_STREAMS];
 
 		if (streamCount > ONI_MAX_STREAMS)
@@ -1279,9 +1909,54 @@ private:
 	}
 };
 
+/**
+The CoordinateConverter class converts points between the different coordinate systems.
+
+<b>Depth and World coordinate systems</b>
+
+OpenNI applications commonly use two different coordinate systems to represent depth.  These two systems are referred to as Depth
+and World representation.
+
+Depth coordinates are the native data representation.  In this system, the frame is a map (two dimensional array), and each pixel is
+assigned a depth value.  This depth value represents the distance between the camera plane and whatever object is in the given
+pixel. The X and Y coordinates are simply the location in the map, where the origin is the top-left corner of the field of view.
+
+World coordinates superimpose a more familiar 3D Cartesian coordinate system on the world, with the camera lens at the origin.
+In this system, every point is specified by 3 points -- x, y and z.  The x axis of this system is along a line that passes
+through the infrared projector and CMOS imager of the camera.  The y axis is parallel to the front face of the camera, and
+perpendicular to the x axis (it will also be perpendicular to the ground if the camera is upright and level).  The z axis
+runs into the scene, perpendicular to both the x and y axis.  From the perspective of the camera, an object moving from
+left to right is moving along the increasing x axis.  An object moving up is moving along the increasing y axis, and an object
+moving away from the camera is moving along the increasing z axis.
+
+Mathematically, the Depth coordinate system is the projection of the scene on the CMOS. If the sensor's angular field of view and
+resolution are known, then an angular size can be calculated for each pixel.  This is how the conversion algorithms work.  The
+dependence of this calculation on FoV and resolution is the reason that a @ref VideoStream pointer must be provided to these
+functions.  The @ref VideoStream pointer is used to determine parameters for the specific points to be converted.
+
+Since Depth coordinates are a projective, the apparent size of objects in depth coordinates (measured in pixels)
+will increase as an object moves closer to the sensor.  The size of objects in the World coordinate system is independent of
+distance from the sensor.
+
+Note that converting from Depth to World coordinates is relatively expensive computationally.  It is generally not practical to convert
+the entire raw depth map to World coordinates.  A better approach is to have your computer vision algorithm work in Depth
+coordinates for as long as possible, and only converting a few specific points to World coordinates right before output.
+
+Note that when converting from Depth to World or vice versa, the Z value remains the same.
+*/
 class CoordinateConverter
 {
 public:
+	/**
+	Converts a single point from the World coordinate system to the Depth coordinate system.
+	@param [in] depthStream Reference to an openni::VideoStream that will be used to determine the format of the Depth coordinates
+	@param [in] worldX The X coordinate of the point to be converted, measured in millimeters in World coordinates
+	@param [in] worldY The Y coordinate of the point to be converted, measured in millimeters in World coordinates
+	@param [in] worldZ The Z coordinate of the point to be converted, measured in millimeters in World coordinates
+	@param [out] pDepthX Pointer to a place to store the X coordinate of the output value, measured in pixels with 0 at far left of image
+	@param [out] pDepthY Pointer to a place to store the Y coordinate of the output value, measured in pixels with 0 at top of image
+	@param [out] pDepthZ Pointer to a place to store the Z(depth) coordinate of the output value, measured in the @ref PixelFormat of depthStream
+	*/
 	static Status convertWorldToDepth(const VideoStream& depthStream, float worldX, float worldY, float worldZ, int* pDepthX, int* pDepthY, DepthPixel* pDepthZ)
 	{
 		float depthX, depthY, depthZ;
@@ -1292,21 +1967,62 @@ public:
 		return rc;
 	}
 
+	/**
+	Converts a single point from the World coordinate system to a floating point representation of the Depth coordinate system
+	@param [in] depthStream Reference to an openni::VideoStream that will be used to determine the format of the Depth coordinates
+	@param [in] worldX The X coordinate of the point to be converted, measured in millimeters in World coordinates
+	@param [in] worldY The Y coordinate of the point to be converted, measured in millimeters in World coordinates
+	@param [in] worldZ The Z coordinate of the point to be converted, measured in millimeters in World coordinates
+	@param [out] pDepthX Pointer to a place to store the X coordinate of the output value, measured in pixels with 0.0 at far left of the image
+	@param [out] pDepthY Pointer to a place to store the Y coordinate of the output value, measured in pixels with 0.0 at the top of the image
+	@param [out] pDepthZ Pointer to a place to store the Z(depth) coordinate of the output value, measured in millimeters with 0.0 at the camera lens
+	*/
 	static Status convertWorldToDepth(const VideoStream& depthStream, float worldX, float worldY, float worldZ, float* pDepthX, float* pDepthY, float* pDepthZ)
 	{
 		return (Status)oniCoordinateConverterWorldToDepth(depthStream._getHandle(), worldX, worldY, worldZ, pDepthX, pDepthY, pDepthZ);
 	}
 
+	/**
+	Converts a single point from the Depth coordinate system to the World coordinate system.
+	@param [in] depthStream Reference to an openi::VideoStream that will be used to determine the format of the Depth coordinates
+	@param [in] depthX The X coordinate of the point to be converted, measured in pixels with 0 at the far left of the image
+	@param [in] depthY The Y coordinate of the point to be converted, measured in pixels with 0 at the top of the image
+	@param [in] depthZ the Z(depth) coordinate of the point to be converted, measured in the @ref PixelFormat of depthStream
+	@param [out] pWorldX Pointer to a place to store the X coordinate of the output value, measured in millimeters in World coordinates
+	@param [out] pWorldY Pointer to a place to store the Y coordinate of the output value, measured in millimeters in World coordinates
+	@param [out] pWorldZ Pointer to a place to store the Z coordinate of the output value, measured in millimeters in World coordinates
+	*/
 	static Status convertDepthToWorld(const VideoStream& depthStream, int depthX, int depthY, DepthPixel depthZ, float* pWorldX, float* pWorldY, float* pWorldZ)
 	{
 		return (Status)oniCoordinateConverterDepthToWorld(depthStream._getHandle(), float(depthX), float(depthY), float(depthZ), pWorldX, pWorldY, pWorldZ);
 	}
 
+	/**
+	Converts a single point from a floating point representation of the Depth coordinate system to the World coordinate system.
+	@param [in] depthStream Reference to an openi::VideoStream that will be used to determine the format of the Depth coordinates
+	@param [in] depthX The X coordinate of the point to be converted, measured in pixels with 0.0 at the far left of the image
+	@param [in] depthY The Y coordinate of the point to be converted, measured in pixels with 0.0 at the top of the image
+	@param [in] depthZ Z(depth) coordinate of the point to be converted, measured in the @ref PixelFormat of depthStream
+	@param [out] pWorldX Pointer to a place to store the X coordinate of the output value, measured in millimeters in World coordinates
+	@param [out] pWorldY Pointer to a place to store the Y coordinate of the output value, measured in millimeters in World coordinates
+	@param [out] pWorldZ Pointer to a place to store the Z coordinate of the output value, measured in millimeters in World coordinates
+	*/
 	static Status convertDepthToWorld(const VideoStream& depthStream, float depthX, float depthY, float depthZ, float* pWorldX, float* pWorldY, float* pWorldZ)
 	{
 		return (Status)oniCoordinateConverterDepthToWorld(depthStream._getHandle(), depthX, depthY, depthZ, pWorldX, pWorldY, pWorldZ);
 	}
 
+	/**
+	For a given depth point, provides the coordinates of the corresponding color value.  Useful for superimposing the depth and color images.
+	This operation is the same as turning on registration, but is performed on a single pixel rather than the whole image.
+	@param [in] depthStream Reference to a openni::VideoStream that produced the depth value
+	@param [in] colorStream Reference to a openni::VideoStream that we want to find the appropriate color pixel in
+	@param [in] depthX X value of the depth point, given in Depth coordinates and measured in pixels
+	@param [in] depthY Y value of the depth point, given in Depth coordinates and measured in pixels
+	@param [in] depthZ Z(depth) value of the depth point, given in the @ref PixelFormat of depthStream
+	@param [out] pColorX The X coordinate of the color pixel that overlaps the given depth pixel, measured in pixels
+	@param [out] pColorY The Y coordinate of the color pixel that overlaps the given depth pixel, measured in pixels
+	*/
 	static Status convertDepthToColor(const VideoStream& depthStream, const VideoStream& colorStream, int depthX, int depthY, DepthPixel depthZ, int* pColorX, int* pColorY)
 	{
 		return (Status)oniCoordinateConverterDepthToColor(depthStream._getHandle(), colorStream._getHandle(), depthX, depthY, depthZ, pColorX, pColorY);
@@ -1320,14 +2036,10 @@ public:
  */
 class Recorder
 {
-// A handy macro, validating that the Recorder has been initialized before
-// use. This macro reduces code duplicate significantly.
-#define SHOULD_BE_VALID if (!isValid()) { return STATUS_ERROR; } else {}
-
 public:
     /**
-     * Creates a recorder. The recorder is not valid, i.e. IsValid() returns
-     * false. You must initialize the recorder before use with Initialize().
+     * Creates a recorder. The recorder is not valid, i.e. @ref isValid() returns
+     * false. You must initialize the recorder before use with @ref create().
      */
     Recorder() : m_recorder(NULL)
     {
@@ -1363,37 +2075,47 @@ public:
     bool isValid() const
     {
         return NULL != getHandle();
-    }    
+    }
 
     /**
      * Attaches a stream to the recorder. Note, this won't start recording, you
-     * should explicitly start it using Start() method. As soon as the recording
+     * should explicitly start it using @ref start() method. As soon as the recording
      * process has been started, no more streams can be attached to the recorder.
+	 *
+	 * @param [in] stream	The stream to be recorded.
+	 * @param [in] allowLossyCompression [Optional] If this value is true, the recorder might use
+	 *	a lossy compression, which means that when the recording will be played-back, there might
+	 *  be small differences from the original frame. Default value is false.
      */
     Status attach(VideoStream& stream, bool allowLossyCompression = false)
     {
-        SHOULD_BE_VALID
-        if (!stream.isValid())
+        if (!isValid() || !stream.isValid())
         {
             return STATUS_ERROR;
         }
         return (Status)oniRecorderAttachStream(
-                m_recorder, 
+                m_recorder,
                 stream._getHandle(),
                 allowLossyCompression);
     }
 
     /**
-     * Starts recording.
+     * Starts recording. 
+	 * Once this method is called, the recorder will take all subsequent frames from the attached streams
+	 * and store them in the file.
+	 * You may not attach additional streams once recording was started.
      */
     Status start()
     {
-        SHOULD_BE_VALID
+		if (!isValid())
+		{
+			return STATUS_ERROR;
+		}
         return (Status)oniRecorderStart(m_recorder);
     }
 
     /**
-     * Stops recording. You may use Start() to resume the recording.
+     * Stops recording. You may use @ref start() to resume the recording.
      */
     void stop()
     {
@@ -1403,6 +2125,9 @@ public:
 		}
     }
 
+	/**
+	Destroys the recorder object.
+	*/
 	void destroy()
 	{
 		if (isValid())
@@ -1425,9 +2150,6 @@ private:
 
 
     OniRecorderHandle m_recorder;
-
-// Get rid of needless macro.
-#undef SHOULD_BE_VALID
 };
 
 // Implemetation
@@ -1441,7 +2163,67 @@ Status VideoStream::create(const Device& device, SensorType sensorType)
 	}
 
 	_setHandle(streamHandle);
+
+	if (isPropertySupported(STREAM_PROPERTY_AUTO_WHITE_BALANCE) && isPropertySupported(STREAM_PROPERTY_AUTO_EXPOSURE))
+	{
+		m_pCameraSettings = new CameraSettings(this);
+	}
+
 	return STATUS_OK;
+}
+
+void VideoStream::destroy()
+{
+	if (!isValid())
+	{
+		return;
+	}
+
+	if (m_pCameraSettings != NULL)
+	{
+		delete m_pCameraSettings;
+		m_pCameraSettings = NULL;
+	}
+
+	if (m_stream != NULL)
+	{
+		oniStreamDestroy(m_stream);
+		m_stream = NULL;
+	}
+}
+
+Status Device::open(const char* uri)
+{
+	OniDeviceHandle deviceHandle;
+	Status rc = (Status)oniDeviceOpen(uri, &deviceHandle);
+	if (rc != STATUS_OK)
+	{
+		return rc;
+	}
+
+	_setHandle(deviceHandle);
+
+	if (isFile())
+	{
+		m_pPlaybackControl = new PlaybackControl(this);
+	}
+
+	return STATUS_OK;
+}
+
+void Device::close()
+{
+	if (m_pPlaybackControl != NULL)
+	{
+		delete m_pPlaybackControl;
+		m_pPlaybackControl = NULL;
+	}
+
+	if (m_device != NULL)
+	{
+		oniDeviceClose(m_device);
+		m_device = NULL;
+	}
 }
 
 

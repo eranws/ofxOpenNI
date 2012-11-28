@@ -17,7 +17,8 @@
 *  See the License for the specific language governing permissions and       *
 *  limitations under the License.                                            *
 *                                                                            *
-*****************************************************************************/#ifndef _ONI_ENUMS_H_
+*****************************************************************************/
+#ifndef _ONI_ENUMS_H_
 #define _ONI_ENUMS_H_
 
 namespace openni
@@ -26,21 +27,22 @@ namespace openni
 /** Possible failure values */
 typedef enum
 {
-	STATUS_OK,
-	STATUS_ERROR,
-	STATUS_NOT_IMPLEMENTED,
-	STATUS_NOT_SUPPORTED,
-	STATUS_BAD_PARAMETER,
-	STATUS_OUT_OF_FLOW,
-	STATUS_NO_DEVICE
+	STATUS_OK = 0,
+	STATUS_ERROR = 1,
+	STATUS_NOT_IMPLEMENTED = 2,
+	STATUS_NOT_SUPPORTED = 3,
+	STATUS_BAD_PARAMETER = 4,
+	STATUS_OUT_OF_FLOW = 5,
+	STATUS_NO_DEVICE = 6,
+	STATUS_TIME_OUT = 102,
 } Status;
 
 /** The source of the stream */
 typedef enum
 {
 	SENSOR_IR = 1,
-	SENSOR_COLOR,
-	SENSOR_DEPTH
+	SENSOR_COLOR = 2,
+	SENSOR_DEPTH = 3,
 
 } SensorType;
 
@@ -63,15 +65,16 @@ typedef enum
 
 typedef enum
 {
-	DEVICE_STATE_OK,
-	DEVICE_STATE_ERROR,
-	DEVICE_STATE_NOT_READY
+	DEVICE_STATE_OK 	= 0,
+	DEVICE_STATE_ERROR 	= 1,
+	DEVICE_STATE_NOT_READY 	= 2,
+	DEVICE_STATE_EOF 	= 3
 } DeviceState;
 
 typedef enum
 {
 	IMAGE_REGISTRATION_OFF				= 0,
-	IMAGE_REGISTRATION_DEPTH_TO_COLOR,
+	IMAGE_REGISTRATION_DEPTH_TO_COLOR	= 1,
 } ImageRegistrationMode;
 
 static const int TIMEOUT_NONE = 0;
