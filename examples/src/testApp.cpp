@@ -76,7 +76,7 @@ void testApp::draw()
 		{
 			const nite::UserData& user = users[i];
 			updateUserState(user,userTrackerFrame.getTimestamp());
-			if (user.getState() == nite::USER_STATE_NEW)
+			if (user.isNew())
 			{
 				userTracker.startSkeletonTracking(user.getId());
 			}
@@ -151,7 +151,7 @@ int testApp::setupOpenNi()
 	}
 	OpenNI::addListener(this);
 
-	rc = device.open(ONI_ANY_DEVICE);
+	rc = device.open(ANY_DEVICE);
 	if (rc != ONI_STATUS_OK)
 	{
 		printf("Couldn't open device\n%s\n", OpenNI::getExtendedError());
@@ -405,46 +405,47 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 }
 
 
-
 #define MAX_USERS 10
-nite::UserState g_userStates[MAX_USERS] = {(nite::UserState)-1};
+bool g_visibleUsers[MAX_USERS] = {false};
 nite::SkeletonState g_skeletonStates[MAX_USERS] = {nite::SKELETON_NONE};
 
 #define USER_MESSAGE(msg) \
-{printf("[%08llu] User #%d:\t%s\n",ts, user.getId(),msg); break;}
+{printf("[%08llu] User #%d:\t%s\n",ts, user.getId(),msg);}
 
 void updateUserState(const nite::UserData& user, unsigned long long ts)
 {
-	if(g_userStates[user.getId()] != user.getState())
-	{
-		switch(g_userStates[user.getId()] = user.getState())
-		{
-		case nite::USER_STATE_NEW:
-			USER_MESSAGE("New")
-		case nite::USER_STATE_VISIBLE:
-			USER_MESSAGE("Visible")
-		case nite::USER_STATE_OUT_OF_SCENE:
-			USER_MESSAGE("Out of scene...")
-		case nite::USER_STATE_LOST:
-			USER_MESSAGE("Lost.")
-		}
-	}
+	if (user.isNew())
+		USER_MESSAGE("New")
+	else if (user.isVisible() && !g_visibleUsers[user.getId()])
+	USER_MESSAGE("Visible")
+	else if (!user.isVisible() && g_visibleUsers[user.getId()])
+	USER_MESSAGE("Out of Scene")
+	else if (user.isLost())
+	USER_MESSAGE("Lost")
+
+	g_visibleUsers[user.getId()] = user.isVisible();
+
+
 	if(g_skeletonStates[user.getId()] != user.getSkeleton().getState())
 	{
 		switch(g_skeletonStates[user.getId()] = user.getSkeleton().getState())
 		{
 		case nite::SKELETON_NONE:
 			USER_MESSAGE("Stopped tracking.")
+				break;
 		case nite::SKELETON_CALIBRATING:
 			USER_MESSAGE("Calibrating...")
+				break;
 		case nite::SKELETON_TRACKED:
 			USER_MESSAGE("Tracking!")
+				break;
 		case nite::SKELETON_CALIBRATION_ERROR_NOT_IN_POSE:
 		case nite::SKELETON_CALIBRATION_ERROR_HANDS:
 		case nite::SKELETON_CALIBRATION_ERROR_LEGS:
 		case nite::SKELETON_CALIBRATION_ERROR_HEAD:
 		case nite::SKELETON_CALIBRATION_ERROR_TORSO:
 			USER_MESSAGE("Calibration Failed... :-|")
+				break;
 		}
 	}
 }
