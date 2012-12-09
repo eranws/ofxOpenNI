@@ -8,6 +8,7 @@
 #include "ofMain.h"
 
 #include "ofxUI\src\ofxUI.h"
+#include <map>
 
 
 #define MAX_DEVICES 2
@@ -73,6 +74,8 @@ private:
 
 	nite::UserTrackerFrameRef userTrackerFrame;
 	nite::UserTracker* userTracker;
+
+	std::map<nite::UserId, ofVec2f> headMap;
 
 };
 
