@@ -78,6 +78,7 @@ private:
 	typedef std::map<nite::UserId, ofVec2f> HeadMap;
 	HeadMap headMap;
 
+	bool _closing;
 };
 
 #endif

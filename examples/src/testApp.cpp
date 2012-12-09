@@ -8,6 +8,8 @@ using namespace nite;
 //--------------------------------------------------------------
 void testApp::setup(){	
 
+	_closing = false;
+
 	ofSetCircleResolution(100);
 	//ofSetFrameRate(300);
 	ofSetVerticalSync(true);
@@ -16,7 +18,7 @@ void testApp::setup(){
 	setupNite();
 
 	bgImage.loadImage("graphics/bg.jpg"); //depends on resolution
-	item.loadImage("graphics/falafel.png");
+	item.loadImage("graphics/falafel.gif");
 	itemSize = ofVec2f(item.getWidth(), item.getHeight());
 	itemSizeFactor = 1.0f;
 
@@ -188,7 +190,7 @@ int testApp::setupOpenNi()
 
 void testApp::onNewFrame( VideoStream& stream )
 {
-	if (!stream.isValid()) return;
+	if (_closing || !stream.isValid()) return;
 
 	VideoFrameRef frame;
 	stream.readFrame(&frame);
@@ -264,8 +266,10 @@ void testApp::exit(){
 	delete gui4; 
 
 	//if(userTracker) delete(userTracker);
-	
+	_closing = true;
+	Sleep(500);
 
+	/*
 	depthStream.removeListener(this);
 	colorStream.removeListener(this);
 	
@@ -274,6 +278,7 @@ void testApp::exit(){
 	
 	depthStream.destroy();
 	colorStream.destroy();
+	*/
 
 	device.close();
 	
