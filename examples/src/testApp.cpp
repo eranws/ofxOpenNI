@@ -11,7 +11,7 @@ void testApp::setup(){
 	ofSetCircleResolution(100);
 	//ofSetFrameRate(300);
 	ofSetVerticalSync(true);
-	
+
 	setupOpenNi();
 	setupNite();
 
@@ -38,8 +38,8 @@ void testApp::update(){
 	{
 		ofShortPixels* depthPixels = depthPixelsDoubleBuffer[0];
 
-		ofPixels colorPixels;
-		colorPixels.allocate(depthPixels->getWidth(), depthPixels->getHeight(), OF_IMAGE_COLOR);
+		ofPixels depthColorPixels;
+		depthColorPixels.allocate(depthPixels->getWidth(), depthPixels->getHeight(), OF_IMAGE_COLOR);
 
 		unsigned short* p = depthPixels->getPixels();
 		for (int i=0; i < depthPixels->size(); i++)
@@ -47,13 +47,20 @@ void testApp::update(){
 			unsigned short& k = p[i];
 
 			{
-				colorPixels[3*i + 0] = (k >> 5) & 0xff;
-				colorPixels[3*i + 1] = (k >> 3) & 0xff;
-				colorPixels[3*i + 2] = k & 0xff;// & 0xff;
+				depthColorPixels[3*i + 0] = (k >> 5) & 0xff;
+				depthColorPixels[3*i + 1] = (k >> 3) & 0xff;
+				depthColorPixels[3*i + 2] = k & 0xff;// & 0xff;
 			}
 		}
-		depthTexture.loadData(colorPixels);
+		depthTexture.loadData(depthColorPixels);
 	}
+
+	if (colorStream.isValid())
+	{
+		ofPixels* colorPixels = colorPixelsDoubleBuffer[0];
+		colorTexture.loadData(*colorPixels);
+	}
+
 
 }
 
@@ -63,20 +70,27 @@ void testApp::update(){
 void testApp::draw()
 {
 	bgImage.draw(400,400);
-	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
 	if (drawDebug && drawOpenNiDebug)
 	{
 		ofSetHexColor(0xffffff);
-		depthTexture.draw(0,0);
-
+		depthTexture.draw(100,100);
 		ofSetHexColor(0x333333);
 		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
 	}
+	
+	colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 
 	for (HeadMap::iterator it = headMap.begin(); it != headMap.end(); it++)
 	{
-		ofCircle(ofPoint(it->second), 10);
+		ofPoint pos = ofPoint(it->second.x, it->second.y, 0);
+		pos.x *= ofGetWindowWidth() / colorStream.getVideoMode().getResolutionX();
+		pos.y *= ofGetWindowHeight() / colorStream.getVideoMode().getResolutionY();
+		
+		item.draw(pos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+
+		//falafels
+		ofCircle(pos, 10);
 	}
 
 
@@ -141,15 +155,32 @@ int testApp::setupOpenNi()
 			printf("Couldn't create depth stream\n%s\n", OpenNI::getExtendedError());
 		}
 	}
-	int w = depthStream.getVideoMode().getResolutionX();
-	int h = depthStream.getVideoMode().getResolutionY();
-	depthTexture.allocate(w, h, GL_RGB);
 
+	if (device.getSensorInfo(openni::SENSOR_COLOR) != NULL)
+	{
+		rc = colorStream.create(device, SENSOR_COLOR);
+		if (rc != ONI_STATUS_OK)
+		{
+			printf("Couldn't create color stream\n%s\n", OpenNI::getExtendedError());
+		}
+	}
+
+
+	int dw = depthStream.getVideoMode().getResolutionX();
+	int dh = depthStream.getVideoMode().getResolutionY();
+	depthTexture.allocate(dw, dh, GL_RGB);
+
+	int cw = colorStream.getVideoMode().getResolutionX();
+	int ch = colorStream.getVideoMode().getResolutionY();
+	colorTexture.allocate(dw, dh, GL_RGB);
 
 	for (int i=0 ; i<2; i++)
 	{
 		depthPixelsDoubleBuffer[i] = new ofShortPixels();
-		depthPixelsDoubleBuffer[i]->allocate(w, h, OF_IMAGE_GRAYSCALE);
+		depthPixelsDoubleBuffer[i]->allocate(dw, dh, OF_IMAGE_GRAYSCALE);
+
+		colorPixelsDoubleBuffer[i] = new ofPixels();
+		colorPixelsDoubleBuffer[i]->allocate(cw, ch, OF_IMAGE_COLOR);
 	}
 
 	return 0;
@@ -157,64 +188,72 @@ int testApp::setupOpenNi()
 
 void testApp::onNewFrame( VideoStream& stream )
 {
-	stream.readFrame(&depthFrame);
-	const unsigned short* data = (const unsigned short*)depthFrame.getData();
+	if (!stream.isValid()) return;
 
-	bool debugPrintMiddlePixel = false;
-	if (debugPrintMiddlePixel) //TODO: move to Utils
+	VideoFrameRef frame;
+	stream.readFrame(&frame);
+
+	switch (frame.getVideoMode().getPixelFormat())
 	{
-		int middleIndex = (depthFrame.getHeight()+1)*depthFrame.getWidth()/2;
-		DepthPixel* pDepth = (DepthPixel*)depthFrame.getData();
-		printf("[%08llu] %8d\n", depthFrame.getTimestamp(), pDepth[middleIndex]);
-	}
-
-	depthPixelsDoubleBuffer[1]->setFromPixels(data, depthFrame.getWidth(), depthFrame.getHeight(), OF_IMAGE_GRAYSCALE);
-
-	//depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
-	swap(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
-
-	nite::Status niteRc = userTracker->readFrame(&userTrackerFrame);
-	if (niteRc != NITE_STATUS_OK)
-	{
-		printf("Get next frame failed\n");
-	}
-	else
-	{
-//		swap(userTrackerFrame[0], userTrackerFrame[1]);
-	}
-
-	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
-	for (int i = 0; i < users.getSize(); ++i)
-	{
-		const nite::UserData& user = users[i];
-		if (user.isNew())
+	case PIXEL_FORMAT_RGB888:
 		{
-			userTracker->startSkeletonTracking(user.getId());
-			//printf("%d.", user.getId());
+
+			colorStream.readFrame(&colorFrame);
+			unsigned char* colorData = (unsigned char*)colorFrame.getData();
+			colorPixelsDoubleBuffer[1]->setFromPixels(colorData , colorFrame.getWidth(), colorFrame.getHeight(), OF_IMAGE_COLOR);
+			swap(colorPixelsDoubleBuffer[0],colorPixelsDoubleBuffer[1]);
+			break;
 		}
-		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
+
+
+	case PIXEL_FORMAT_DEPTH_1_MM:
+	case PIXEL_FORMAT_DEPTH_100_UM:
 		{
-			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
-			if (head.getPositionConfidence() > .5)
+
+			stream.readFrame(&depthFrame);
+			const unsigned short* data = (const unsigned short*)depthFrame.getData();
+			depthPixelsDoubleBuffer[1]->setFromPixels(data, depthFrame.getWidth(), depthFrame.getHeight(), OF_IMAGE_GRAYSCALE);
+			swap(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
+
+			nite::Status niteRc = userTracker->readFrame(&userTrackerFrame);
+			if (niteRc != NITE_STATUS_OK)
 			{
-				ofVec2f headScreenPos;
-				userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
-				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
-				headMap[user.getId()] = headScreenPos;
+				printf("Get next frame failed\n");
 			}
+
+			const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+			for (int i = 0; i < users.getSize(); ++i)
+			{
+				const nite::UserData& user = users[i];
+				if (user.isNew())
+				{
+					userTracker->startSkeletonTracking(user.getId());
+					//printf("%d.", user.getId());
+				}
+				else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
+				{
+					const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
+					if (head.getPositionConfidence() > .5)
+					{
+						ofVec2f headScreenPos;
+						userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
+						printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
+						headMap[user.getId()] = headScreenPos;
+					}
+				}
+				else
+				{
+					headMap.erase(user.getId());
+				}
+
+				if (user.isLost() || !user.isVisible())
+					headMap.erase(user.getId());
+
+
+			}
+
 		}
-		else
-		{
-			headMap.erase(user.getId());
-		}
-
-		if (user.isLost() || !user.isVisible())
-			headMap.erase(user.getId());
-
-
 	}
-
-
 }
 
 
@@ -225,11 +264,19 @@ void testApp::exit(){
 	delete gui4; 
 
 	//if(userTracker) delete(userTracker);
+	
 
 	depthStream.removeListener(this);
+	colorStream.removeListener(this);
+	
 	depthStream.stop();
+	colorStream.stop();
+	
 	depthStream.destroy();
+	colorStream.destroy();
+
 	device.close();
+	
 
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
@@ -256,7 +303,7 @@ int testApp::setupNite()
 
 	for (int i=0 ; i<2; i++)
 	{
-//		userTrackerFrame[i] = new nite::UserTrackerFrameRef; 
+		//		userTrackerFrame[i] = new nite::UserTrackerFrameRef; 
 	}
 
 	return 0;
@@ -275,6 +322,20 @@ int testApp::start()
 	if (rc != ONI_STATUS_OK)
 	{
 		printf("Couldn't register listener for the depth stream\n%s\n", OpenNI::getExtendedError());
+	}
+
+
+	rc = colorStream.start();
+	if (rc != ONI_STATUS_OK)
+	{
+		printf("Couldn't start the color stream\n%s\n", OpenNI::getExtendedError());
+	}
+
+	// Register to new frame
+	rc = colorStream.addListener(this);
+	if (rc != ONI_STATUS_OK)
+	{
+		printf("Couldn't register listener for the color stream\n%s\n", OpenNI::getExtendedError());
 	}
 
 

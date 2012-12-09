@@ -42,3 +42,12 @@ void printUserState(const nite::UserData& user, unsigned long long ts)
 		}
 	}
 }
+
+
+bool debugPrintMiddlePixel = false;
+if (debugPrintMiddlePixel) //TODO: move to Utils
+{
+	int middleIndex = (depthFrame.getHeight()+1)*depthFrame.getWidth()/2;
+	DepthPixel* pDepth = (DepthPixel*)depthFrame.getData();
+	printf("[%08llu] %8d\n", depthFrame.getTimestamp(), pDepth[middleIndex]);
+}
