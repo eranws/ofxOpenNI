@@ -74,6 +74,10 @@ void testApp::draw()
 		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
 	}
 
+	for (HeadMap::iterator it = headMap.begin(); it != headMap.end(); it++)
+	{
+		ofCircle(ofPoint(it->second), 10);
+	}
 
 
 }
@@ -186,10 +190,9 @@ void testApp::onNewFrame( VideoStream& stream )
 		if (user.isNew())
 		{
 			userTracker->startSkeletonTracking(user.getId());
-			printf("%d.", user.getId());
+			//printf("%d.", user.getId());
 		}
-		else //printf("%d\n", user.getSkeleton().getState());
-		if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
+		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
 		{
 			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
 			if (head.getPositionConfidence() > .5)
@@ -197,11 +200,18 @@ void testApp::onNewFrame( VideoStream& stream )
 				ofVec2f headScreenPos;
 				userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
 				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
-//				ofCircle(ofPoint(headScreenPos), 10);
 				headMap[user.getId()] = headScreenPos;
 			}
-
 		}
+		else
+		{
+			headMap.erase(user.getId());
+		}
+
+		if (user.isLost() || !user.isVisible())
+			headMap.erase(user.getId());
+
+
 	}
 
 

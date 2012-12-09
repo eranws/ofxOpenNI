@@ -75,7 +75,8 @@ private:
 	nite::UserTrackerFrameRef userTrackerFrame;
 	nite::UserTracker* userTracker;
 
-	std::map<nite::UserId, ofVec2f> headMap;
+	typedef std::map<nite::UserId, ofVec2f> HeadMap;
+	HeadMap headMap;
 
 };
 
