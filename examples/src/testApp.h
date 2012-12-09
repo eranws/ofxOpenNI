@@ -61,13 +61,13 @@ private:
 	ofxUIScrollableCanvas *gui4;
 	ofxUIMovingGraph *mg; 
 	float buffer[256]; 
+	float falafelSizeFactor;
 
 	ofImage bgImage;
 	//TODO: make a collection of these...
 	ofImage item;
 	ofPoint itemPos;
 	ofVec2f itemSize;
-	float itemSizeFactor; //according to head distance
 
 	float red, green, blue; 
 
@@ -75,7 +75,7 @@ private:
 	nite::UserTrackerFrameRef userTrackerFrame;
 	nite::UserTracker* userTracker;
 
-	typedef std::map<nite::UserId, ofVec2f> HeadMap;
+	typedef std::map<nite::UserId, ofVec3f> HeadMap;
 	HeadMap headMap;
 
 	bool _closing;

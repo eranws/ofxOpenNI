@@ -19,8 +19,8 @@ void testApp::setup(){
 
 	bgImage.loadImage("graphics/bg.jpg"); //depends on resolution
 	item.loadImage("graphics/falafel.gif");
+	item.setAnchorPercent(0.5, 0.6); 
 	itemSize = ofVec2f(item.getWidth(), item.getHeight());
-	itemSizeFactor = 1.0f;
 
 	setGUI4();
 
@@ -71,7 +71,7 @@ void testApp::update(){
 
 void testApp::draw()
 {
-	bgImage.draw(400,400);
+//	bgImage.draw(400,400);
 
 	if (drawDebug && drawOpenNiDebug)
 	{
@@ -81,18 +81,26 @@ void testApp::draw()
 		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
 	}
 	
+
+	ofSetHexColor(0xffffff);
 	colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 
 	for (HeadMap::iterator it = headMap.begin(); it != headMap.end(); it++)
 	{
-		ofPoint pos = ofPoint(it->second.x, it->second.y, 0);
-		pos.x *= ofGetWindowWidth() / colorStream.getVideoMode().getResolutionX();
-		pos.y *= ofGetWindowHeight() / colorStream.getVideoMode().getResolutionY();
-		
+
+		ofPoint pos;
+	
+		pos.x = it->second.x * ofGetWindowWidth() / colorStream.getVideoMode().getResolutionX();
+		pos.y = it->second.y * ofGetWindowHeight() / colorStream.getVideoMode().getResolutionY();
+
+		ofCircle(pos, 10); //debug
+
+
+		float itemSizeFactor = falafelSizeFactor * 1000 / it->second.z; //according to head distance
+
 		item.draw(pos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
 		//falafels
-		ofCircle(pos, 10);
 	}
 
 
@@ -240,7 +248,7 @@ void testApp::onNewFrame( VideoStream& stream )
 						ofVec2f headScreenPos;
 						userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
 						printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
-						headMap[user.getId()] = headScreenPos;
+						headMap[user.getId()] = ofPoint(headScreenPos.x, headScreenPos.y, head.getPosition().z);
 					}
 				}
 				else
@@ -367,10 +375,14 @@ void testApp::setGUI4()
 	gui4->addWidgetDown(new ofxUIMinimalSlider(length-xInit, dim, 0, 100, 50.0, "MINIMAL",OFX_UI_FONT_MEDIUM));
 
 	gui4->addSpacer(length-xInit, 2);
-
-	gui4->addWidgetDown(new ofxUILabel("CIRCLE SLIDER", OFX_UI_FONT_MEDIUM)); 				
-	gui4->addWidgetDown(new ofxUICircleSlider((length-xInit)*.5, 0, 100, 50.0, "NORTH SOUTH", OFX_UI_FONT_MEDIUM));    
 	*/
+
+	gui4->addWidgetDown(new ofxUILabel("Falafel Size", OFX_UI_FONT_MEDIUM));
+
+	falafelSizeFactor = 0.5;
+	gui4->addWidgetDown(new ofxUICircleSlider((length-xInit)*.5, 0.2, 2.0, &falafelSizeFactor, "FALAFEL SIZE", OFX_UI_FONT_MEDIUM));    
+	
+
 	gui4->addSpacer(length-xInit, 2);
 	gui4->addWidgetDown(new ofxUILabel("FPS SLIDER", OFX_UI_FONT_MEDIUM)); 				
 	gui4->addFPSSlider("FPS SLIDER", length-xInit, dim);
@@ -437,6 +449,11 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 	{
 		ofxUIToggle *toggle = (ofxUIToggle *) e.widget; 
 		drawOpenNiDebug = toggle->getValue(); 
+	}
+	else if(name == "FALAFEL SIZE")
+	{
+		ofxUICircleSlider *cs= (ofxUICircleSlider *) e.widget; 
+		printf("%.2f\n", cs->getScaledValue()); 
 	}
 	else if(name == "TEXT INPUT")
 	{
