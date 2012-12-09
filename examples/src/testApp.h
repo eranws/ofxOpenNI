@@ -87,7 +87,8 @@ private:
 	static const int handImageCount = 4;
 	ofImage hand[handImageCount];
 	ofPoint handPos;
-
+	ofVec2f handSize;
+	float handSizeFactor;
 
 	float red, green, blue; 
 

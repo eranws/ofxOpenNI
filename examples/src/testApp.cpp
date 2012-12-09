@@ -42,8 +42,11 @@ void testApp::setup(){
 		hand[i].loadImage(ss.str());
 		hand[i].setAnchorPercent(0.7, 0.5); 
 		//itemSize = ofVec2f(item.getWidth(), item.getHeight());
+
 	}
 	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.75 );
+	handSize = ofVec2f(hand[0].getWidth(), hand[0].getHeight());
+	handSizeFactor = 2.0f;
 
 	windowResized(ofGetWindowWidth(), ofGetWindowHeight());
 	setGUI4();
@@ -183,7 +186,7 @@ void testApp::draw()
 		}
 
 		int handIndex = (ofGetElapsedTimeMillis() % 1000) / 250;
-		hand[handIndex].draw(handPos);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+		hand[handIndex].draw(handPos, handSize.x * handSizeFactor, handSize.y * handSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
 
 	
