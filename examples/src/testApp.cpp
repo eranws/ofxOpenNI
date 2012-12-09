@@ -168,7 +168,7 @@ void testApp::onNewFrame( VideoStream& stream )
 	//depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
 	InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
-	nite::Status niteRc = userTracker.readFrame(&userTrackerFrame);
+	nite::Status niteRc = userTracker->readFrame(&userTrackerFrame);
 	if (niteRc != NITE_STATUS_OK)
 	{
 		printf("Get next frame failed\n");
@@ -180,14 +180,14 @@ void testApp::onNewFrame( VideoStream& stream )
 		const nite::UserData& user = users[i];
 		if (user.getState() == nite::USER_STATE_NEW)
 		{
-			userTracker.startSkeletonTracking(user.getId());
+			userTracker->startSkeletonTracking(user.getId());
 		}
 		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
 		{
 			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
 			if (head.getPositionConfidence() > .5)
 			{
-				userTracker.convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
+				userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
 				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
 			}
 
@@ -202,15 +202,15 @@ void testApp::exit(){
 
 	delete gui4; 
 
+	//if(userTracker) delete(userTracker);
+
 	depthStream.removeListener(this);
 	depthStream.stop();
 	depthStream.destroy();
 	device.close();
 
-	std::exit(1); //avoid crash in nite tracker. TODO remove
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
-
 }
 
 int testApp::setupNite()
@@ -224,7 +224,8 @@ int testApp::setupNite()
 		return 1;
 	}
 
-	niteRc = userTracker.create();
+	userTracker = new nite::UserTracker;
+	niteRc = userTracker->create();
 	if (niteRc != NITE_STATUS_OK)
 	{
 		printf("Couldn't create user tracker\n");

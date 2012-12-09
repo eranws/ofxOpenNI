@@ -73,7 +73,7 @@ private:
 	ofVec2f headScreenPos;
 
 	nite::UserTrackerFrameRef userTrackerFrame;
-	nite::UserTracker userTracker;
+	nite::UserTracker* userTracker;
 
 };
 
