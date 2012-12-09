@@ -86,9 +86,18 @@ private:
 
 	static const int handImageCount = 4;
 	ofImage hand[handImageCount];
-	ofPoint handPos;
+	ofVec2f handPos;
 	ofVec2f handSize;
 	float handSizeFactor;
+
+
+	ofImage text;
+	ofVec2f textPos;
+	ofVec2f textSize;
+	float textSizeFactor;
+	ofVec2f textAnimationTarget;
+	ofVec2f textAnimation;
+
 
 	float red, green, blue; 
 

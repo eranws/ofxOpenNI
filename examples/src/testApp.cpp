@@ -48,6 +48,14 @@ void testApp::setup(){
 	handSize = ofVec2f(hand[0].getWidth(), hand[0].getHeight());
 	handSizeFactor = 2.0f;
 
+
+	text.loadImage("graphics/text/text-1.gif");
+	text.setAnchorPercent(0.5, 0.5); 
+	textSize = ofVec2f(text.getWidth(), text.getHeight());
+	textPos = ofVec2f(ofGetWindowWidth() * 230.0f/290.0f, ofGetWindowHeight() * 140.0f/210.0f);
+	textSizeFactor = 0.4f;
+
+
 	windowResized(ofGetWindowWidth(), ofGetWindowHeight());
 	setGUI4();
 
@@ -191,6 +199,22 @@ void testApp::draw()
 		offset *= hand[0].getWidth() / 100;
 		hand[handIndex].draw(handPos.x - offset, handPos.y, handSize.x * handSizeFactor, handSize.y * handSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
+		if (ofGetFrameNum() % 100 == 0)
+		{
+			textAnimation = ofVec2f();
+			textAnimationTarget = ofVec2f(ofGetWindowWidth() * 2, 0);
+		}
+		else
+		{
+			if (ofGetFrameNum() % 10 == 0)
+			{
+				textAnimationTarget = ofVec2f(ofRandomf(), ofRandomf()) * 10;
+			}
+		}
+		
+		textAnimation.interpolate(textAnimationTarget, 0.2f);
+
+		text.draw(textPos + textAnimation, textSize.x * textSizeFactor, textSize.y * textSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
 	
 
