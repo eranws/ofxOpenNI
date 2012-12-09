@@ -54,8 +54,14 @@ private:
 	ofShortPixels* depthPixelsDoubleBuffer[2];
 	ofPixels* colorPixelsDoubleBuffer[2];
 
+	ofShortPixels* userPixelsDoubleBuffer[2];
+
 	ofTexture depthTexture;
 	ofTexture colorTexture;
+	
+	ofTexture usersTexture;
+	ofTexture frontUserColorTexture;
+
 
 	void setGUI4(); 	    
 	ofxUIScrollableCanvas *gui4;

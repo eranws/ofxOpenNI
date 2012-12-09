@@ -55,12 +55,53 @@ void testApp::update(){
 			}
 		}
 		depthTexture.loadData(depthColorPixels);
+
+
+
+		ofShortPixels* userPixels = userPixelsDoubleBuffer[0];
+		ofPixels userColorPixels;
+		userColorPixels.allocate(userPixels->getWidth(), userPixels->getHeight(), OF_IMAGE_COLOR);
+
+		unsigned short* u = userPixels->getPixels();
+		for (int i=0; i < userPixels->size(); i++)
+		{
+			unsigned short& k = u[i];
+			{
+				userColorPixels[3*i + 0] = k * 50;
+				userColorPixels[3*i + 1] = k * 50;
+				userColorPixels[3*i + 2] = k * 50;
+			}
+		}
+		usersTexture.loadData(userColorPixels);
 	}
 
 	if (colorStream.isValid())
 	{
 		ofPixels* colorPixels = colorPixelsDoubleBuffer[0];
 		colorTexture.loadData(*colorPixels);
+
+		ofShortPixels* frontUserPixels = userPixelsDoubleBuffer[0];
+		ofPixels frontUserColorPixels;
+		frontUserColorPixels.allocate(frontUserPixels->getWidth(), frontUserPixels->getHeight(), OF_IMAGE_COLOR);
+
+		unsigned short* u = frontUserPixels->getPixels();
+		
+		unsigned char* c = colorPixels->getPixels();
+
+		for (int i=0; i < frontUserPixels->size(); i++)
+		{
+			unsigned short& k = u[i];
+
+			if (k!=0)
+			{
+				frontUserColorPixels[3*i + 0] = c[3*i + 0];
+				frontUserColorPixels[3*i + 1] = c[3*i + 1];
+				frontUserColorPixels[3*i + 2] = c[3*i + 2];
+			}
+		}
+		frontUserColorTexture.loadData(frontUserColorPixels);
+
+
 	}
 
 
@@ -84,6 +125,8 @@ void testApp::draw()
 
 	ofSetHexColor(0xffffff);
 	colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
+	
+	frontUserColorTexture.draw(500,0);
 
 	for (HeadMap::iterator it = headMap.begin(); it != headMap.end(); it++)
 	{
@@ -95,12 +138,8 @@ void testApp::draw()
 
 		ofCircle(pos, 10); //debug
 
-
 		float itemSizeFactor = falafelSizeFactor * 1000 / it->second.z; //according to head distance
-
 		item.draw(pos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
-
-		//falafels
 	}
 
 
@@ -179,10 +218,13 @@ int testApp::setupOpenNi()
 	int dw = depthStream.getVideoMode().getResolutionX();
 	int dh = depthStream.getVideoMode().getResolutionY();
 	depthTexture.allocate(dw, dh, GL_RGB);
+	usersTexture.allocate(dw, dh, GL_RGB);
+	frontUserColorTexture.allocate(dw, dh, GL_RGB);
 
 	int cw = colorStream.getVideoMode().getResolutionX();
 	int ch = colorStream.getVideoMode().getResolutionY();
 	colorTexture.allocate(dw, dh, GL_RGB);
+
 
 	for (int i=0 ; i<2; i++)
 	{
@@ -191,6 +233,10 @@ int testApp::setupOpenNi()
 
 		colorPixelsDoubleBuffer[i] = new ofPixels();
 		colorPixelsDoubleBuffer[i]->allocate(cw, ch, OF_IMAGE_COLOR);
+
+		userPixelsDoubleBuffer[i] = new ofShortPixels();
+		userPixelsDoubleBuffer[i]->allocate(dw, dh, OF_IMAGE_GRAYSCALE);
+
 	}
 
 	return 0;
@@ -232,6 +278,14 @@ void testApp::onNewFrame( VideoStream& stream )
 			}
 
 			const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+
+			const nite::UserMap userMap = userTrackerFrame.getUserMap();
+			
+			const unsigned short* userData = (const unsigned short*)userMap.getPixels();
+			userPixelsDoubleBuffer[1]->setFromPixels(userData, userMap.getWidth(), userMap.getHeight(), OF_IMAGE_GRAYSCALE);
+			swap(userPixelsDoubleBuffer[0], userPixelsDoubleBuffer[1]);
+
+
 			for (int i = 0; i < users.getSize(); ++i)
 			{
 				const nite::UserData& user = users[i];
@@ -250,6 +304,9 @@ void testApp::onNewFrame( VideoStream& stream )
 						printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
 						headMap[user.getId()] = ofPoint(headScreenPos.x, headScreenPos.y, head.getPosition().z);
 					}
+
+
+
 				}
 				else
 				{
