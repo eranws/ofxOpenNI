@@ -74,6 +74,29 @@ void testApp::draw()
 		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
 	}
 
+	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
+	for (int i = 0; i < users.getSize(); ++i)
+	{
+		const nite::UserData& user = users[i];
+		if (user.isNew())
+		{
+			userTracker->startSkeletonTracking(user.getId());
+			printf("%d.", user.getId());
+		}
+		else printf("%d\n", user.getSkeleton().getState());
+		if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
+		{
+			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
+			if (head.getPositionConfidence() > .5)
+			{
+				ofVec2f headScreenPos;
+				userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
+				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
+				ofCircle(ofPoint(headScreenPos), 10);
+			}
+
+		}
+	}
 
 
 }
@@ -174,29 +197,11 @@ void testApp::onNewFrame( VideoStream& stream )
 	{
 		printf("Get next frame failed\n");
 	}
-
-	const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
-	for (int i = 0; i < users.getSize(); ++i)
+	else
 	{
-		const nite::UserData& user = users[i];
-		if (user.isNew())
-		{
-			userTracker->startSkeletonTracking(user.getId());
-			printf("%d.", user.getId());
-		}
-		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
-		{
-			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
-			if (head.getPositionConfidence() > .5)
-			{
-				ofVec2f headScreenPos;
-				userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
-				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
-				ofCircle(ofPoint(headScreenPos), 10);
-			}
-
-		}
+//		swap(userTrackerFrame[0], userTrackerFrame[1]);
 	}
+
 }
 
 
@@ -236,6 +241,10 @@ int testApp::setupNite()
 		return 3;
 	}
 
+	for (int i=0 ; i<2; i++)
+	{
+//		userTrackerFrame[i] = new nite::UserTrackerFrameRef; 
+	}
 
 	return 0;
 }
