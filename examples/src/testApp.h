@@ -14,6 +14,16 @@
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
 
+
+struct XHead
+{
+	nite::UserId id;
+	ofVec3f pos;
+
+	friend bool operator<(XHead& a, XHead& b);
+
+};
+
 class testApp : public ofBaseApp, public openni::VideoStream::Listener, public openni::OpenNI::Listener, nite::UserTracker::Listener
 {
 
@@ -81,8 +91,9 @@ private:
 	nite::UserTrackerFrameRef userTrackerFrame;
 	nite::UserTracker* userTracker;
 
-	typedef std::map<nite::UserId, ofVec3f> HeadMap;
-	HeadMap headMap;
+	typedef std::vector<XHead> HeadMap;
+	HeadMap* headMaps[2];
+
 
 	bool _closing;
 };

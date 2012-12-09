@@ -5,6 +5,13 @@
 using namespace openni;
 using namespace nite;
 
+
+
+bool operator<(XHead& a, XHead& b)
+{
+	return a.pos.z < b.pos.z;
+}
+
 //--------------------------------------------------------------
 void testApp::setup(){	
 
@@ -14,6 +21,11 @@ void testApp::setup(){
 	//ofSetFrameRate(300);
 	ofSetVerticalSync(true);
 
+//	glEnable(GL_DEPTH_TEST);
+	for (int i = 0; i < 2; i++)
+	{
+		headMaps[i] = new HeadMap;
+	}
 	setupOpenNi();
 	setupNite();
 
@@ -75,34 +87,6 @@ void testApp::update(){
 		usersTexture.loadData(userColorPixels);
 	}
 
-	if (colorStream.isValid())
-	{
-		ofPixels* colorPixels = colorPixelsDoubleBuffer[0];
-		colorTexture.loadData(*colorPixels);
-
-		ofShortPixels* frontUserPixels = userPixelsDoubleBuffer[0];
-		ofPixels frontUserColorPixels;
-		frontUserColorPixels.allocate(frontUserPixels->getWidth(), frontUserPixels->getHeight(), OF_IMAGE_COLOR);
-
-		unsigned short* u = frontUserPixels->getPixels();
-		
-		unsigned char* c = colorPixels->getPixels();
-
-		for (int i=0; i < frontUserPixels->size(); i++)
-		{
-			unsigned short& k = u[i];
-
-			if (k!=0)
-			{
-				frontUserColorPixels[3*i + 0] = c[3*i + 0];
-				frontUserColorPixels[3*i + 1] = c[3*i + 1];
-				frontUserColorPixels[3*i + 2] = c[3*i + 2];
-			}
-		}
-		frontUserColorTexture.loadData(frontUserColorPixels);
-
-
-	}
 
 
 }
@@ -112,8 +96,7 @@ void testApp::update(){
 
 void testApp::draw()
 {
-//	bgImage.draw(400,400);
-
+	//	bgImage.draw(400,400);
 	if (drawDebug && drawOpenNiDebug)
 	{
 		ofSetHexColor(0xffffff);
@@ -121,30 +104,77 @@ void testApp::draw()
 		ofSetHexColor(0x333333);
 		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
 	}
-	
+
 
 	ofSetHexColor(0xffffff);
 	colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
-	
-	frontUserColorTexture.draw(500,0);
 
-	for (HeadMap::iterator it = headMap.begin(); it != headMap.end(); it++)
+
+	if (colorStream.isValid())
 	{
+		ofPixels* colorPixels = colorPixelsDoubleBuffer[0];
+		colorTexture.loadData(*colorPixels);
 
-		ofPoint pos;
-	
-		pos.x = it->second.x * ofGetWindowWidth() / colorStream.getVideoMode().getResolutionX();
-		pos.y = it->second.y * ofGetWindowHeight() / colorStream.getVideoMode().getResolutionY();
+		HeadMap* headMap0 = headMaps[0];
+		HeadMap headMap = *headMap0;
 
-		ofCircle(pos, 10); //debug
+		sort(headMap.begin(), headMap.end());
+		
+		for (HeadMap::reverse_iterator it = headMap.rbegin(); it != headMap.rend(); it++)
+		{
+			ofShortPixels* frontUserPixels = userPixelsDoubleBuffer[0];
+			ofPixels frontUserColorPixels;
+			frontUserColorPixels.allocate(frontUserPixels->getWidth(), frontUserPixels->getHeight(), OF_IMAGE_COLOR_ALPHA);
 
-		float itemSizeFactor = falafelSizeFactor * 1000 / it->second.z; //according to head distance
-		item.draw(pos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+			unsigned short* u = frontUserPixels->getPixels();
+			unsigned char* c = colorPixels->getPixels();
+
+			for (int i=0; i < frontUserPixels->size(); i++)
+			{
+				unsigned short& k = u[i];
+
+				if (k == it->id)
+				{
+					frontUserColorPixels[4*i + 0] = c[3*i + 0];
+					frontUserColorPixels[4*i + 1] = c[3*i + 1];
+					frontUserColorPixels[4*i + 2] = c[3*i + 2];
+					frontUserColorPixels[4*i + 3] = 0xff;
+
+				}
+				else
+				{
+					frontUserColorPixels[4*i + 0] = 0;
+					frontUserColorPixels[4*i + 1] = 0;
+					frontUserColorPixels[4*i + 2] = 0;
+					frontUserColorPixels[4*i + 3] = 0;
+
+				}
+			}
+			frontUserColorTexture.loadData(frontUserColorPixels);
+
+			ofPoint poss(0, 0, -it->pos.z);
+			frontUserColorTexture.draw(poss, ofGetWindowWidth(), ofGetWindowHeight());
+
+
+
+			ofPoint pos;
+
+			pos.x = it->pos.x * ofGetWindowWidth() / colorStream.getVideoMode().getResolutionX();
+			pos.y = it->pos.y * ofGetWindowHeight() / colorStream.getVideoMode().getResolutionY();
+			pos.z = it->pos.z;
+
+			ofCircle(pos, 20); //debug
+
+			if (it->id != headMap[0].id)
+			{
+				float itemSizeFactor = falafelSizeFactor * 1000 / it->pos.z; //according to head distance
+				item.draw(pos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+			}
+		}
+
+
 	}
-
-
 }
-
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){ 
 
@@ -205,6 +235,7 @@ int testApp::setupOpenNi()
 		}
 	}
 
+
 	if (device.getSensorInfo(openni::SENSOR_COLOR) != NULL)
 	{
 		rc = colorStream.create(device, SENSOR_COLOR);
@@ -214,12 +245,19 @@ int testApp::setupOpenNi()
 		}
 	}
 
+	rc = device.setImageRegistrationMode(IMAGE_REGISTRATION_DEPTH_TO_COLOR);
+	if (rc != ONI_STATUS_OK)
+	{
+		printf("setImageRegistrationMode Error: \n%s\n", OpenNI::getExtendedError());
+	}
+
+
 
 	int dw = depthStream.getVideoMode().getResolutionX();
 	int dh = depthStream.getVideoMode().getResolutionY();
 	depthTexture.allocate(dw, dh, GL_RGB);
 	usersTexture.allocate(dw, dh, GL_RGB);
-	frontUserColorTexture.allocate(dw, dh, GL_RGB);
+	frontUserColorTexture.allocate(dw, dh, GL_RGBA);
 
 	int cw = colorStream.getVideoMode().getResolutionX();
 	int ch = colorStream.getVideoMode().getResolutionY();
@@ -280,11 +318,14 @@ void testApp::onNewFrame( VideoStream& stream )
 			const nite::Array<nite::UserData>& users = userTrackerFrame.getUsers();
 
 			const nite::UserMap userMap = userTrackerFrame.getUserMap();
-			
+
 			const unsigned short* userData = (const unsigned short*)userMap.getPixels();
 			userPixelsDoubleBuffer[1]->setFromPixels(userData, userMap.getWidth(), userMap.getHeight(), OF_IMAGE_GRAYSCALE);
 			swap(userPixelsDoubleBuffer[0], userPixelsDoubleBuffer[1]);
 
+			
+			HeadMap* headMap = headMaps[1]; 
+			headMap->clear();
 
 			for (int i = 0; i < users.getSize(); ++i)
 			{
@@ -301,23 +342,20 @@ void testApp::onNewFrame( VideoStream& stream )
 					{
 						ofVec2f headScreenPos;
 						userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
-						printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
-						headMap[user.getId()] = ofPoint(headScreenPos.x, headScreenPos.y, head.getPosition().z);
+						//printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
+						XHead xhead;
+						xhead.id = user.getId();
+						xhead.pos = ofPoint(headScreenPos.x, headScreenPos.y, head.getPosition().z);
+						headMap->push_back(xhead);
 					}
 
 
 
 				}
-				else
-				{
-					headMap.erase(user.getId());
-				}
-
-				if (user.isLost() || !user.isVisible())
-					headMap.erase(user.getId());
-
 
 			}
+			swap(headMaps[0], headMaps[1]);
+
 
 		}
 	}
@@ -337,16 +375,16 @@ void testApp::exit(){
 	/*
 	depthStream.removeListener(this);
 	colorStream.removeListener(this);
-	
+
 	depthStream.stop();
 	colorStream.stop();
-	
+
 	depthStream.destroy();
 	colorStream.destroy();
 	*/
 
 	device.close();
-	
+
 
 	nite::NiTE::shutdown();
 	OpenNI::shutdown();
@@ -438,7 +476,7 @@ void testApp::setGUI4()
 
 	falafelSizeFactor = 0.5;
 	gui4->addWidgetDown(new ofxUICircleSlider((length-xInit)*.5, 0.2, 2.0, &falafelSizeFactor, "FALAFEL SIZE", OFX_UI_FONT_MEDIUM));    
-	
+
 
 	gui4->addSpacer(length-xInit, 2);
 	gui4->addWidgetDown(new ofxUILabel("FPS SLIDER", OFX_UI_FONT_MEDIUM)); 				
