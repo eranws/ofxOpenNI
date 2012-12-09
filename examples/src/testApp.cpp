@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "OpenNI.h"
 using namespace openni;
+using namespace nite;
 
 //--------------------------------------------------------------
 void testApp::setup(){	
@@ -61,8 +62,6 @@ void testApp::update(){
 
 void testApp::draw()
 {
-	ofCircle(ofPoint(headScreenPos), 10);
-
 	bgImage.draw(400,400);
 	item.draw(itemPos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
@@ -74,6 +73,8 @@ void testApp::draw()
 		ofSetHexColor(0x333333);
 		ofDrawBitmapStringHighlight("fps:" + ofToString(ofGetFrameRate()), 10,10);
 	}
+
+
 
 }
 
@@ -105,7 +106,7 @@ void testApp::windowResized(int w, int h){
 
 int testApp::setupOpenNi()
 {
-	Status rc = OpenNI::initialize();
+	openni::Status rc = OpenNI::initialize();
 	if (rc != ONI_STATUS_OK)
 	{
 		printf("Initialize failed\n%s\n", OpenNI::getExtendedError());
@@ -113,7 +114,7 @@ int testApp::setupOpenNi()
 	}
 	OpenNI::addListener(this);
 
-	rc = device.open(ONI_ANY_DEVICE);
+	rc = device.open(0);
 	if (rc != ONI_STATUS_OK)
 	{
 		printf("Couldn't open device\n%s\n", OpenNI::getExtendedError());
@@ -166,7 +167,7 @@ void testApp::onNewFrame( VideoStream& stream )
 	depthPixelsDoubleBuffer[1]->setFromPixels(data, depthFrame.getWidth(), depthFrame.getHeight(), OF_IMAGE_GRAYSCALE);
 
 	//depthPixelsDoubleBuffer[0] = depthPixelsDoubleBuffer[1];
-	InterlockedExchangePointer(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
+	swap(depthPixelsDoubleBuffer[0],depthPixelsDoubleBuffer[1]);
 
 	nite::Status niteRc = userTracker->readFrame(&userTrackerFrame);
 	if (niteRc != NITE_STATUS_OK)
@@ -178,17 +179,20 @@ void testApp::onNewFrame( VideoStream& stream )
 	for (int i = 0; i < users.getSize(); ++i)
 	{
 		const nite::UserData& user = users[i];
-		if (user.getState() == nite::USER_STATE_NEW)
+		if (user.isNew())
 		{
 			userTracker->startSkeletonTracking(user.getId());
+			printf("%d.", user.getId());
 		}
 		else if (user.getSkeleton().getState() == nite::SKELETON_TRACKED)
 		{
 			const nite::SkeletonJoint& head = user.getSkeleton().getJoint(nite::JOINT_HEAD);
 			if (head.getPositionConfidence() > .5)
 			{
+				ofVec2f headScreenPos;
 				userTracker->convertJointCoordinatesToDepth(head.getPosition().x,head.getPosition().y,head.getPosition().z,&headScreenPos.x, &headScreenPos.y);
 				printf("%d. (%5.2f, %5.2f, %5.2f)\n", user.getId(), head.getPosition().x, head.getPosition().y, head.getPosition().z);
+				ofCircle(ofPoint(headScreenPos), 10);
 			}
 
 		}
@@ -238,7 +242,7 @@ int testApp::setupNite()
 
 int testApp::start()
 {
-	Status rc = depthStream.start();
+	openni::Status rc = depthStream.start();
 	if (rc != ONI_STATUS_OK)
 	{
 		printf("Couldn't start the depth stream\n%s\n", OpenNI::getExtendedError());

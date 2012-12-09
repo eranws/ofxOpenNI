@@ -70,7 +70,6 @@ private:
 
 	float red, green, blue; 
 
-	ofVec2f headScreenPos;
 
 	nite::UserTrackerFrameRef userTrackerFrame;
 	nite::UserTracker* userTracker;
