@@ -186,7 +186,10 @@ void testApp::draw()
 		}
 
 		int handIndex = (ofGetElapsedTimeMillis() % 1000) / 250;
-		hand[handIndex].draw(handPos, handSize.x * handSizeFactor, handSize.y * handSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+
+		float offset = abs(sinf((ofGetElapsedTimeMillis() % 1000) * 6.28f / 1000.0f ));
+		offset *= hand[0].getWidth() / 100;
+		hand[handIndex].draw(handPos.x - offset, handPos.y, handSize.x * handSizeFactor, handSize.y * handSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
 
 
 	
