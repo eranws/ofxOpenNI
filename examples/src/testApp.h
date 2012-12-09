@@ -82,8 +82,12 @@ private:
 	ofImage bgImage;
 	//TODO: make a collection of these...
 	ofImage item;
-	ofPoint itemPos;
 	ofVec2f itemSize;
+
+	static const int handImageCount = 4;
+	ofImage hand[handImageCount];
+	ofPoint handPos;
+
 
 	float red, green, blue; 
 

@@ -34,6 +34,18 @@ void testApp::setup(){
 	item.setAnchorPercent(0.5, 0.6); 
 	itemSize = ofVec2f(item.getWidth(), item.getHeight());
 
+
+	for (int i=0; i<handImageCount; i++)
+	{
+		stringstream ss;
+		ss << "graphics/hand/hand-" << i + 1 << ".gif";
+		hand[i].loadImage(ss.str());
+		hand[i].setAnchorPercent(0.7, 0.5); 
+		//itemSize = ofVec2f(item.getWidth(), item.getHeight());
+	}
+	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.75 );
+
+	windowResized(ofGetWindowWidth(), ofGetWindowHeight());
 	setGUI4();
 
 	start();
@@ -44,8 +56,6 @@ void testApp::setup(){
 void testApp::update(){
 	debugString = stringstream();
 	mg->addPoint(ofGetFrameRate());
-
-	itemPos = ofVec2f(mouseX, mouseY);
 
 
 	if (depthStream.isValid())
@@ -172,6 +182,11 @@ void testApp::draw()
 			}
 		}
 
+		int handIndex = (ofGetElapsedTimeMillis() % 1000) / 250;
+		hand[handIndex].draw(handPos);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+
+
+	
 
 	}
 }
@@ -197,7 +212,7 @@ void testApp::mouseMoved(int x, int y )
 
 //--------------------------------------------------------------
 void testApp::windowResized(int w, int h){
-
+	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.75 );
 }
 
 
