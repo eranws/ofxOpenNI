@@ -147,7 +147,7 @@ void testApp::update(){
 void testApp::draw()
 {
 	//	bgImage.draw(400,400);
-	if (drawDebug && drawOpenNiDebug)
+	if (0 && drawDebug && drawOpenNiDebug)
 	{
 		ofSetHexColor(0xffffff);
 		depthTexture.draw(100,100);
@@ -163,20 +163,22 @@ void testApp::draw()
 		colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 	}
 
+	int bgIndex = (ofGetElapsedTimeMillis() % 1000) / 500;
 	if (animateBg) //state 2
 	{
 		if (bgProgress < 1.0f)
 		{
-			bgProgress += 0.04;
+			bgProgress += 0.02f;
 		}
 		else
 		{
 			drawColorBackground = false;
+			bgImage[bgIndex].draw(0, 0, bgSize.x, bgSize.y);
 		}
 
-		int bgIndex = (ofGetElapsedTimeMillis() % 1000) / 500;
+		if (bgProgress > 1.0f) bgProgress = 1.0f;
 		bgImage[bgIndex].setAnchorPercent(-1.0 + bgProgress, 0);
-		bgImage[bgIndex].draw(0, 0, bgSize.x, bgSize.y);
+
 	}
 	else
 	{
@@ -226,6 +228,12 @@ void testApp::draw()
 			}
 			frontUserColorTexture.loadData(frontUserColorPixels);
 
+
+			if (animateBg && it->id == headMap[0].id)
+			{
+				bgImage[bgIndex].draw(0, 0, bgSize.x, bgSize.y);
+			}
+
 			ofPoint poss(0, 0, -it->pos.z);
 			frontUserColorTexture.draw(poss, ofGetWindowWidth(), ofGetWindowHeight());
 
@@ -237,12 +245,22 @@ void testApp::draw()
 			pos.y = it->pos.y * ofGetWindowHeight() / colorStream.getVideoMode().getResolutionY();
 			pos.z = it->pos.z;
 
-			ofCircle(pos, 20); //debug
+			//ofCircle(pos, 20); //debug
 
 			if (it->id == headMap[0].id)
 			{
+
 				float f = 1000.0 / it->pos.z;
 				crown.draw(pos, crownSize.x * crownSizeFactor * f, crownSize.y * crownSizeFactor * f);
+
+				if (pos.x > 0.9f * ofGetWindowWidth())
+				{
+					if (!animateBg)
+					{
+						toggleState(); 
+					}
+
+				}
 			}
 			else
 			{
@@ -293,7 +311,7 @@ void testApp::keyPressed(int key){
 	{	
 	case 'f': ofToggleFullscreen(); break;
 	case 'g': gui4->toggleVisible(); break;
-	case ' ': animateBg = !animateBg; break;
+	case ' ': toggleState(); break;
 
 	}
 
@@ -688,5 +706,11 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 		cout << output << endl; 
 	}
 }
+
+void testApp::toggleState()
+{
+	animateBg = !animateBg;
+}
+
 
 

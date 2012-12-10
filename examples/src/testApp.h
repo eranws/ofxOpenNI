@@ -74,6 +74,7 @@ private:
 
 
 	void setGUI4(); 	    
+	void toggleState();
 	ofxUIScrollableCanvas *gui4;
 	ofxUIMovingGraph *mg; 
 	float buffer[256]; 
