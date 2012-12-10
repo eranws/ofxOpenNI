@@ -81,6 +81,19 @@ void testApp::setup(){
 	}
 
 
+	for (int i=0; i<yhImageCount; i++)
+	{
+		stringstream ss;
+		ss << "graphics/yosefhead/yosef-head" << i+1 << ".gif"; //depends on resolution
+		yhImage[i].loadImage(ss.str());
+		yhImage[i].setAnchorPercent(0.4f, 0.8f); 
+	}
+
+	yhSize = ofVec2f(yhImage[0].getWidth(), yhImage[0].getHeight());
+	yhSizeFactor = 0.5f;
+
+	
+
 	drawColorBackground = true;
 	bgProgress = 0.0f;
 	animateBg = false;
@@ -164,6 +177,7 @@ void testApp::draw()
 	}
 
 	int bgIndex = (ofGetElapsedTimeMillis() % 1000) / 500;
+	int yhIndex = (ofGetElapsedTimeMillis() % 800) / 400;
 	if (animateBg) //state 2
 	{
 		if (bgProgress < 1.0f)
@@ -174,6 +188,8 @@ void testApp::draw()
 		{
 			drawColorBackground = false;
 			bgImage[bgIndex].draw(0, 0, bgSize.x, bgSize.y);
+			yhImage[yhIndex].draw(yhPos.x, yhPos.y, yhSize.x * yhSizeFactor, yhSize.y * yhSizeFactor);
+
 		}
 
 		if (bgProgress > 1.0f) bgProgress = 1.0f;
@@ -333,6 +349,9 @@ void testApp::windowResized(int w, int h){
 	instPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight());
 
 	bgSize = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight());
+
+	yhPos = ofVec2f(ofGetWindowWidth() * 798.0f / 1191.0f, ofGetWindowHeight() * 253.0f / 842.0f);
+
 }
 
 

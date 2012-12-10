@@ -119,6 +119,13 @@ private:
 	float bgProgress;
 	bool animateBg;
 
+	static const int yhImageCount = 2;
+	ofImage yhImage[yhImageCount];
+	ofVec2f yhSize;
+	ofVec2f yhPos;
+	float yhSizeFactor;
+
+
 
 
 
