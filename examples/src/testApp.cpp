@@ -29,7 +29,6 @@ void testApp::setup(){
 	setupOpenNi();
 	setupNite();
 
-	bgImage.loadImage("graphics/bg.jpg"); //depends on resolution
 	item.loadImage("graphics/falafel.gif");
 	item.setAnchorPercent(0.5, 0.6); 
 	itemSize = ofVec2f(item.getWidth(), item.getHeight());
@@ -71,6 +70,20 @@ void testApp::setup(){
 	crown.setAnchorPercent(0.5, 1.0);
 	crownSize = ofVec2f(crown.getWidth(), crown.getHeight());
 	crownSizeFactor = 0.7f;
+
+
+	for (int i=0; i<bgImageCount; i++)
+	{
+		stringstream ss;
+		ss << "graphics/2ndscreen/falafel-kingdom-" << i+1 << ".gif"; //depends on resolution
+		bgImage[i].loadImage(ss.str());
+		bgImage[i].setAnchorPercent(0, 0); 
+	}
+
+
+	drawColorBackground = true;
+	bgProgress = 0.0f;
+	animateBg = false;
 
 	windowResized(ofGetWindowWidth(), ofGetWindowHeight());
 	setGUI4();
@@ -144,10 +157,34 @@ void testApp::draw()
 
 
 	ofSetHexColor(0xffffff);
-	colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
 
+	if (drawColorBackground)
+	{
+		colorTexture.draw(0, 0, 0, ofGetWindowWidth(), ofGetWindowHeight());
+	}
 
-	if (colorStream.isValid())
+	if (animateBg) //state 2
+	{
+		if (bgProgress < 1.0f)
+		{
+			bgProgress += 0.04;
+		}
+		else
+		{
+			drawColorBackground = false;
+		}
+
+		int bgIndex = (ofGetElapsedTimeMillis() % 1000) / 500;
+		bgImage[bgIndex].setAnchorPercent(-1.0 + bgProgress, 0);
+		bgImage[bgIndex].draw(0, 0, bgSize.x, bgSize.y);
+	}
+	else
+	{
+		bgProgress = 0.0;
+		drawColorBackground = true;
+	}
+
+	if (drawColorBackground && colorStream.isValid())
 	{
 		ofPixels* colorPixels = colorPixelsDoubleBuffer[0];
 		colorTexture.loadData(*colorPixels);
@@ -256,6 +293,8 @@ void testApp::keyPressed(int key){
 	{	
 	case 'f': ofToggleFullscreen(); break;
 	case 'g': gui4->toggleVisible(); break;
+	case ' ': animateBg = !animateBg; break;
+
 	}
 
 }
@@ -274,6 +313,8 @@ void testApp::windowResized(int w, int h){
 	textPos = ofVec2f(ofGetWindowWidth() * 200.0f/290.0f, ofGetWindowHeight() * 100.0f/210.0f);
 	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.7 );
 	instPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight());
+
+	bgSize = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight());
 }
 
 

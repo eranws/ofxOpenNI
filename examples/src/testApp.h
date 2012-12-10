@@ -79,8 +79,6 @@ private:
 	float buffer[256]; 
 	float falafelSizeFactor;
 
-	ofImage bgImage;
-	//TODO: make a collection of these...
 	ofImage item;
 	ofVec2f itemSize;
 
@@ -109,9 +107,18 @@ private:
 	ofVec2f crownPos;
 	ofVec2f crownSize;
 	float crownSizeFactor;
-	
-	//ofVec2f crownAnimationTarget;
-	//ofVec2f crownAnimation;
+
+	static const int bgImageCount = 2;
+	ofImage bgImage[bgImageCount];
+	ofVec2f bgSize;
+	float bgSizeFactor;
+
+
+	bool drawColorBackground;
+	float bgProgress;
+	bool animateBg;
+
+
 
 
 
