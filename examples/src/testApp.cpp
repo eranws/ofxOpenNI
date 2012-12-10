@@ -92,6 +92,11 @@ void testApp::setup(){
 	yhSize = ofVec2f(yhImage[0].getWidth(), yhImage[0].getHeight());
 	yhSizeFactor = 0.5f;
 
+
+	text2.loadImage("graphics/text/text-2.gif");
+	text2.setAnchorPercent(0.5, 1); 
+	text2Size = ofVec2f(text2.getWidth(), text2.getHeight());
+	text2SizeFactor = 0.8f;
 	
 
 	drawColorBackground = true;
@@ -183,21 +188,25 @@ void testApp::draw()
 		if (bgProgress < 1.0f)
 		{
 			bgProgress += 0.02f;
+			if (bgProgress > 1.0f) bgProgress = 1.0f;
+
 		}
 		else
 		{
 			drawColorBackground = false;
 			bgImage[bgIndex].draw(0, 0, bgSize.x, bgSize.y);
 			yhImage[yhIndex].draw(yhPos.x, yhPos.y, yhSize.x * yhSizeFactor, yhSize.y * yhSizeFactor);
-
+	
+			if (text2Animation.y > 0.1f) text2Animation *= 0.99;
+			text2.draw(text2Pos + text2Animation, text2Size.x * text2SizeFactor, text2Size.y * text2SizeFactor);
 		}
 
-		if (bgProgress > 1.0f) bgProgress = 1.0f;
 		bgImage[bgIndex].setAnchorPercent(-1.0 + bgProgress, 0);
 
 	}
 	else
 	{
+		text2Animation = ofVec2f(0, ofGetScreenHeight() / 2);
 		bgProgress = 0.0;
 		drawColorBackground = true;
 	}
@@ -351,6 +360,8 @@ void testApp::windowResized(int w, int h){
 	bgSize = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight());
 
 	yhPos = ofVec2f(ofGetWindowWidth() * 798.0f / 1191.0f, ofGetWindowHeight() * 253.0f / 842.0f);
+
+	text2Pos = ofVec2f(ofGetWindowWidth() * 140.0f/290.0f, ofGetWindowHeight() * 0.95);
 
 }
 

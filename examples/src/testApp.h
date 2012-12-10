@@ -125,6 +125,12 @@ private:
 	ofVec2f yhPos;
 	float yhSizeFactor;
 
+	ofImage text2;
+	ofVec2f text2Pos;
+	ofVec2f text2Size;
+	float text2SizeFactor;
+//	ofVec2f text2AnimationTarget;
+	ofVec2f text2Animation;
 
 
 
