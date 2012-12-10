@@ -44,7 +44,6 @@ void testApp::setup(){
 		//itemSize = ofVec2f(item.getWidth(), item.getHeight());
 
 	}
-	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.75 );
 	handSize = ofVec2f(hand[0].getWidth(), hand[0].getHeight());
 	handSizeFactor = 2.0f;
 
@@ -52,9 +51,26 @@ void testApp::setup(){
 	text.loadImage("graphics/text/text-1.gif");
 	text.setAnchorPercent(0.5, 0.5); 
 	textSize = ofVec2f(text.getWidth(), text.getHeight());
-	textPos = ofVec2f(ofGetWindowWidth() * 230.0f/290.0f, ofGetWindowHeight() * 140.0f/210.0f);
 	textSizeFactor = 0.4f;
 
+
+	for (int i=0; i<instImageCount; i++)
+	{
+		stringstream ss;
+		ss << "graphics/walkinginstruction/walking-instruction" << i << ".gif";
+		inst[i].loadImage(ss.str());
+		inst[i].setAnchorPercent(1, 1); 
+	}
+
+	instSize = ofVec2f(inst[0].getWidth(), inst[0].getHeight());
+	instSizeFactor = 1.0f;
+
+
+	//Crown
+	crown.loadImage("graphics/crown.gif");
+	crown.setAnchorPercent(0.5, 1.0);
+	crownSize = ofVec2f(crown.getWidth(), crown.getHeight());
+	crownSizeFactor = 0.7f;
 
 	windowResized(ofGetWindowWidth(), ofGetWindowHeight());
 	setGUI4();
@@ -186,7 +202,12 @@ void testApp::draw()
 
 			ofCircle(pos, 20); //debug
 
-			if (it->id != headMap[0].id)
+			if (it->id == headMap[0].id)
+			{
+				float f = 1000.0 / it->pos.z;
+				crown.draw(pos, crownSize.x * crownSizeFactor * f, crownSize.y * crownSizeFactor * f);
+			}
+			else
 			{
 				float itemSizeFactor = falafelSizeFactor * 1000 / it->pos.z; //according to head distance
 				item.draw(pos, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
@@ -195,9 +216,10 @@ void testApp::draw()
 
 		int handIndex = (ofGetElapsedTimeMillis() % 1000) / 250;
 
-		float offset = abs(sinf((ofGetElapsedTimeMillis() % 1000) * 6.28f / 1000.0f ));
-		offset *= hand[0].getWidth() / 100;
-		hand[handIndex].draw(handPos.x - offset, handPos.y, handSize.x * handSizeFactor, handSize.y * handSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+		//float offset = abs(sinf((ofGetElapsedTimeMillis() % 1000) * 6.28f / 1000.0f ));
+		//offset *= hand[0].getWidth() / 100;
+		float offset = 0;
+		hand[handIndex].draw(handPos.x - offset, handPos.y, handSize.x * handSizeFactor, handSize.y * handSizeFactor);
 
 		if (ofGetFrameNum() % 100 == 0)
 		{
@@ -214,9 +236,16 @@ void testApp::draw()
 		
 		textAnimation.interpolate(textAnimationTarget, 0.2f);
 
-		text.draw(textPos + textAnimation, textSize.x * textSizeFactor, textSize.y * textSizeFactor);//, itemSize.x * itemSizeFactor, itemSize.y * itemSizeFactor);
+		text.draw(textPos + textAnimation, textSize.x * textSizeFactor, textSize.y * textSizeFactor);
 
-	
+
+		// walking instructions
+		int instIndex = (ofGetElapsedTimeMillis() % 1998) / 111;
+		if (instIndex < instImageCount)
+		{
+			inst[instIndex].draw(instPos.x, instPos.y, instSize.x * instSizeFactor, instSize.y * instSizeFactor);
+		}
+
 
 	}
 }
@@ -242,7 +271,9 @@ void testApp::mouseMoved(int x, int y )
 
 //--------------------------------------------------------------
 void testApp::windowResized(int w, int h){
-	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.75 );
+	textPos = ofVec2f(ofGetWindowWidth() * 200.0f/290.0f, ofGetWindowHeight() * 100.0f/210.0f);
+	handPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight() * 0.7 );
+	instPos = ofVec2f(ofGetWindowWidth(), ofGetWindowHeight());
 }
 
 

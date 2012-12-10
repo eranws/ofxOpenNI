@@ -99,6 +99,22 @@ private:
 	ofVec2f textAnimation;
 
 
+	static const int instImageCount = 9;
+	ofImage inst[instImageCount];
+	ofVec2f instPos;
+	ofVec2f instSize;
+	float instSizeFactor;
+
+	ofImage crown;
+	ofVec2f crownPos;
+	ofVec2f crownSize;
+	float crownSizeFactor;
+	
+	//ofVec2f crownAnimationTarget;
+	//ofVec2f crownAnimation;
+
+
+
 	float red, green, blue; 
 
 
