@@ -1,7 +1,6 @@
 #ifndef _TEST_APP
 #define _TEST_APP
 
-#include "ofxOpenNI.h"
 #include "ofMain.h"
 #include "ofxFaceTrackerThreaded.h"
 #include "..\Scene.h"
@@ -28,10 +27,9 @@ public:
 
 private:
 
-	void handEvent(ofxOpenNIHandEvent & event);
-	void setupOpenNiDevice();
+//	void handEvent(ofxOpenNIHandEvent & event);
 
-	ofxOpenNI openNIDevice;
+//	ofxOpenNI openNIDevice;
 	ofTrueTypeFont verdana;
 
 	ofxFaceTrackerThreaded faceTracker;

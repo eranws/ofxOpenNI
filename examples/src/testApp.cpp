@@ -15,7 +15,7 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
-	setupOpenNiDevice();
+//	setupOpenNiDevice();
 	
 	handCam.setDistance(10);
 	faceTracker.setup();
@@ -31,6 +31,8 @@ void testApp::update(){
 	
 	camString = stringstream();
 	
+#ifdef OPENNI1
+
 	ofxProfileSectionPush("openNIDevice update");
 	openNIDevice.update();
 	ofxProfileSectionPop();
@@ -59,7 +61,9 @@ void testApp::update(){
 		}
 
 	}
+#endif
 
+#ifdef OPENNI1
 	// reset all depthThresholds to 0,0,0
 	for(int i = 0; i < openNIDevice.getMaxNumHands(); i++){
 		ofxOpenNIDepthThreshold & depthThreshold = openNIDevice.getDepthThreshold(i);
@@ -145,6 +149,8 @@ void testApp::update(){
 		}
 
 	}
+#endif
+
 	ofxProfileSectionPop();
 
 }
@@ -162,7 +168,9 @@ void testApp::draw(){
 		ofPushMatrix();
 		ofPushStyle();
 
+#ifdef OPENNI1
 		openNIDevice.drawDebug(); // draw debug (ie., image, depth, skeleton)
+#endif
 		ofPopMatrix();
 		ofxProfileSectionPop();
 	}
@@ -171,7 +179,10 @@ void testApp::draw(){
 
 	
 	stringstream ss;
+#ifdef OPENNI1
 	ss << ofGetFrameRate() << endl << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
+#endif
+
 	ss << ofxProfile::describe();
 	ofDrawBitmapString(ss.str(), 10, 10);
 
@@ -199,7 +210,7 @@ void testApp::draw(){
 		ofPushMatrix();
 
 		const float b = (facePos==ofVec3f()) ? 0 : 0.5;
-		facePos = (b*facePos) + (1-b) * openNIDevice.cameraToWorld(faceTracker.getPosition());
+		//facePos = (b*facePos) + (1-b) * openNIDevice.cameraToWorld(faceTracker.getPosition());
 
 		ofSetColor(ofColor::green);
 		ofSphere(facePos, 5);
@@ -213,6 +224,8 @@ void testApp::draw(){
 
 		ofPopMatrix();
 	}
+
+#ifdef OPENNI1
 
 	// iterate through users
 	int oldestHandIndex = 0;
@@ -292,6 +305,7 @@ void testApp::draw(){
 		}
 
 	}
+#endif
 
 	ofDisableBlendMode();
 	ofPopMatrix();
@@ -332,7 +346,7 @@ void testApp::draw(){
 	camString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
 	camString << "frameRate: " << frameRate << endl;
 	camString << "fps: " << ofGetFrameRate() << endl;
-	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
+//	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
 
 	if (drawDebugString)
 	{
@@ -342,11 +356,13 @@ void testApp::draw(){
 	}
 }
 
+#ifdef OPENNI1
 //--------------------------------------------------------------
 void testApp::handEvent(ofxOpenNIHandEvent & event){
 	// show hand event messages in the console
 	ofLogNotice() << getHandStatusAsString(event.handStatus) << "for hand" << event.id << "from device" << event.deviceID;
 }
+#endif
 
 //--------------------------------------------------------------
 void testApp::exit(){
@@ -354,7 +370,7 @@ void testApp::exit(){
 	faceTracker.stopThread();
 	faceTracker.waitForThread();
 
-	openNIDevice.stop();
+//	openNIDevice.stop();
 }
 
 //--------------------------------------------------------------
@@ -403,6 +419,8 @@ void testApp::windowResized(int w, int h){
 
 }
 
+#ifdef OPENNI1
+
 void testApp::setupOpenNiDevice()
 {
 	openNIDevice.setup();
@@ -444,6 +462,7 @@ void testApp::setupOpenNiDevice()
 
 	openNIDevice.start();
 }
+#endif
 
 
 ofVec3f testApp::Finger::getFilteredPosition(float a)
