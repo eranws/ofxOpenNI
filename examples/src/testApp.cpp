@@ -15,8 +15,10 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
+	ofxOpenNI::init();
 //	setupOpenNiDevice();
-	
+	handTracker.setup();
+
 	handCam.setDistance(10);
 	faceTracker.setup();
 
@@ -27,41 +29,37 @@ void testApp::setup() {
 
 //--------------------------------------------------------------
 void testApp::update(){
+	
+	colorStream.update();
+
 	ofxProfileThisFunction();
 	
 	camString = stringstream();
 	
-#ifdef OPENNI1
-
-	ofxProfileSectionPush("openNIDevice update");
-	openNIDevice.update();
+	ofxProfileSectionPush("handTracker update");
+	handTracker.update();
 	ofxProfileSectionPop();
 
-	if(openNIDevice.isNewFrame()) {
-		ofxProfileSectionPush("faceTracker update");
+	ofxProfileSectionPush("faceTracker update");
+	ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
+	ofPixels ofPixels = colorStream.getPixels();
+	ofxProfileSectionPop();
 
-		ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
-		ofPixels ofPixels = openNIDevice.getImagePixels();
-		ofxProfileSectionPop();
+	ofxProfileSectionPush("cv::Mat mat = 	ofxCv::toCv(ofPixels);");
+	cv::Mat mat = 	ofxCv::toCv(ofPixels);
+	ofxProfileSectionPop();
 
-		ofxProfileSectionPush("cv::Mat mat = 	ofxCv::toCv(ofPixels);");
-		cv::Mat mat = 	ofxCv::toCv(ofPixels);
-		ofxProfileSectionPop();
-
-		ofxProfileSectionPush("faceTracker.update(mat);");
-		faceTracker.update(mat);
-		ofxProfileSectionPop();
-		
-		ofxProfileSectionPop();
-
-		if(!faceTracker.getFound())
-		{
-			facePos = ofVec3f();
-			screenPoint = ofVec2f();
-		}
-
+	ofxProfileSectionPush("faceTracker.update(mat);");
+	faceTracker.update(mat);
+	ofxProfileSectionPop();
+	
+	ofxProfileSectionPop();
+	if(!faceTracker.getFound())
+	{
+		facePos = ofVec3f();
+		screenPoint = ofVec2f();
 	}
-#endif
+
 
 #ifdef OPENNI1
 	// reset all depthThresholds to 0,0,0

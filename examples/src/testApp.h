@@ -5,6 +5,11 @@
 #include "ofxFaceTrackerThreaded.h"
 #include "..\Scene.h"
 
+#include "..\ofxNite2.h"
+#include "..\ofxOpenNi2.h"
+
+
+
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
 
@@ -28,8 +33,10 @@ public:
 private:
 
 //	void handEvent(ofxOpenNIHandEvent & event);
+	
+	ofxColorStream colorStream;
 
-//	ofxOpenNI openNIDevice;
+	ofxNite2 handTracker;
 	ofTrueTypeFont verdana;
 
 	ofxFaceTrackerThreaded faceTracker;
