@@ -16,7 +16,8 @@ void testApp::setup() {
 	ofSetFrameRate(100);
 
 //	setupOpenNiDevice();
-	
+	handTracker.setup();
+
 	handCam.setDistance(10);
 	faceTracker.setup();
 

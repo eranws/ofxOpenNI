@@ -4,6 +4,7 @@
 #include "ofMain.h"
 #include "ofxFaceTrackerThreaded.h"
 #include "..\Scene.h"
+#include "..\ofxHandTracker.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -32,6 +33,7 @@ private:
 //	ofxOpenNI openNIDevice;
 	ofTrueTypeFont verdana;
 
+	ofxHandTracker handTracker;
 	ofxFaceTrackerThreaded faceTracker;
 
 	ofEasyCam handCam;
