@@ -52,10 +52,11 @@ private:
 	Scene scene;
 
 
+	bool showProfilerString;
 	bool drawDebugString;
 	bool drawOpenNiDebug;
 
-	stringstream camString;
+	stringstream debugString;
 
 	ofVec3f facePos;
 	ofVec2f screenPoint;

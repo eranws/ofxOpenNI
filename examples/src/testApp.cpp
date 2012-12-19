@@ -29,7 +29,7 @@ void testApp::setup() {
 void testApp::update(){
 	ofxProfileThisFunction();
 	
-	camString = stringstream();
+	debugString = stringstream();
 	
 #ifdef OPENNI1
 
@@ -132,7 +132,7 @@ void testApp::update(){
 
 			}
 			fingerCoM /= count;
-			camString << "count" << count;
+			debugString << "count" << count;
 
 
 			fingers[i].position.push_front(fingerCoM);
@@ -178,21 +178,14 @@ void testApp::draw(){
 
 
 	
-	stringstream ss;
-#ifdef OPENNI1
-	ss << ofGetFrameRate() << endl << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
-#endif
-
-	ss << ofxProfile::describe();
-	ofDrawBitmapString(ss.str(), 10, 10);
-
+	
 
 	sceneCam.begin();
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
 
 
-#define camlog(x) {camString<<#x<<" : "<<sceneCam.x() << endl;}
+#define camlog(x) {debugString<<#x<<" : "<<sceneCam.x() << endl;}
 	camlog(getDistance);
 	camlog(getPosition);
 	camlog(getOrientationEuler);
@@ -216,7 +209,7 @@ void testApp::draw(){
 		ofSphere(facePos, 5);
 
 		ofTranslate(facePos);
-		camString << "facePos" << facePos;
+		debugString << "facePos" << facePos;
 
 		ofxCv::applyMatrix(faceTracker.getRotationMatrix());
 		//ofRotateY(180.0);
@@ -324,7 +317,7 @@ void testApp::draw(){
 			ofSetColor(255,255,255,1 - 0.1*i);
 			ofCircle(screenPointHistory[ri], 11 - ri);
 		}
-		camString << "screenPoint: " << screenPoint << endl;
+		debugString << "screenPoint: " << screenPoint << endl;
 	}
 
 
@@ -343,17 +336,29 @@ void testApp::draw(){
 
 	// draw some info regarding frame counts etc
 	ofSetColor(0, 255, 0);
-	camString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
-	camString << "frameRate: " << frameRate << endl;
-	camString << "fps: " << ofGetFrameRate() << endl;
+	debugString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
+	debugString << "frameRate: " << frameRate << endl;
+	debugString << "fps: " << ofGetFrameRate() << endl;
 //	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
+
+	
+
+#ifdef OPENNI1
+	debugString << ofGetFrameRate() << endl << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
+#endif
+
+	if (showProfilerString)
+	{
+		debugString << ofxProfile::describe();
+	}
 
 	if (drawDebugString)
 	{
 		ofSetColor(ofColor::green);
-		ofDrawBitmapString(camString.str(), 10, 20);
+		ofDrawBitmapString(debugString.str(), 10, 20);
 		//verdana.drawString(msg, 20, 480 - 20);
 	}
+
 }
 
 #ifdef OPENNI1
@@ -379,6 +384,7 @@ void testApp::keyPressed(int key){
 	{
 	case '1': drawDebugString = !drawDebugString; break;
 	case '2': drawOpenNiDebug = !drawOpenNiDebug; break;
+	case '3': showProfilerString = !showProfilerString; break;
 
 	case 'C': ofxProfile::clear(); break;
 
