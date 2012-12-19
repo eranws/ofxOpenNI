@@ -1,9 +1,9 @@
 #pragma once
 #include "ofEvents.h"
 #include <deque>
+#include "ofThread.h"
 
 class Tracker {};
-
 class TrackerEventArgs{};
 
 // helper function
@@ -21,12 +21,7 @@ public:
 
 TrackerEvents& getTrackerEvents();
 
-namespace nite
-{
-	class HandTracker;
-}
-
-class ofxHandTracker 
+class ofxHandTracker : public ofThread
 {
 
 public:
@@ -34,12 +29,14 @@ public:
 	}
 
 	void setup();
-	nite::HandTracker* handTracker;
-
+	void exit();
 
 
 	std::deque<ofPoint> positionHistory() const { return _positionHistory; }
 	unsigned int historySize() const { return _historySize; }
+
+protected:
+	virtual void threadedFunction();
 
 private:
 	std::deque<ofPoint> _positionHistory;

@@ -19,7 +19,7 @@ void testApp::setup() {
 	handTracker.setup();
 
 	handCam.setDistance(10);
-	faceTracker.setup();
+	//faceTracker.setup();
 
 	sceneCam.setGlobalPosition(0,0,1000);
 
@@ -376,6 +376,7 @@ void testApp::exit(){
 	faceTracker.stopThread();
 	faceTracker.waitForThread();
 
+	handTracker.exit();
 //	openNIDevice.stop();
 }
 
