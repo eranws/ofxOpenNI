@@ -6,44 +6,12 @@
 #include "ofEvents.h"
 #include <deque>
 
-
-/*
-		//raw event input
-		_positionHistory.push_front(ofPoint(float(e.x),float(e.y)));
-		if (_positionHistory.size() <= _historySize)
-		{
-		return;
-		}
-		else
-		{
-		_positionHistory.pop_back();
-		}
-
-		//process
-
-		// example: calculate speed
-		ofPoint speed = _positionHistory.back() - _positionHistory.front();
-		float velocity = speed.length();
-		ofNotifyEvent(getTrackerEvents().velocityUpdate, velocity); //TODO send id
-		*/
-
-		// example of processing: pointInverter
-
-
-		//send Event
-
-
-
-
 TrackerEvents& getTrackerEvents()
 {
 	static TrackerEvents* events = new TrackerEvents;
 	return *events;
 }
-
 TrackerEventArgs bangEventArgs;
-
-
 
 
 
@@ -111,11 +79,35 @@ void ofxHandTracker::threadedFunction()
 				const nite::HandData& hand = hands[i];
 				if (hand.isTracking())
 				{
+					
 					printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
+
+					//raw event input
+					_positionHistory.push_front(ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z));
+					if (_positionHistory.size() <= _historySize)
+					{
+						continue;
+					}
+					else
+					{
+						_positionHistory.pop_back();
+					}
+
+					//process
+
+					// example: calculate speed
+					ofPoint speed = _positionHistory.back() - _positionHistory.front();
+					float velocity = speed.length();
+					ofNotifyEvent(getTrackerEvents().handVelocityUpdate, velocity); //TODO send id
+					ofNotifyEvent(getTrackerEvents().handUpdate, positionHistory().front()); //TODO send id
+
+
 				}
 			}
 		}
 
 		nite::NiTE::shutdown();
 }
+
+
 

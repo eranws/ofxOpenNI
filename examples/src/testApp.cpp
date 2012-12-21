@@ -11,7 +11,6 @@
 //--------------------------------------------------------------
 void testApp::setup() {
 
-	
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
@@ -184,6 +183,27 @@ void testApp::draw(){
 	sceneCam.begin();
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// TODO move to history Filter...
+	std::deque<ofPoint> points = handTracker.positionHistory();
+	for (int i = 0; i < points.size(); i++)
+	{
+		ofSphere(points[i], 10);
+	}
+
+	if (points.size() == handTracker.historySize())
+	{
+		for (int i = 1; i < points.size(); i++)
+		{
+			ofSetLineWidth(points.size() - i);
+			ofLine(points[i-1], points[i]);
+		}
+	}
+
+
+
 
 
 #define camlog(x) {debugString<<#x<<" : "<<sceneCam.x() << endl;}

@@ -26,6 +26,8 @@ public:
 	void mouseReleased(int x, int y, int button);
 	void windowResized(int w, int h);
 
+	void handUpdate(ofPoint& p);
+
 private:
 
 //	void handEvent(ofxOpenNIHandEvent & event);

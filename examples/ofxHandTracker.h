@@ -9,13 +9,13 @@ class TrackerEventArgs{};
 // helper function
 template<class ListenerClass>
 void registerHandTrackerEvents(ListenerClass * listener){
-	ofAddListener(getTrackerEvents().handUpdate, listener, &ListenerClass::velocityUpdate);
+	ofAddListener(getTrackerEvents().handUpdate, listener, &ListenerClass::handUpdate);
 }
 
 class TrackerEvents{
 public:
-	//	ofEvent<float> velocityUpdate;
-	ofEvent<TrackerEventArgs> handUpdate;
+	ofEvent<float> handVelocityUpdate;
+	ofEvent<ofPoint> handUpdate;
 	//TODO: more events here...
 };
 
