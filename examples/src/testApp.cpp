@@ -399,7 +399,9 @@ void testApp::exit(){
 	faceTracker.waitForThread();
 
 	handTracker.exit();
-//	openNIDevice.stop();
+	colorStream.exit();
+	depthStream.exit();
+	oniDevice.exit();
 }
 
 //--------------------------------------------------------------
