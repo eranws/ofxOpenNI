@@ -5,6 +5,8 @@
 #include "ofxFaceTrackerThreaded.h"
 #include "..\Scene.h"
 #include "..\ofxHandTracker.h"
+#include "..\ofxDepthStream.h"
+#include "..\ofxOniDevice.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -32,6 +34,7 @@ private:
 
 //	void handEvent(ofxOpenNIHandEvent & event);
 
+	ofxOniDevice oniDevice;
 	ofxDepthStream depthStream;
 	ofxHandTracker handTracker;
 	ofxFaceTrackerThreaded faceTracker;

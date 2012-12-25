@@ -3,21 +3,27 @@
 #include "OpenNI.h"
 
 
-void ofxDepthStream::setup()
+void ofxDepthStream::setup(ofPtr<openni::Device> device)
 {
-	using namespace openni;
+	this->device = device;
 
-	openni::Status rc = openni::OpenNI::initialize();
-	if (rc != ONI_STATUS_OK)
+	openni::Status rc;
+
+	if (device->getSensorInfo(openni::SENSOR_DEPTH) != NULL)
 	{
-		throw ("Initialize failed\n%s\n", openni::OpenNI::getExtendedError());
+		stream = ofPtr<openni::VideoStream>(new openni::VideoStream);
+		rc = stream->create(*device, openni::SENSOR_DEPTH);
+		if (rc != openni::STATUS_OK)
+		{
+			throw ("Couldn't create depth stream\n%s\n", openni::OpenNI::getExtendedError());
+		}
 	}
 
-	device = new openni::Device;
-	rc = device->open(ANY_DEVICE);
-	if (rc != ONI_STATUS_OK)
+	rc = stream->start();
+	if (rc != openni::STATUS_OK)
 	{
-		throw ("Couldn't open device\n%s\n", OpenNI::getExtendedError());
+		throw ("Couldn't start the depth stream\n%s\n", openni::OpenNI::getExtendedError());
+
 	}
 
 	startThread(false, true);
@@ -31,55 +37,33 @@ void ofxDepthStream::exit()
 
 void ofxDepthStream::threadedFunction()
 {
-	using namespace openni;
 	openni::Status rc;
-	
-	openni::VideoStream depth;
 
-	if (device->getSensorInfo(SENSOR_DEPTH) != NULL)
-	{
-		rc = depth.create(*device, SENSOR_DEPTH);
-		if (rc != STATUS_OK)
-		{
-			throw ("Couldn't create depth stream\n%s\n", OpenNI::getExtendedError());
-		}
-	}
-
-	rc = depth.start();
-	if (rc != STATUS_OK)
-	{
-		throw ("Couldn't start the depth stream\n%s\n", OpenNI::getExtendedError());
-		
-	}
-
-	VideoFrameRef frame;
-
+	openni::VideoFrameRef frame;
 	while (isThreadRunning())
 	{
-		rc = depth.readFrame(&frame);
-		if (rc != STATUS_OK)
+		rc = stream->readFrame(&frame);
+		if (rc != openni::STATUS_OK)
 		{
 			printf("Wait failed\n");
 			continue;
 		}
 
-		if (frame.getVideoMode().getPixelFormat() != PIXEL_FORMAT_DEPTH_1_MM && frame.getVideoMode().getPixelFormat() != PIXEL_FORMAT_DEPTH_100_UM)
+		if (frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_1_MM && frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_100_UM)
 		{
 			printf("Unexpected frame format\n");
 			continue;
 		}
 
-		DepthPixel* pDepth = (DepthPixel*)frame.getData();
+		openni::DepthPixel* pDepth = (openni::DepthPixel*)frame.getData();
 		int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
 		
-		printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], depth.getVideoMode().getFps());
+		printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], stream->getVideoMode().getFps());
 
 	}
 
-	depth.stop();
-	depth.destroy();
-	device->close();
-	OpenNI::shutdown();
+	stream->stop();
+	stream->destroy();
 
 }
 

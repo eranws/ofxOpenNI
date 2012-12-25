@@ -14,7 +14,7 @@ TrackerEventArgs bangEventArgs;
 
 
 
-void ofxHandTracker::setup(openni::Device* device)
+void ofxHandTracker::setup(ofPtr<openni::Device> device)
 {
 	nite::Status niteRc;
 	niteRc = nite::NiTE::initialize();
@@ -40,7 +40,7 @@ void ofxHandTracker::threadedFunction()
 		nite::HandTrackerFrameRef handTrackerFrame;	
 		nite::Status niteRc;
 
-		niteRc = handTracker.create(device);
+		niteRc = handTracker.create(device.get());
 		if (niteRc != nite::STATUS_OK)
 		{
 			throw ("Couldn't create user tracker\n");

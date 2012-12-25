@@ -46,6 +46,7 @@
     </ClCompile>
     <ClCompile Include="ofxHandTracker.cpp" />
     <ClCompile Include="ofxDepthStream.cpp" />
+    <ClCompile Include="ofxOniDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.h">
@@ -96,6 +97,7 @@
     </ClInclude>
     <ClInclude Include="ofxHandTracker.h" />
     <ClInclude Include="ofxDepthStream.h" />
+    <ClInclude Include="ofxOniDevice.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">

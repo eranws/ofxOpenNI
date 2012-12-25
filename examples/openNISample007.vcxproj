@@ -146,6 +146,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClCompile Include="..\..\ofxProfile\src\ofxProfile.cpp" />
     <ClCompile Include="ofxDepthStream.cpp" />
     <ClCompile Include="ofxHandTracker.cpp" />
+    <ClCompile Include="ofxOniDevice.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\testApp.cpp" />
@@ -258,6 +259,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="..\..\ofxProfile\src\ofxProfile.h" />
     <ClInclude Include="ofxDepthStream.h" />
     <ClInclude Include="ofxHandTracker.h" />
+    <ClInclude Include="ofxOniDevice.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="src\testApp.h" />
   </ItemGroup>

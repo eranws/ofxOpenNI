@@ -34,7 +34,7 @@ public:
 	{
 	}
 
-	void setup(openni::Device* device = 0);
+	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>());
 	void exit();
 
 
@@ -47,7 +47,7 @@ protected:
 private:
 	std::deque<ofPoint> _positionHistory;
 	unsigned int _historySize;
-	openni::Device* device;
+	ofPtr<openni::Device> device;
 };
 
 

@@ -4,6 +4,7 @@
 namespace openni
 {
 	class Device;
+	class VideoStream;
 }
 
 class ofxDepthStream : public ofThread
@@ -11,14 +12,15 @@ class ofxDepthStream : public ofThread
 
 public:
 
-	void setup();
+	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>());
 	void exit();
 
-	openni::Device* getDevice() const { return device; }
+	ofPtr<openni::Device> getDevice() const { return device; }
 
 protected:
 	virtual void threadedFunction();
 
-	openni::Device* device;
+	ofPtr<openni::Device> device;
+	ofPtr<openni::VideoStream> stream;
 	
 };

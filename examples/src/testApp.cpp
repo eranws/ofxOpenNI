@@ -12,7 +12,8 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
-	depthStream.setup();
+	oniDevice.setup();
+	depthStream.setup(oniDevice.getDevice());
 	handTracker.setup(depthStream.getDevice());
 
 	handCam.setDistance(10);
