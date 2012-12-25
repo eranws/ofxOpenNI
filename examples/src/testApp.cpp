@@ -174,7 +174,11 @@ void testApp::draw(){
 	}
 
 
-
+	ofTexture t;
+	ofPixels p = *colorStream.getPixels(); 
+	t.allocate(p);
+	t.loadData(p);
+	t.draw(0,0);
 	
 	
 
