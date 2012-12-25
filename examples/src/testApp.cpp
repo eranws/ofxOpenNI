@@ -14,6 +14,7 @@ void testApp::setup() {
 
 	oniDevice.setup();
 	depthStream.setup(oniDevice.getDevice());
+	colorStream.setup(oniDevice.getDevice());
 	handTracker.setup(depthStream.getDevice());
 
 	handCam.setDistance(10);

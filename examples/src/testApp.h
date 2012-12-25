@@ -7,6 +7,7 @@
 #include "..\ofxHandTracker.h"
 #include "..\ofxDepthStream.h"
 #include "..\ofxOniDevice.h"
+#include "..\ofxColorStream.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -36,7 +37,9 @@ private:
 
 	ofxOniDevice oniDevice;
 	ofxDepthStream depthStream;
+	ofxColorStream colorStream;
 	ofxHandTracker handTracker;
+
 	ofxFaceTrackerThreaded faceTracker;
 
 	ofEasyCam handCam;
