@@ -2,7 +2,6 @@
 
 #include "Nite.h"
 
-#pragma once
 #include "ofEvents.h"
 #include <deque>
 
@@ -15,7 +14,7 @@ TrackerEventArgs bangEventArgs;
 
 
 
-void ofxHandTracker::setup()
+void ofxHandTracker::setup(openni::Device* device)
 {
 	nite::Status niteRc;
 	niteRc = nite::NiTE::initialize();
@@ -23,6 +22,7 @@ void ofxHandTracker::setup()
 	{
 		throw ("NiTE initialization failed\n");
 	}
+	this->device = device;
 
 	startThread(false, true);
 }
@@ -40,7 +40,7 @@ void ofxHandTracker::threadedFunction()
 		nite::HandTrackerFrameRef handTrackerFrame;	
 		nite::Status niteRc;
 
-		niteRc = handTracker.create();
+		niteRc = handTracker.create(device);
 		if (niteRc != nite::STATUS_OK)
 		{
 			throw ("Couldn't create user tracker\n");

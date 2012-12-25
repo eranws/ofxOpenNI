@@ -144,6 +144,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.cpp" />
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\src\ofxFaceTracker.cpp" />
     <ClCompile Include="..\..\ofxProfile\src\ofxProfile.cpp" />
+    <ClCompile Include="ofxDepthStream.cpp" />
     <ClCompile Include="ofxHandTracker.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -255,6 +256,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video\tracking.hpp" />
     <ClInclude Include="..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video\video.hpp" />
     <ClInclude Include="..\..\ofxProfile\src\ofxProfile.h" />
+    <ClInclude Include="ofxDepthStream.h" />
     <ClInclude Include="ofxHandTracker.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="src\testApp.h" />

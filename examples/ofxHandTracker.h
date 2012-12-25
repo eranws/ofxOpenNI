@@ -21,14 +21,20 @@ public:
 
 TrackerEvents& getTrackerEvents();
 
+namespace openni
+{
+	class Device;
+}
+
 class ofxHandTracker : public ofThread
 {
 
 public:
-	ofxHandTracker() : _historySize(8) {
+	ofxHandTracker() : _historySize(8)
+	{
 	}
 
-	void setup();
+	void setup(openni::Device* device = 0);
 	void exit();
 
 
@@ -41,6 +47,7 @@ protected:
 private:
 	std::deque<ofPoint> _positionHistory;
 	unsigned int _historySize;
+	openni::Device* device;
 };
 
 

@@ -1,11 +1,9 @@
 #include "testApp.h"
-#include <string>
 #include "ofxCv\Utilities.h"
 
 #define PROFILE
+#ifdef PROFILE
 #include "src\ofxProfile.h"
-
-#ifdef _MSC_VER
 #endif
 
 //--------------------------------------------------------------
@@ -14,15 +12,14 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
-//	setupOpenNiDevice();
-	handTracker.setup();
+	depthStream.setup();
+	handTracker.setup(depthStream.getDevice());
 
 	handCam.setDistance(10);
-	//faceTracker.setup();
+	faceTracker.setup();
 
-	sceneCam.setGlobalPosition(0,0,1000);
+	sceneCam.setGlobalPosition(0,0,2000);
 
-	verdana.loadFont(ofToDataPath("verdana.ttf"), 24);
 }
 
 //--------------------------------------------------------------
@@ -31,13 +28,12 @@ void testApp::update(){
 	
 	debugString = stringstream();
 	
-#ifdef OPENNI1
-
-	ofxProfileSectionPush("openNIDevice update");
-	openNIDevice.update();
+#if 0
+	ofxProfileSectionPush("depthStream update");
+	//depthStream.update();
 	ofxProfileSectionPop();
 
-	if(openNIDevice.isNewFrame()) {
+	if(depthStream.isNewFrame()) {
 		ofxProfileSectionPush("faceTracker update");
 
 		ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
@@ -206,7 +202,7 @@ void testApp::draw(){
 
 
 
-#define camlog(x) {debugString<<#x<<" : "<<sceneCam.x() << endl;}
+#define camlog(func) {debugString << #func << " : " << sceneCam.func() << endl;}
 	camlog(getDistance);
 	camlog(getPosition);
 	camlog(getOrientationEuler);
@@ -466,7 +462,7 @@ void testApp::setupOpenNiDevice()
 	openNIDevice.addHandsGenerator();
 
 	// add all focus gestures (ie., wave, click, raise arm)
-	openNIDevice.addAllHandFocusGestures();
+	depthStream.addAllHandFocusGestures();
 
 	// or you can add them one at a time
 	//vector<string> gestureNames = openNIDevice.getAvailableGestures(); // you can use this to get a list of gestures
@@ -484,11 +480,11 @@ void testApp::setupOpenNiDevice()
 		depthThreshold.setUsePointCloud(true);
 		depthThreshold.setPointCloudDrawSize(2);
 
-		openNIDevice.addDepthThreshold(depthThreshold);
+		depthStream.addDepthThreshold(depthThreshold);
 
 	}
 
-	openNIDevice.start();
+	depthStream.start();
 }
 #endif
 

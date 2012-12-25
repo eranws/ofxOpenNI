@@ -32,9 +32,7 @@ private:
 
 //	void handEvent(ofxOpenNIHandEvent & event);
 
-//	ofxOpenNI openNIDevice;
-	ofTrueTypeFont verdana;
-
+	ofxDepthStream depthStream;
 	ofxHandTracker handTracker;
 	ofxFaceTrackerThreaded faceTracker;
 
