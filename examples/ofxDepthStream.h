@@ -1,5 +1,6 @@
 #pragma once
 #include "ofThread.h"
+#include "ofPixels.h"
 
 namespace openni
 {
@@ -16,11 +17,18 @@ public:
 	void exit();
 
 	ofPtr<openni::Device> getDevice() const { return device; }
+	ofShortPixels& getPixels() const { return *pixels[0]; }
+
+	ofVec3f cameraToWorld(ofVec2f p); //Depth Camera?
 
 protected:
+	ofPtr<ofShortPixels> pixels[2];
+
 	virtual void threadedFunction();
+	void allocateBuffers();
 
 	ofPtr<openni::Device> device;
 	ofPtr<openni::VideoStream> stream;
+
 	
 };

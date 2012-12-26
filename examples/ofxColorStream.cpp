@@ -81,7 +81,7 @@ void ofxColorStream::allocateBuffers()
 		pixels[i] = ofPtr<ofPixels>(new ofPixels);
 		pixels[i]->allocate(w, h, OF_IMAGE_COLOR);
 	}
-	texture.allocate(w, h, GL_RGB);
+//	texture.allocate(w, h, GL_RGB);
 }
 
 

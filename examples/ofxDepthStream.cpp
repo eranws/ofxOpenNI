@@ -1,6 +1,6 @@
 #include "ofxDepthStream.h"
-
 #include "OpenNI.h"
+#include "src\ofxProfile.h"
 
 
 void ofxDepthStream::setup(ofPtr<openni::Device> device)
@@ -18,6 +18,8 @@ void ofxDepthStream::setup(ofPtr<openni::Device> device)
 			throw ("Couldn't create depth stream\n%s\n", openni::OpenNI::getExtendedError());
 		}
 	}
+
+	allocateBuffers();
 
 	rc = stream->start();
 	if (rc != openni::STATUS_OK)
@@ -39,9 +41,11 @@ void ofxDepthStream::threadedFunction()
 {
 	openni::Status rc;
 
-	openni::VideoFrameRef frame;
 	while (isThreadRunning())
 	{
+		ofxProfileSectionPush("depthStream update");
+		
+		openni::VideoFrameRef frame;
 		rc = stream->readFrame(&frame);
 		if (rc != openni::STATUS_OK)
 		{
@@ -60,12 +64,39 @@ void ofxDepthStream::threadedFunction()
 		
 		printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], stream->getVideoMode().getFps());
 
+		pixels[1]->setFromPixels((const unsigned short*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_GRAYSCALE);
+		swap(pixels[0], pixels[1]);
+
+		ofxProfileSectionPop();
 	}
 
 	stream->stop();
 	stream->destroy();
 
 }
+
+ofVec3f ofxDepthStream::cameraToWorld(ofVec2f p)
+{
+	ofVec3f world;
+	openni::CoordinateConverter::convertDepthToWorld(*stream, p.x, p.y, float(pixels[0]->operator[](pixels[0]->getPixelIndex(p.x,p.y))), &world.x, &world.y, &world.z);
+	return world;
+}
+
+
+
+void ofxDepthStream::allocateBuffers()
+{
+	int w = stream->getVideoMode().getResolutionX();
+	int h = stream->getVideoMode().getResolutionY();
+
+	for (int i = 0; i < 2; i++)
+	{
+		pixels[i] = ofPtr<ofShortPixels>(new ofShortPixels);
+		pixels[i]->allocate(w, h, OF_IMAGE_GRAYSCALE);
+	}
+	
+}
+
 
 
 

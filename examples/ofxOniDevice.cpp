@@ -1,7 +1,7 @@
 #include "ofxOniDevice.h"
 #include "OpenNI.h"
 
-void ofxOniDevice::setup()
+void ofxOniDevice::setup(const char* uri)
 {
 	using namespace openni;
 
@@ -12,10 +12,10 @@ void ofxOniDevice::setup()
 	}
 
 	device = ofPtr<openni::Device>(new openni::Device);
-	rc = device->open(ANY_DEVICE);
+	rc = device->open(uri);
 	if (rc != ONI_STATUS_OK)
 	{
-		throw ("Couldn't open device\n%s\n", OpenNI::getExtendedError());
+		throw std::exception(OpenNI::getExtendedError());
 	}
 
 }
@@ -25,3 +25,11 @@ void ofxOniDevice::exit()
 	device->close();
 	openni::OpenNI::shutdown();
 }
+
+void ofxOniDevice::setRegistration( bool b )
+{
+	device->isImageRegistrationModeSupported(openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR);
+	device->setImageRegistrationMode(openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR);
+	
+}
+

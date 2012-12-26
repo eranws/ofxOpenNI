@@ -1,6 +1,6 @@
 #pragma once
 #include "ofThread.h"
-#include "ofTexture.h"
+#include "ofPixels.h"
 
 namespace openni
 {
@@ -16,14 +16,10 @@ public:
 	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>());
 	void exit();
 
-	
 	ofPtr<openni::Device> getDevice() const { return device; }
-	ofPtr<ofPixels> getPixels() const { return pixels[0]; }
-	
+	ofPixels& getPixels() const { return *pixels[0]; }
 
 protected:
-
-	ofTexture texture;
 	ofPtr<ofPixels> pixels[2];
 	
 	virtual void threadedFunction();

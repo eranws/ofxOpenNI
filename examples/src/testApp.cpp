@@ -5,6 +5,7 @@
 #ifdef PROFILE
 #include "src\ofxProfile.h"
 #endif
+#include <math.h>
 
 //--------------------------------------------------------------
 void testApp::setup() {
@@ -12,9 +13,20 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
-	oniDevice.setup();
+	try
+	{
+		oniDevice.setup();
+	}
+	catch (exception e)
+	{
+		oniDevice.setup("c:\\1.oni");
+	}
+	
+
 	depthStream.setup(oniDevice.getDevice());
 	colorStream.setup(oniDevice.getDevice());
+	oniDevice.setRegistration(true);
+
 	handTracker.setup(depthStream.getDevice());
 
 	handCam.setDistance(10);
@@ -30,20 +42,17 @@ void testApp::update(){
 	
 	debugString = stringstream();
 	
-#if 0
-	ofxProfileSectionPush("depthStream update");
-	//depthStream.update();
-	ofxProfileSectionPop();
-
-	if(depthStream.isNewFrame()) {
+	
+	//if(depthStream.isNewFrame()) {
 		ofxProfileSectionPush("faceTracker update");
 
 		ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
-		ofPixels ofPixels = openNIDevice.getImagePixels();
+		ofPixels ofPixels = colorStream.getPixels();
 		ofxProfileSectionPop();
 
-		ofxProfileSectionPush("cv::Mat mat = 	ofxCv::toCv(ofPixels);");
-		cv::Mat mat = 	ofxCv::toCv(ofPixels);
+
+		ofxProfileSectionPush("cv::Mat mat = ofxCv::toCv(ofPixels);");
+		cv::Mat mat = ofxCv::toCv(ofPixels);
 		ofxProfileSectionPop();
 
 		ofxProfileSectionPush("faceTracker.update(mat);");
@@ -58,8 +67,6 @@ void testApp::update(){
 			screenPoint = ofVec2f();
 		}
 
-	}
-#endif
 
 #ifdef OPENNI1
 	// reset all depthThresholds to 0,0,0
@@ -173,20 +180,52 @@ void testApp::draw(){
 		ofxProfileSectionPop();
 	}
 
+	ofSetColor(255);
 
-	ofTexture t;
-	ofPixels p = *colorStream.getPixels(); 
-	t.allocate(p);
-	t.loadData(p);
-	t.draw(0,0);
+	ofTexture colorTexture;
+	ofPixels colorPixels = colorStream.getPixels(); 
+	colorTexture.allocate(colorPixels);
+	colorTexture.loadData(colorPixels);
+	colorTexture.draw(0,0);
+
+	ofTexture depthTexture;
+	ofShortPixels depthRawPixels = depthStream.getPixels();
 	
+	ofPixels depthPixels;
+	depthPixels.allocate(depthRawPixels.getWidth(), depthRawPixels.getHeight(), OF_PIXELS_RGBA);
 	
+	const unsigned short* prd = depthRawPixels.getPixels();
+	unsigned char* pd = depthPixels.getPixels();
+	for (int i = 0; i < depthRawPixels.size(); i++)
+	{
+		const short minDepth = 450;
+		short s = prd[i];
+		char x = (s < minDepth) ? 0 : powf(s - minDepth, 0.7f);
+		pd[4 * i + 0] = 255 - x;
+		pd[4 * i + 1] = 255 - x;
+		pd[4 * i + 2] = 255 - x;
+		pd[4 * i + 3] = x;
+
+	}
+
+
+	depthTexture.allocate(depthPixels);
+	depthTexture.loadData(depthPixels);
+	depthTexture.draw(640,0);
+
+	colorTexture.draw(320,0);
+	depthTexture.draw(320,0);
+
 
 	sceneCam.begin();
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
 
+	ofSetColor(255);
+	colorTexture.draw(0,0);
 
+
+	/*
 	//////////////////////////////////////////////////////////////////////////
 	// TODO move to history Filter...
 	std::deque<ofPoint> points = handTracker.positionHistory();
@@ -203,7 +242,7 @@ void testApp::draw(){
 			ofLine(points[i-1], points[i]);
 		}
 	}
-
+	*/
 
 
 
@@ -226,7 +265,7 @@ void testApp::draw(){
 		ofPushMatrix();
 
 		const float b = (facePos==ofVec3f()) ? 0 : 0.5;
-		//facePos = (b*facePos) + (1-b) * openNIDevice.cameraToWorld(faceTracker.getPosition());
+		facePos = (b*facePos) + (1-b) * depthStream.cameraToWorld(faceTracker.getPosition());
 
 		ofSetColor(ofColor::green);
 		ofSphere(facePos, 5);
@@ -235,8 +274,8 @@ void testApp::draw(){
 		debugString << "facePos" << facePos;
 
 		ofxCv::applyMatrix(faceTracker.getRotationMatrix());
-		//ofRotateY(180.0);
-		//faceTracker.getObjectMesh().drawWireframe();
+		ofRotateY(180.0);
+		faceTracker.getObjectMesh().drawWireframe();
 
 		ofPopMatrix();
 	}
