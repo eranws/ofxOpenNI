@@ -189,14 +189,14 @@ void testApp::draw(){
 	colorTexture.draw(0,0);
 
 	ofTexture depthTexture;
-	ofShortPixels depthRawPixels = depthStream.getPixels();
+	ofPtr<ofShortPixels> depthRawPixels = depthStream.getPixels();
 	
 	ofPixels depthPixels;
-	depthPixels.allocate(depthRawPixels.getWidth(), depthRawPixels.getHeight(), OF_PIXELS_RGBA);
+	depthPixels.allocate(depthRawPixels->getWidth(), depthRawPixels->getHeight(), OF_PIXELS_RGBA);
 	
-	const unsigned short* prd = depthRawPixels.getPixels();
+	const unsigned short* prd = depthRawPixels->getPixels();
 	unsigned char* pd = depthPixels.getPixels();
-	for (int i = 0; i < depthRawPixels.size(); i++)
+	for (int i = 0; i < depthRawPixels->size(); i++)
 	{
 		const short minDepth = 450;
 		short s = prd[i];

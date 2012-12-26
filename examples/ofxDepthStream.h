@@ -17,7 +17,7 @@ public:
 	void exit();
 
 	ofPtr<openni::Device> getDevice() const { return device; }
-	ofShortPixels& getPixels() const { return *pixels[0]; }
+	ofPtr<ofShortPixels> getPixels() const { return pixels[0]; }
 
 	ofVec3f cameraToWorld(ofVec2f p); //Depth Camera?
 

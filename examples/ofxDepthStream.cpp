@@ -78,7 +78,13 @@ void ofxDepthStream::threadedFunction()
 ofVec3f ofxDepthStream::cameraToWorld(ofVec2f p)
 {
 	ofVec3f world;
-	openni::CoordinateConverter::convertDepthToWorld(*stream, p.x, p.y, float(pixels[0]->operator[](pixels[0]->getPixelIndex(p.x,p.y))), &world.x, &world.y, &world.z);
+
+	ofPtr<ofShortPixels> pix = getPixels();
+
+	int index = pix->getPixelIndex(int(p.x), int(p.y));
+	unsigned short z = (*pix)[index];
+
+	openni::CoordinateConverter::convertDepthToWorld(*stream, p.x, p.y, float(z), &world.x, &world.y, &world.z);
 	return world;
 }
 
