@@ -8,6 +8,7 @@
 #include "..\ofxDepthStream.h"
 #include "..\ofxOniDevice.h"
 #include "..\ofxColorStream.h"
+#include "..\Keypad.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -70,6 +71,7 @@ private:
 	ofVec2f screenPoint;
 	deque<ofVec2f> screenPointHistory;
 
+	Keypad keypad;
 
 
 

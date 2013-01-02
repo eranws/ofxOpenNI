@@ -225,10 +225,13 @@ void testApp::draw(){
 	colorTexture.draw(0,0);
 
 
-	/*
+	
 	//////////////////////////////////////////////////////////////////////////
 	// TODO move to history Filter...
+	ofxProfileSectionPush("draw hands");
+
 	std::deque<ofPoint> points = handTracker.positionHistory();
+
 	for (int i = 0; i < points.size(); i++)
 	{
 		ofSphere(points[i], 10);
@@ -242,7 +245,9 @@ void testApp::draw(){
 			ofLine(points[i-1], points[i]);
 		}
 	}
-	*/
+	ofxProfileSectionPop();
+
+	
 
 
 
@@ -421,6 +426,8 @@ void testApp::draw(){
 		//verdana.drawString(msg, 20, 480 - 20);
 	}
 
+	keypad.draw();
+
 }
 
 #ifdef OPENNI1
@@ -445,17 +452,30 @@ void testApp::exit(){
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
+
 	switch (key)
 	{
-	case '1': drawDebugString = !drawDebugString; break;
-	case '2': drawOpenNiDebug = !drawOpenNiDebug; break;
-	case '3': showProfilerString = !showProfilerString; break;
+		case 'k': keypad.isActive = !keypad.isActive; return;
+	}
 
-	case 'C': ofxProfile::clear(); break;
+	if (keypad.isActive)
+	{
+		keypad.keyPressed(key);
+	}
+	else
+	{
+		switch (key)
+		{
+		case '1': drawDebugString = !drawDebugString; break;
+		case '2': drawOpenNiDebug = !drawOpenNiDebug; break;
 
-	case 'f': ofToggleFullscreen(); break;
-	default:
-		break;
+		case '3': showProfilerString = !showProfilerString; break;
+		case 'C': ofxProfile::clear(); break;
+
+		case 'f': ofToggleFullscreen(); break;
+		default:
+			break;
+		}
 	}
 
 }
