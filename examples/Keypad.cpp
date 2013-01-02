@@ -35,14 +35,14 @@ void Keypad::draw()
 	unsigned long now = ofGetSystemTime();
 
 
-	for (int j = 0; j < nY; j++)
+	for (int c = 0; c < nX * nY; c++)
 	{
-		for (int i = 0; i < nX; i++)
-		{
-			ofSetColor((now - timestamp[(xFlip ? (2-i) : i) + (yFlip ? (2-j) : j)* nX]) / 2, 255, 255);
+			int i = c % nX;
+			int j = c / nY;
+			int p = (now - timestamp[c]) / 2;
+			ofSetColor(255, p, p);
 			ofRectangle button(xSpacing + i * ofGetWindowWidth() / nX, ySpacing + j * ofGetWindowHeight() / nY, w, h);
 			ofRect(button);
-		}
 	}
 	
 	ofPopStyle();
@@ -71,8 +71,11 @@ void Keypad::keyPressed( int key )
 	case '7':
 	case '8':
 	case '9':
-		int intKey = key - '1';
-		timestamp[intKey] = ofGetSystemTime();
+		int k = key - '1';
+		int i = k % nX;
+		int j = k / nY;
+		int mappedKey = (xFlip ? (2-i) : i) + (yFlip ? (2-j) : j)* nX;
+		timestamp[mappedKey] = ofGetSystemTime();
 		break;
 
 	}
