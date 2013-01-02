@@ -18,6 +18,9 @@ private:
 	
 	int nX, nY;
 
+	bool xFlip;
+	bool yFlip;
+
 	unsigned long timestamp[9];
 
 };

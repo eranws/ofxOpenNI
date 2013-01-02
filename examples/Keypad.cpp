@@ -5,6 +5,9 @@ Keypad::Keypad(void)
 {
 	nX = 3;
 	nY = 3;
+
+	xFlip = false;
+	yFlip = false;
 }
 
 
@@ -36,7 +39,7 @@ void Keypad::draw()
 	{
 		for (int i = 0; i < nX; i++)
 		{
-			ofSetColor((now - timestamp[i + (2-j) * nX]) / 2, 255, 255);
+			ofSetColor((now - timestamp[(xFlip ? (2-i) : i) + (yFlip ? (2-j) : j)* nX]) / 2, 255, 255);
 			ofRectangle button(xSpacing + i * ofGetWindowWidth() / nX, ySpacing + j * ofGetWindowHeight() / nY, w, h);
 			ofRect(button);
 		}
@@ -56,6 +59,8 @@ void Keypad::keyPressed( int key )
 	case '*': nY < 10 && nY++; break;
 	case '/': nY > 1 && nY--; break;
 	*/
+	case 'x': xFlip = !xFlip; break;
+	case 'y': yFlip = !yFlip; break;
 
 	case '1':
 	case '2':
