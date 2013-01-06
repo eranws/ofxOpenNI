@@ -59,7 +59,7 @@ void ofxColorStream ::threadedFunction()
 		openni::RGB888Pixel* pcolor = (openni::RGB888Pixel*)frame.getData();
 		int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
 
-		printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pcolor[middleIndex].r, stream->getVideoMode().getFps());
+		//printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pcolor[middleIndex].r, stream->getVideoMode().getFps());
 		
 		pixels[1]->setFromPixels((const unsigned char*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_COLOR);
 		swap(pixels[0], pixels[1]);

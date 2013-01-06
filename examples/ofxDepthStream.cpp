@@ -62,7 +62,7 @@ void ofxDepthStream::threadedFunction()
 		openni::DepthPixel* pDepth = (openni::DepthPixel*)frame.getData();
 		int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
 		
-		printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], stream->getVideoMode().getFps());
+		//printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], stream->getVideoMode().getFps());
 
 		pixels[1]->setFromPixels((const unsigned short*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_GRAYSCALE);
 		swap(pixels[0], pixels[1]);
