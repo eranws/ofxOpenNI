@@ -1,6 +1,7 @@
 #pragma once
 #include "ofThread.h"
 #include "ofPixels.h"
+#include <vector>
 
 namespace openni
 {
@@ -16,7 +17,7 @@ public:
 
 	void setup(ofPtr<openni::VideoStream> stream = ofPtr<openni::VideoStream>());
 
-	void attach(ofPtr<openni::VideoStream> stream);
+	void addStream(ofPtr<openni::VideoStream> stream);
 	void start();
 	void stop();
 
@@ -26,7 +27,7 @@ public:
 	
 protected:
 	
-	ofPtr<openni::VideoStream> _stream; //make a list?
+	std::vector<ofPtr<openni::VideoStream>> _streams; //make a list?
 	ofPtr<openni::Recorder> recorder;
 
 

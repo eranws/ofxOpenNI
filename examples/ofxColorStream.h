@@ -17,6 +17,8 @@ public:
 	void exit();
 
 	ofPtr<openni::Device> getDevice() const { return device; }
+	ofPtr<openni::VideoStream> getStream() const { return stream; }
+
 	ofPixels& getPixels() const { return *pixels[0]; }
 
 protected:
@@ -24,6 +26,7 @@ protected:
 	
 	virtual void threadedFunction();
 	void allocateBuffers();
+
 	ofPtr<openni::Device> device;
 	ofPtr<openni::VideoStream> stream;
 

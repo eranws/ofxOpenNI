@@ -29,7 +29,8 @@ void testApp::setup() {
 	oniDevice.setRegistration(true);
 
 	recorder.setup();
-	recorder.attach(depthStream.getStream());
+	recorder.addStream(depthStream.getStream());
+	recorder.addStream(colorStream.getStream());
 
 
 
