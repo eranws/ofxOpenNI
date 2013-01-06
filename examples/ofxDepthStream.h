@@ -14,9 +14,12 @@ class ofxDepthStream : public ofThread
 public:
 
 	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>());
+
 	void exit();
 
 	ofPtr<openni::Device> getDevice() const { return device; }
+	ofPtr<openni::VideoStream> getStream() const { return stream; }
+
 	ofPtr<ofShortPixels> getPixels() const { return pixels[0]; }
 
 	ofVec3f cameraToWorld(ofVec2f p); //Depth Camera?
@@ -29,6 +32,5 @@ protected:
 
 	ofPtr<openni::Device> device;
 	ofPtr<openni::VideoStream> stream;
-
 	
 };

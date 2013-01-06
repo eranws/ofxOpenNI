@@ -49,6 +49,7 @@
     <ClCompile Include="ofxOniDevice.cpp" />
     <ClCompile Include="ofxColorStream.cpp" />
     <ClCompile Include="Keypad.cpp" />
+    <ClCompile Include="ofxRecorder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.h">
@@ -102,6 +103,7 @@
     <ClInclude Include="ofxOniDevice.h" />
     <ClInclude Include="ofxColorStream.h" />
     <ClInclude Include="Keypad.h" />
+    <ClInclude Include="ofxRecorder.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">

@@ -13,6 +13,7 @@ void testApp::setup() {
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	ofSetFrameRate(100);
 
+
 	try
 	{
 		oniDevice.setup();
@@ -26,6 +27,11 @@ void testApp::setup() {
 	depthStream.setup(oniDevice.getDevice());
 	colorStream.setup(oniDevice.getDevice());
 	oniDevice.setRegistration(true);
+
+	recorder.setup();
+	recorder.attach(depthStream.getStream());
+
+
 
 	handTracker.setup(depthStream.getDevice());
 
@@ -457,7 +463,12 @@ void testApp::keyPressed(int key){
 
 	switch (key)
 	{
+		
+		case OF_KEY_F8: recorder.start(); return;
+		case OF_KEY_F7: recorder.stop(); return;
+
 		case 'k': keypad.isActive = !keypad.isActive; return;
+
 	}
 
 	if (keypad.isActive)

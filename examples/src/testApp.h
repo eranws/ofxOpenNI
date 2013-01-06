@@ -9,6 +9,7 @@
 #include "..\ofxOniDevice.h"
 #include "..\ofxColorStream.h"
 #include "..\Keypad.h"
+#include "..\ofxRecorder.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -40,6 +41,7 @@ private:
 	ofxDepthStream depthStream;
 	ofxColorStream colorStream;
 	ofxHandTracker handTracker;
+	ofxRecorder recorder;
 
 	ofxFaceTrackerThreaded faceTracker;
 
