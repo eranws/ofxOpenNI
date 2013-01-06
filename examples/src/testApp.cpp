@@ -415,6 +415,8 @@ void testApp::draw(){
 	debugString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
 	debugString << "frameRate: " << frameRate << endl;
 	debugString << "fps: " << ofGetFrameRate() << endl;
+	debugString << "Recording: " << (recorder.IsRecording() ? "On" : "Off") << endl;
+
 //	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
 
 	

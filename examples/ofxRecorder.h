@@ -23,12 +23,15 @@ public:
 
 	void exit();
 
-	ofPtr<openni::Recorder> getRecorder() const { return recorder; }
+	bool IsRecording() const { return _isRecording; }
+
+	//ofPtr<openni::Recorder> getRecorder() const { return recorder; }
 	
 protected:
 	
 	std::vector<ofPtr<openni::VideoStream>> _streams; //make a list?
 	ofPtr<openni::Recorder> recorder;
 
+	bool _isRecording;
 
 };

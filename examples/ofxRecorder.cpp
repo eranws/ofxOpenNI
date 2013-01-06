@@ -5,28 +5,27 @@
 void ofxRecorder::setup( ofPtr<openni::VideoStream> stream )
 {
 	recorder = ofPtr<openni::Recorder>(new openni::Recorder);
-
+	_isRecording = false;
 }
 
 void ofxRecorder::start()
 {
-	
 	recorder->create(ofGetTimestampString().append(".oni").c_str()); 
-	
-	
 	for (int i = 0; i < _streams.size(); i++)
 	{
 		recorder->attach(*_streams[i]);
 	}
-	// second parameter – allow lossy compression. Default is FALSE
-	// Multiple streams can be attached – but only one from each type
-
-	recorder->start();
-
+	openni::Status rc = recorder->start();
+	if (rc == openni::STATUS_OK)
+	{
+		_isRecording = true;
+	}
 }
 
 void ofxRecorder::stop()
 {
+	_isRecording = false;
+
 	recorder->stop();
 	recorder->destroy();
 }
@@ -38,6 +37,5 @@ void ofxRecorder::exit()
 
 void ofxRecorder::addStream( ofPtr<openni::VideoStream> stream )
 {
-	//TODO: multistream
 	_streams.push_back(stream);
 }
