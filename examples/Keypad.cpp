@@ -1,13 +1,19 @@
 #include "Keypad.h"
 
 
+const char keyMap[] = "qwerasdfzxcv";
+const int keyMapSize = sizeof(keyMap) - 1;
+
+
 Keypad::Keypad(void)
 {
 	nX = 3;
 	nY = 3;
 
 	xFlip = false;
-	yFlip = false;
+	yFlip = true;
+
+	timestamps.assign(nX * nY, 0);
 }
 
 
@@ -22,27 +28,25 @@ void Keypad::draw()
 	const int xSpacing = 10;
 	const int ySpacing = 10;
 
-	
-
 	ofPushStyle();
 
+	ofBackground(0);
 	ofFill();
 	ofSetColor(255);
 	
 	int w = ofGetWindowWidth() / nX - 2 * xSpacing;
 	int h = ofGetWindowHeight() / nY - 2 * ySpacing;
-
 	unsigned long now = ofGetSystemTime();
 
-
-	for (int c = 0; c < nX * nY; c++)
+	for (int i = 0; i < nX; i++)
 	{
-			int i = c % nX;
-			int j = c / nY;
-			int p = (now - timestamp[c]) / 2;
-			ofSetColor(255, p, p);
+		for (int j = 0; j < nY; j++)
+		{
+			int p = (now - timestamps[i + j * nX]) / 2;
+			ofSetColor(p, 255, 255);
 			ofRectangle button(xSpacing + i * ofGetWindowWidth() / nX, ySpacing + j * ofGetWindowHeight() / nY, w, h);
 			ofRect(button);
+		}
 	}
 	
 	ofPopStyle();
@@ -51,6 +55,19 @@ void Keypad::draw()
 
 void Keypad::keyPressed( int key )
 {
+
+	for (int k = 0; k < keyMapSize; k++)
+	{
+		if (key == keyMap[k])
+		{
+			int i = k % nX;
+			int j = k / nX;
+			int mappedKey = (xFlip ? (nX-i-1) : i) + (yFlip ? (nY-1-j) : j) * nX;
+			timestamps[mappedKey] = ofGetSystemTime();
+		}
+	}
+
+
 	switch(key)
 	{
 	/*
@@ -59,8 +76,8 @@ void Keypad::keyPressed( int key )
 	case '*': nY < 10 && nY++; break;
 	case '/': nY > 1 && nY--; break;
 	*/
-	case 'x': xFlip = !xFlip; break;
-	case 'y': yFlip = !yFlip; break;
+	case 'X': xFlip = !xFlip; break;
+	case 'Y': yFlip = !yFlip; break;
 
 	case '1':
 	case '2':
@@ -73,11 +90,10 @@ void Keypad::keyPressed( int key )
 	case '9':
 		int k = key - '1';
 		int i = k % nX;
-		int j = k / nY;
-		int mappedKey = (xFlip ? (2-i) : i) + (yFlip ? (2-j) : j)* nX;
-		timestamp[mappedKey] = ofGetSystemTime();
+		int j = k / nX;
+		int mappedKey = (xFlip ? (nX-i-1) : i) + (yFlip ? (nY-1-j) : j) * nX;
+		timestamps[mappedKey] = ofGetSystemTime();
 		break;
-
 	}
 
 }

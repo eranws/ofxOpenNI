@@ -21,7 +21,8 @@ private:
 	bool xFlip;
 	bool yFlip;
 
-	unsigned long timestamp[9];
+	vector<unsigned long> timestamps;
+
 
 };
 
