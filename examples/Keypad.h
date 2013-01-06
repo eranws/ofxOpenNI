@@ -22,6 +22,8 @@ private:
 	bool yFlip;
 
 	vector<unsigned long> timestamps;
+	vector<bool> preSelect;
+
 
 
 };
