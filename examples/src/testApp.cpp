@@ -7,10 +7,15 @@
 #endif
 #include <math.h>
 
+const string testApp::MODULE_NAME = "testApp";
+
 //--------------------------------------------------------------
 void testApp::setup() {
 
-	ofSetLogLevel(OF_LOG_VERBOSE);
+	ofSetLogLevel(OF_LOG_SILENT);
+	ofSetLogLevel(MODULE_NAME, OF_LOG_VERBOSE);
+	ofLog::setAutoSpace(true);
+
 	ofSetFrameRate(100);
 
 
@@ -22,7 +27,7 @@ void testApp::setup() {
 	{
 		oniDevice.setup("c:\\1.oni");
 	}
-	
+
 
 	depthStream.setup(oniDevice.getDevice());
 	colorStream.setup(oniDevice.getDevice());
@@ -46,33 +51,33 @@ void testApp::setup() {
 //--------------------------------------------------------------
 void testApp::update(){
 	ofxProfileThisFunction();
-	
+
 	debugString = stringstream();
-	
-	
+
+
 	//if(depthStream.isNewFrame()) {
-		ofxProfileSectionPush("faceTracker update");
+	ofxProfileSectionPush("faceTracker update");
 
-		ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
-		ofPixels ofPixels = colorStream.getPixels();
-		ofxProfileSectionPop();
+	ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
+	ofPixels ofPixels = colorStream.getPixels();
+	ofxProfileSectionPop();
 
 
-		ofxProfileSectionPush("cv::Mat mat = ofxCv::toCv(ofPixels);");
-		cv::Mat mat = ofxCv::toCv(ofPixels);
-		ofxProfileSectionPop();
+	ofxProfileSectionPush("cv::Mat mat = ofxCv::toCv(ofPixels);");
+	cv::Mat mat = ofxCv::toCv(ofPixels);
+	ofxProfileSectionPop();
 
-		ofxProfileSectionPush("faceTracker.update(mat);");
-		faceTracker.update(mat);
-		ofxProfileSectionPop();
-		
-		ofxProfileSectionPop();
+	ofxProfileSectionPush("faceTracker.update(mat);");
+	faceTracker.update(mat);
+	ofxProfileSectionPop();
 
-		if(!faceTracker.getFound())
-		{
-			facePos = ofVec3f();
-			screenPoint = ofVec2f();
-		}
+	ofxProfileSectionPop();
+
+	if(!faceTracker.getFound())
+	{
+		facePos = ofVec3f();
+		screenPoint = ofVec2f();
+	}
 
 
 #ifdef OPENNI1
@@ -135,7 +140,7 @@ void testApp::update(){
 			int count = 0;
 			for (int iv=0; iv < v.size(); iv++)
 			{
-				
+
 				if (minV.distanceSquared(v[iv]) < 100)
 				{
 					fingerCoM += v[iv];
@@ -197,10 +202,10 @@ void testApp::draw(){
 
 	ofTexture depthTexture;
 	ofPtr<ofShortPixels> depthRawPixels = depthStream.getPixels();
-	
+
 	ofPixels depthPixels;
 	depthPixels.allocate(depthRawPixels->getWidth(), depthRawPixels->getHeight(), OF_PIXELS_RGBA);
-	
+
 	const unsigned short* prd = depthRawPixels->getPixels();
 	unsigned char* pd = depthPixels.getPixels();
 	for (int i = 0; i < depthRawPixels->size(); i++)
@@ -232,7 +237,7 @@ void testApp::draw(){
 	colorTexture.draw(0,0);
 
 
-	
+
 	//////////////////////////////////////////////////////////////////////////
 	// TODO move to history Filter...
 	ofxProfileSectionPush("draw hands");
@@ -242,21 +247,21 @@ void testApp::draw(){
 
 	for (int i = 0; i < points.size(); i++)
 	{
-		ofSphere(points[i], 10);
+	ofSphere(points[i], 10);
 	}
 
 	if (points.size() == handTracker.historySize())
 	{
-		for (int i = 1; i < points.size(); i++)
-		{
-			ofSetLineWidth(points.size() - i);
-			ofLine(points[i-1], points[i]);
-		}
+	for (int i = 1; i < points.size(); i++)
+	{
+	ofSetLineWidth(points.size() - i);
+	ofLine(points[i-1], points[i]);
+	}
 	}
 	*/
 	ofxProfileSectionPop();
 
-	
+
 
 
 
@@ -273,7 +278,7 @@ void testApp::draw(){
 	ofPushMatrix();
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
-	
+
 	if(faceTracker.getFound()) {
 
 		ofPushMatrix();
@@ -300,8 +305,8 @@ void testApp::draw(){
 	int oldestHandIndex = 0;
 	for (int h = 0; h < openNIDevice.getNumTrackedHands(); h++)
 	{
-		 if (openNIDevice.getTrackedHand(h).getBirthTime() < openNIDevice.getTrackedHand(oldestHandIndex).getBirthTime())
-			 oldestHandIndex = h;
+		if (openNIDevice.getTrackedHand(h).getBirthTime() < openNIDevice.getTrackedHand(oldestHandIndex).getBirthTime())
+			oldestHandIndex = h;
 	}
 
 	int i=oldestHandIndex;
@@ -331,9 +336,9 @@ void testApp::draw(){
 			//cam.lookAt(handPosition);//, ofVec3f(0, -1, 0));
 			depthThreshold.getPointCloud().disableColors();
 			depthThreshold.drawPointCloud();
-			
+
 			ofNoFill();
-			
+
 
 			ofSetColor(ofColor::blue, 128);
 			ofSphere(fingers[i].getFilteredPosition(0.5), 5);
@@ -362,7 +367,7 @@ void testApp::draw(){
 
 				const float b = (screenPoint==ofVec2f()) ? 0 : 0.5;
 				screenPoint = (b*screenPoint) + (1-b) * scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
-				
+
 				screenPointHistory.push_front(screenPoint);
 				if (screenPointHistory.size() > 10)
 				{
@@ -417,9 +422,9 @@ void testApp::draw(){
 	debugString << "fps: " << ofGetFrameRate() << endl;
 	debugString << "Recording: " << (recorder.IsRecording() ? "On" : "Off") << endl;
 
-//	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
+	//	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
 
-	
+
 
 #ifdef OPENNI1
 	debugString << ofGetFrameRate() << endl << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
@@ -466,11 +471,30 @@ void testApp::keyPressed(int key){
 
 	switch (key)
 	{
-		
-		case OF_KEY_F8: recorder.start(); return;
-		case OF_KEY_F7: recorder.stop(); return;
 
-		case 'k': keypad.isActive = !keypad.isActive; return;
+	case OF_KEY_F8:
+		if (!recorder.IsRecording())
+		{
+			string filename = ofGetTimestampString();
+
+			ofLogToFile(filename + ".txt", true);
+			ofLogVerbose(MODULE_NAME) << ofGetSystemTime() << "recording started";
+			ofLogVerbose(MODULE_NAME) << ofGetSystemTime() << keypad.toString();
+
+			recorder.start(filename);
+		}
+
+		return;
+
+	case OF_KEY_F7:
+		if (!recorder.IsRecording())
+		{
+			recorder.stop();
+		}
+		return;
+
+
+	case 'k': keypad.isActive = !keypad.isActive; return;
 
 	}
 
@@ -575,7 +599,7 @@ void testApp::setupOpenNiDevice()
 ofVec3f testApp::Finger::getFilteredPosition(float a)
 {
 	ofVec3f res;
-	
+
 	for (int i = 0; i < position.size(); i++)
 	{
 		res += pow(1-a,i) * position[i];

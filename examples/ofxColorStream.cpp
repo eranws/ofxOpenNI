@@ -2,7 +2,7 @@
 #include "OpenNI.h"
 
 
-void ofxColorStream ::setup(ofPtr<openni::Device> device)
+void ofxColorStream ::setup(ofPtr<openni::Device> device, bool isVerbose)
 {
 	this->device = device;
 
@@ -27,7 +27,7 @@ void ofxColorStream ::setup(ofPtr<openni::Device> device)
 
 	}
 
-	startThread(false, true);
+	startThread(false, isVerbose);
 }
 
 void ofxColorStream ::exit()

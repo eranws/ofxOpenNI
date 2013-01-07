@@ -3,7 +3,7 @@
 #include "src\ofxProfile.h"
 
 
-void ofxDepthStream::setup(ofPtr<openni::Device> device)
+void ofxDepthStream::setup(ofPtr<openni::Device> device, bool isVerbose)
 {
 	this->device = device;
 
@@ -28,7 +28,7 @@ void ofxDepthStream::setup(ofPtr<openni::Device> device)
 
 	}
 
-	startThread(false, true);
+	startThread(false, isVerbose);
 }
 
 void ofxDepthStream::exit()

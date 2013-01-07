@@ -8,9 +8,9 @@ void ofxRecorder::setup( ofPtr<openni::VideoStream> stream )
 	_isRecording = false;
 }
 
-void ofxRecorder::start()
+void ofxRecorder::start(string filename)
 {
-	recorder->create(ofGetTimestampString().append(".oni").c_str()); 
+	recorder->create(filename.append(".oni").c_str()); 
 	for (int i = 0; i < _streams.size(); i++)
 	{
 		recorder->attach(*_streams[i]);

@@ -13,7 +13,7 @@ class ofxColorStream : public ofThread
 
 public:
 
-	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>());
+	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>(), bool isVerbose = false);
 	void exit();
 
 	ofPtr<openni::Device> getDevice() const { return device; }

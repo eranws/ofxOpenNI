@@ -14,7 +14,9 @@
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
 
-class testApp : public ofBaseApp{
+class testApp : public ofBaseApp
+{
+	static const string MODULE_NAME;
 
 public:
 
@@ -75,9 +77,7 @@ private:
 
 	Keypad keypad;
 
-
-
-
+	ofFile file;
 };
 
 #endif

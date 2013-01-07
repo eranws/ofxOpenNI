@@ -14,7 +14,7 @@ TrackerEventArgs bangEventArgs;
 
 
 
-void ofxHandTracker::setup(ofPtr<openni::Device> device)
+void ofxHandTracker::setup(ofPtr<openni::Device> device, bool isVerbose)
 {
 	nite::Status niteRc;
 	niteRc = nite::NiTE::initialize();
@@ -24,7 +24,7 @@ void ofxHandTracker::setup(ofPtr<openni::Device> device)
 	}
 	this->device = device;
 
-	startThread(false, true);
+	startThread(false, isVerbose);
 }
 
 void ofxHandTracker::exit()

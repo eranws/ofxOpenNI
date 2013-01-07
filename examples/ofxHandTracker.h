@@ -34,7 +34,7 @@ public:
 	{
 	}
 
-	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>());
+	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>(), bool isVerbose = false);
 	void exit();
 
 

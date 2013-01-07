@@ -18,12 +18,12 @@ public:
 	void setup(ofPtr<openni::VideoStream> stream = ofPtr<openni::VideoStream>());
 
 	void addStream(ofPtr<openni::VideoStream> stream);
-	void start();
+	void start(string filename);
 	void stop();
 
 	void exit();
 
-	bool IsRecording() const { return _isRecording; }
+	bool IsRecording() const {return _isRecording;}
 
 	//ofPtr<openni::Recorder> getRecorder() const { return recorder; }
 	
