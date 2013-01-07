@@ -13,16 +13,16 @@ Keypad::Keypad(void)
 {
 	ofSetLogLevel(MODULE_NAME, OF_LOG_VERBOSE);
 
-	rows = 5;
-	cols = 3;
+	cols = 5;
+	rows = 3;
 
 	lastPreselect = -1;
 
 	xFlip = false;
 	yFlip = true;
 
-	timestamps.assign(rows * cols, 0);
-	preSelect.assign(rows * cols, 0);
+	timestamps.assign(cols * rows, 0);
+	preSelect.assign(cols * rows, 0);
 }
 
 
@@ -43,15 +43,15 @@ void Keypad::draw()
 	ofFill();
 	ofSetColor(255);
 
-	int w = ofGetWindowWidth() / rows - 2 * xSpacing;
-	int h = ofGetWindowHeight() / cols - 2 * ySpacing;
+	int w = ofGetWindowWidth() / cols - 2 * xSpacing;
+	int h = ofGetWindowHeight() / rows - 2 * ySpacing;
 	unsigned long now = ofGetSystemTime();
 
-	for (int i = 0; i < rows; i++)
+	for (int i = 0; i < cols; i++)
 	{
-		for (int j = 0; j < cols; j++)
+		for (int j = 0; j < rows; j++)
 		{
-			int index = i + j * rows;
+			int index = i + j * cols;
 
 			ofColor c;
 			const int fadeInTime = 500;
@@ -74,7 +74,7 @@ void Keypad::draw()
 
 			ofSetColor(c);
 
-			ofRectangle button(xSpacing + i * ofGetWindowWidth() / rows, ySpacing + j * ofGetWindowHeight() / cols, w, h);
+			ofRectangle button(xSpacing + i * ofGetWindowWidth() / cols, ySpacing + j * ofGetWindowHeight() / rows, w, h);
 			ofRect(button);
 		}
 	}
@@ -90,9 +90,9 @@ void Keypad::keyPressed( int key )
 	{
 		if (Poco::Ascii::toLower(key) == keyMap[k])
 		{
-			int i = k % rows;
-			int j = k / rows;
-			int mappedKey = (xFlip ? (rows-i-1) : i) + (yFlip ? (cols-1-j) : j) * rows;
+			int i = k % cols;
+			int j = k / cols;
+			int mappedKey = (xFlip ? (cols-i-1) : i) + (yFlip ? (rows-1-j) : j) * cols;
 
 			if (Poco::Ascii::isUpper(key))
 			{
@@ -129,9 +129,9 @@ void Keypad::keyPressed( int key )
 	case '9':
 		{
 			int k = key - '1';
-			int i = k % rows;
-			int j = k / rows;
-			int mappedKey = (xFlip ? (rows-i-1) : i) + (yFlip ? (cols-1-j) : j) * rows;
+			int i = k % cols;
+			int j = k / cols;
+			int mappedKey = (xFlip ? (cols-i-1) : i) + (yFlip ? (rows-1-j) : j) * cols;
 			keypadPressed(mappedKey);				
 			break;
 		}
@@ -140,7 +140,7 @@ void Keypad::keyPressed( int key )
 		if (lastPreselect == -1)
 		{
 			const int delay = 0;//1000;
-			keypadPreselect(ofRandom(rows * cols), delay);
+			keypadPreselect(ofRandom(cols * rows), delay);
 		}
 		else
 		{
@@ -153,7 +153,7 @@ void Keypad::keyPressed( int key )
 		{
 			keypadPressed(lastPreselect);
 			const int delay = 0;
-			keypadPreselect(ofRandom(rows * cols), delay);
+			keypadPreselect(ofRandom(cols * rows), delay);
 		}
 		break;
 
@@ -164,12 +164,12 @@ void Keypad::keyPressed( int key )
 
 string Keypad::toString()
 {
-	return "rows: " + ofToString(rows) + " " + "cols:" + ofToString(cols);
+	return "rows: " + ofToString(cols) + " " + "cols:" + ofToString(rows);
 }
 
 void Keypad::keypadPreselect(int mappedKey, int delay)
 {
-	assert(mappedKey >= 0 && mappedKey < rows * cols);
+	assert(mappedKey >= 0 && mappedKey < cols * rows);
 	lastPreselect = mappedKey;
 
 	unsigned long now = ofGetSystemTime();
@@ -180,7 +180,7 @@ void Keypad::keypadPreselect(int mappedKey, int delay)
 
 void Keypad::keypadPressed( int mappedKey )
 {
-	assert(mappedKey >= 0 && mappedKey < rows * cols);
+	assert(mappedKey >= 0 && mappedKey < cols * rows);
 	lastPreselect = -1;
 
 	unsigned long now = ofGetSystemTime();

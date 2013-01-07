@@ -23,7 +23,7 @@ public:
 	void keypadPressed(int mappedKey);
 private:
 	
-	int rows, cols;
+	int cols, rows;
 
 	bool xFlip;
 	bool yFlip;
