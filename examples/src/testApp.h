@@ -10,6 +10,7 @@
 #include "..\ofxColorStream.h"
 #include "..\Keypad.h"
 #include "..\ofxRecorder.h"
+#include "ofxUI.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -78,6 +79,11 @@ private:
 	Keypad keypad;
 
 	ofFile file;
+
+	ofPtr<ofxUICanvas> gui1;   	
+	void setupGui(); 
+	void guiEvent(ofxUIEventArgs &e);
+
 };
 
 #endif

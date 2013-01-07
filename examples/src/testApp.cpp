@@ -46,6 +46,8 @@ void testApp::setup() {
 
 	sceneCam.setGlobalPosition(0,0,2000);
 
+	setupGui(); 
+
 }
 
 //--------------------------------------------------------------
@@ -526,8 +528,13 @@ void testApp::keyReleased(int key){
 }
 
 //--------------------------------------------------------------
-void testApp::mouseMoved(int x, int y ){
+void testApp::mouseMoved(int x, int y )
+{
+	if (x < 10 && !gui1->isVisible())	
+		gui1->setVisible(true);
 
+	if (x > gui1->getRect()->width)
+		gui1->setVisible(false);			
 }
 
 //--------------------------------------------------------------
@@ -606,4 +613,108 @@ ofVec3f testApp::Finger::getFilteredPosition(float a)
 	}
 	res *= a;
 	return res;
+}
+
+
+
+void testApp::setupGui()
+{
+
+	float dim = 16; 
+	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 
+	float length = 255-xInit; 
+
+	vector<string> names; 
+	names.push_back("RAD1");
+	names.push_back("RAD2");
+	names.push_back("RAD3");	
+
+	gui1 = ofPtr<ofxUICanvas>(new ofxUICanvas(0, 0, length+xInit, ofGetHeight())); 
+	gui1->addWidgetDown(new ofxUILabel("PANEL 1: BASICS", OFX_UI_FONT_LARGE)); 
+	gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE)); 
+
+	gui1->addSpacer(length-xInit, 2);
+	gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
+
+	gui1->addSpacer(length-xInit, 2); 
+	gui1->addWidgetDown(new ofxUILabel("V SLIDERS", OFX_UI_FONT_MEDIUM)); 
+	gui1->addSlider("0", 0.0, 255.0, 150, dim, 160);
+	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_RIGHT);
+	gui1->addSlider("1", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("2", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("3", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("4", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("5", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("6", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("7", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("8", 0.0, 255.0, 150, dim, 160);
+	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_DOWN);
+
+	gui1->addSpacer(length-xInit, 2);
+	gui1->addRadio("RADIO HORIZONTAL", names, OFX_UI_ORIENTATION_HORIZONTAL, dim, dim); 
+	gui1->addRadio("RADIO VERTICAL", names, OFX_UI_ORIENTATION_VERTICAL, dim, dim); 
+
+	gui1->addSpacer(length-xInit, 2);
+	gui1->addWidgetDown(new ofxUILabel("BUTTONS", OFX_UI_FONT_MEDIUM)); 
+	gui1->addButton("DRAW GRID", false, dim, dim);
+	gui1->addWidgetDown(new ofxUILabel("TOGGLES", OFX_UI_FONT_MEDIUM)); 
+	gui1->addToggle( "D_GRID", false, dim, dim);
+
+	gui1->addSpacer(length-xInit, 2);
+	gui1->addWidgetDown(new ofxUILabel("RANGE SLIDER", OFX_UI_FONT_MEDIUM)); 
+	gui1->addRangeSlider("RSLIDER", 0.0, 255.0, 50.0, 100.0, length-xInit,dim);
+
+	gui1->addSpacer(length-xInit, 2);
+	gui1->addWidgetDown(new ofxUILabel("2D PAD", OFX_UI_FONT_MEDIUM)); 
+	gui1->add2DPad("PAD", ofPoint(0,length-xInit), ofPoint(0,120), ofPoint((length-xInit)*.5,120*.5), length-xInit,120);
+
+	gui1->setColorBack(ofColor::gray);
+	//gui1->setDrawBack(true);
+
+	gui1->setColorFill(ofColor::gray);
+	gui1->setDrawFill(true);
+
+	ofAddListener(gui1->newGUIEvent,this,&testApp::guiEvent);
+}
+
+
+void testApp::guiEvent(ofxUIEventArgs &e)
+{
+	string name = e.widget->getName(); 
+	int kind = e.widget->getKind(); 
+	cout << "got event from: " << name << endl; 	
+
+	if(name == "DRAW GRID")
+	{
+		ofxUIButton *button = (ofxUIButton *) e.widget; 
+		//bdrawGrid = button->getValue(); 
+	}
+	else if(name == "D_GRID")
+	{
+		ofxUIToggle *toggle = (ofxUIToggle *) e.widget; 
+		//bdrawGrid = toggle->getValue(); 
+	}
+	else if(name == "TEXT INPUT")
+	{
+		ofxUITextInput *textinput = (ofxUITextInput *) e.widget; 
+		if(textinput->getTriggerType() == OFX_UI_TEXTINPUT_ON_ENTER)
+		{
+			cout << "ON ENTER: "; 
+			//            ofUnregisterKeyEvents((ofxUItestApp*)this); 
+		}
+		else if(textinput->getTriggerType() == OFX_UI_TEXTINPUT_ON_FOCUS)
+		{
+			cout << "ON FOCUS: "; 
+		}
+		else if(textinput->getTriggerType() == OFX_UI_TEXTINPUT_ON_UNFOCUS)
+		{
+			cout << "ON BLUR: "; 
+			//            ofRegisterKeyEvents(this);             
+		}        
+		string output = textinput->getTextString(); 
+		cout << output << endl; 
+	}
+
+
+
 }

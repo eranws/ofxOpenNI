@@ -57,7 +57,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\addons\ofxOpenCv\libs;..\..\..\addons\ofxFaceTracker\src;..\..\..\addons\ofxFaceTracker\libs\FaceTracker\include;..\..\..\addons\ofxProfile;..\..\..\addons\ofxCv\src;..\..\..\addons\ofxCv\libs\ofxCv\include;..\..\..\addons\ofxOpenCv\libs\opencv;..\..\..\addons\ofxOpenCv\libs\opencv\include;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\calib3d;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\contrib;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\core;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\features2d;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\flann;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\gpu;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\highgui;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\imgproc;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\legacy;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\ml;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\objdetect;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\ts;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video;..\..\..\addons\ofxOpenCv\libs\opencv\lib;..\..\..\addons\ofxOpenCv\libs\opencv\lib\vs2010;..\..\..\libs\openFrameworks;..\..\..\libs\openFrameworks\graphics;..\..\..\libs\openFrameworks\app;..\..\..\libs\openFrameworks\sound;..\..\..\libs\openFrameworks\utils;..\..\..\libs\openFrameworks\communication;..\..\..\libs\openFrameworks\video;..\..\..\libs\openFrameworks\math;..\..\..\libs\openFrameworks\types;..\..\..\libs\openFrameworks\events;..\..\..\libs\glut\include;..\..\..\libs\rtAudio\include;..\..\..\libs\quicktime\include;..\..\..\libs\freetype\include;..\..\..\libs\freetype\include\freetype2;..\..\..\libs\cairo\include\cairo;..\..\..\libs\freeImage\include;..\..\..\libs\fmodex\include;..\..\..\libs\videoInput\include;..\..\..\libs\glew\include\;..\..\..\libs\glu\include;..\..\..\libs\poco\include;..\..\..\addons;..\..\..\libs\openFrameworks\gl;..\..\..\libs\openFrameworks\3d;..\..\..\libs\tess2\include;..\..\..\addons\ofxOpenNI\include\nite;..\..\..\addons\ofxOpenNI\include\openni;..\..\..\addons\ofxOpenNI\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\addons\ofxOpenCv\libs;..\..\..\addons\ofxFaceTracker\src;..\..\..\addons\ofxFaceTracker\libs\FaceTracker\include;..\..\..\addons\ofxProfile;..\..\..\addons\ofxCv\src;..\..\..\addons\ofxCv\libs\ofxCv\include;..\..\..\addons\ofxOpenCv\libs\opencv;..\..\..\addons\ofxOpenCv\libs\opencv\include;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\calib3d;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\contrib;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\core;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\features2d;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\flann;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\gpu;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\highgui;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\imgproc;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\legacy;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\ml;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\objdetect;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\ts;..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video;..\..\..\addons\ofxOpenCv\libs\opencv\lib;..\..\..\addons\ofxOpenCv\libs\opencv\lib\vs2010;..\..\..\libs\openFrameworks;..\..\..\libs\openFrameworks\graphics;..\..\..\libs\openFrameworks\app;..\..\..\libs\openFrameworks\sound;..\..\..\libs\openFrameworks\utils;..\..\..\libs\openFrameworks\communication;..\..\..\libs\openFrameworks\video;..\..\..\libs\openFrameworks\math;..\..\..\libs\openFrameworks\types;..\..\..\libs\openFrameworks\events;..\..\..\libs\glut\include;..\..\..\libs\rtAudio\include;..\..\..\libs\quicktime\include;..\..\..\libs\freetype\include;..\..\..\libs\freetype\include\freetype2;..\..\..\libs\cairo\include\cairo;..\..\..\libs\freeImage\include;..\..\..\libs\fmodex\include;..\..\..\libs\videoInput\include;..\..\..\libs\glew\include\;..\..\..\libs\glu\include;..\..\..\libs\poco\include;..\..\..\addons;..\..\..\libs\openFrameworks\gl;..\..\..\libs\openFrameworks\3d;..\..\..\libs\tess2\include;..\..\..\addons\ofxOpenNI\include\nite;..\..\..\addons\ofxOpenNI\include\openni;..\..\..\addons\ofxOpenNI\src;..\..\..\addons\ofxUI\src;..\..\..\addons\ofxXmlSettings\src;..\..\..\addons\ofxXmlSettings\libs;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;POCO_STATIC;CAIRO_WIN32_STATIC_BUILD;DISABLE_SOME_FLOATING_POINT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -144,6 +144,10 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.cpp" />
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\src\ofxFaceTracker.cpp" />
     <ClCompile Include="..\..\ofxProfile\src\ofxProfile.cpp" />
+    <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxml.cpp" />
+    <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlerror.cpp" />
+    <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlparser.cpp" />
+    <ClCompile Include="..\..\ofxXmlSettings\src\ofxXmlSettings.cpp" />
     <ClCompile Include="Keypad.cpp" />
     <ClCompile Include="ofxColorStream.cpp" />
     <ClCompile Include="ofxDepthStream.cpp" />
@@ -260,6 +264,49 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video\tracking.hpp" />
     <ClInclude Include="..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video\video.hpp" />
     <ClInclude Include="..\..\ofxProfile\src\ofxProfile.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUI.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUI2DPad.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIBaseDraws.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIBiLabelSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIButton.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUICanvas.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUICircleSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUICustomImageButton.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIDropDownList.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIEventArgs.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIFPS.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIFPSSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIImage.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIImageButton.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIImageSampler.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIImageSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIImageToggle.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUILabel.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUILabelButton.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUILabelToggle.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIMinimalSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIMovingGraph.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIMultiImageButton.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIMultiImageSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIMultiImageToggle.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUINumberDialer.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIRadio.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIRangeSlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIRectangle.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIRotarySlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIScrollableCanvas.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUISlider.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUISpacer.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUISpectrum.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUITextArea.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUITextInput.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIToggle.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIToggleMatrix.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIWaveform.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIWidget.h" />
+    <ClInclude Include="..\..\ofxUI\src\ofxUIWidgetWithLabel.h" />
+    <ClInclude Include="..\..\ofxXmlSettings\libs\tinyxml.h" />
+    <ClInclude Include="..\..\ofxXmlSettings\src\ofxXmlSettings.h" />
     <ClInclude Include="Keypad.h" />
     <ClInclude Include="ofxColorStream.h" />
     <ClInclude Include="ofxDepthStream.h" />
