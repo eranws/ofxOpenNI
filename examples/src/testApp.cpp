@@ -243,24 +243,26 @@ void testApp::draw(){
 	//////////////////////////////////////////////////////////////////////////
 	// TODO move to history Filter...
 	ofxProfileSectionPush("draw hands");
+	handTracker.lock();
 
-	/*
 	std::deque<ofPoint> points = handTracker.positionHistory();
 
 	for (int i = 0; i < points.size(); i++)
 	{
-	ofSphere(points[i], 10);
+		ofSphere(points[i], 10);
 	}
 
 	if (points.size() == handTracker.historySize())
 	{
-	for (int i = 1; i < points.size(); i++)
-	{
-	ofSetLineWidth(points.size() - i);
-	ofLine(points[i-1], points[i]);
+		for (int i = 1; i < points.size(); i++)
+		{
+			ofSetLineWidth(points.size() - i);
+			ofLine(points[i-1], points[i]);
+		}
+
 	}
-	}
-	*/
+	handTracker.unlock();
+
 	ofxProfileSectionPop();
 
 

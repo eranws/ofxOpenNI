@@ -37,6 +37,7 @@ public:
 	void setup(ofPtr<openni::Device> device = ofPtr<openni::Device>(), bool isVerbose = false);
 	void exit();
 
+	ofPoint getHandPoint() const { return handPoint; }
 
 	std::deque<ofPoint> positionHistory() const { return _positionHistory; }
 	unsigned int historySize() const { return _historySize; }
@@ -48,6 +49,8 @@ private:
 	std::deque<ofPoint> _positionHistory;
 	unsigned int _historySize;
 	ofPtr<openni::Device> device;
+
+	ofPoint handPoint;
 };
 
 

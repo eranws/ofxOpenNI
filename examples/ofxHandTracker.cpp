@@ -79,18 +79,22 @@ void ofxHandTracker::threadedFunction()
 				const nite::HandData& hand = hands[i];
 				if (hand.isTracking())
 				{
-					
+					handPoint = ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
 					printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
 
 					//raw event input
+					lock();
 					_positionHistory.push_front(ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z));
+					unlock();
 					if (_positionHistory.size() <= _historySize)
 					{
 						continue;
 					}
 					else
 					{
+						lock();
 						_positionHistory.pop_back();
+						unlock();
 					}
 
 					//process
