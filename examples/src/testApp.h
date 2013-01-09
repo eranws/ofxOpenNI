@@ -84,6 +84,11 @@ private:
 	void setupGui(); 
 	void guiEvent(ofxUIEventArgs &e);
 
+	deque<cv::Mat> depthHistory;
+	int depthHistorySize;
+
+	IplImage* motion;
+
 };
 
 #endif

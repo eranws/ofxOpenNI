@@ -80,7 +80,7 @@ void ofxHandTracker::threadedFunction()
 				if (hand.isTracking())
 				{
 					handPoint = ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
-					printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
+					//printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
 
 					//raw event input
 					lock();

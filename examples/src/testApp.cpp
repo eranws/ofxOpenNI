@@ -7,7 +7,15 @@
 #endif
 #include <math.h>
 
+void  update_mhi( IplImage* img, IplImage* dst, int diff_threshold );
+
 const string testApp::MODULE_NAME = "testApp";
+
+cv::Scalar white(255, 255, 255);
+cv::Scalar blue(255,0,0);
+cv::Scalar green(0,255,0);
+cv::Scalar red(0,0,255);
+cv::Scalar black(0,0,0);
 
 //--------------------------------------------------------------
 void testApp::setup() {
@@ -31,7 +39,7 @@ void testApp::setup() {
 
 	depthStream.setup(oniDevice.getDevice());
 	colorStream.setup(oniDevice.getDevice());
-	oniDevice.setRegistration(true);
+	//oniDevice.setRegistration(true);
 
 	recorder.setup();
 	recorder.addStream(depthStream.getStream());
@@ -48,6 +56,9 @@ void testApp::setup() {
 
 	setupGui(); 
 
+	depthHistorySize = 10;
+
+	motion = NULL;
 }
 
 //--------------------------------------------------------------
@@ -80,6 +91,182 @@ void testApp::update(){
 		facePos = ofVec3f();
 		screenPoint = ofVec2f();
 	}
+
+
+	ofPtr<ofShortPixels> depthPixels = depthStream.getPixels();
+	cv::Mat depthMat = ofxCv::toCv(*depthPixels);
+	
+	depthHistory.push_front(depthMat.clone());
+	if (depthHistory.size() > depthHistorySize)
+	{
+		depthHistory.pop_back();
+	}
+	if (depthHistory.size() == depthHistorySize)
+	{
+		const int s = 5;
+		cv::Mat d = depthHistory[0].clone();
+		
+		cv::Mat d8 = depthHistory[0].clone();
+		//cv::sqrt(d8, d8);
+		d8.convertTo(d8, CV_8UC1, 0.1);
+
+
+		cv::Mat d0 = depthHistory[1] - depthHistory[0];
+		
+		ofxUISlider* s0 = (ofxUISlider*)gui1->getWidget("0");		
+		ofxUISlider* s1 = (ofxUISlider*)gui1->getWidget("1");		
+		ofxUISlider* s2 = (ofxUISlider*)gui1->getWidget("2");		
+
+		cv::Mat mask;
+		//mask.create(depthHistory[0].size(), CV_8UC1);
+		mask = (depthHistory[0] == 0);
+		
+		//mask = (depthHistory[s] == 0);
+		//mask += (d > s1->getScaledValue());
+		for (int i = 1; i < s; i++)
+		{
+			cv::Mat diff = depthHistory[i] - depthHistory[i-1];
+			mask |= (diff < 1);
+		}
+		d.setTo(0, mask);
+		
+		cv::imshow("mask", mask);
+
+		int morph_size = 2;
+		cv::Mat element = getStructuringElement( 2, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) );
+
+		cv::Mat morphMask;
+		morphologyEx(mask, morphMask, CV_MOP_OPEN, element, cv::Point(-1, -1), 5);
+		cv::imshow("morphMask", morphMask);
+
+
+		double maxVal;
+		cv::Point maxLoc;
+		cv::minMaxLoc(d, 0, &maxVal, 0, &maxLoc);
+
+		cv::Mat drgb;
+		
+		d.convertTo(drgb, CV_8UC1);
+		cv::cvtColor(drgb, drgb, CV_GRAY2RGB);
+
+		cv::circle(drgb, maxLoc, 1 + maxVal * s2->getScaledValue(), CV_RGB(255, 0, 0), CV_FILLED);
+		cv::putText(drgb, ofToString(maxVal), cv::Point(11, 11), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(255, 255, 255));
+		cv::putText(drgb, ofToString(maxVal), cv::Point(10, 10), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(0, 255, 0));
+		//cv::circle(drgb, cv::Point(100,100), 30, CV_RGB(255, 0, 0), CV_FILLED);
+		cv::imshow("d", d * s0->getScaledValue());
+		cv::imshow("drgb", drgb);// * s2->getScaledValue());
+
+
+		//
+
+		cv::Mat invMask;
+		cv::bitwise_not(morphMask, invMask);
+
+		std::vector<std::vector<cv::Point> > contours;
+		std::vector<cv::Vec4i> hierarchy;
+
+		cv::Mat d0mask = d0 > 0;
+
+		morphologyEx(d0mask, d0mask, CV_MOP_OPEN, element, cv::Point(-1, -1), 2);
+
+		cv::Mat d8thrMean;
+		
+		adaptiveThreshold(d8, d8thrMean, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 3, 0);
+		
+		
+		cv::Mat d8clean = d8thrMean.clone();
+		for (int i = 2; i < 6; i++)
+		{
+			cv::Mat d8thrMeanBlurred;
+			blur(d8thrMean, d8thrMeanBlurred, cv::Size(i, i));
+			d8clean &= d8thrMeanBlurred >= (255 / i);
+		}
+		cv::imshow("d8clean", d8clean);
+
+
+		cv::Mat contoursMat = cv::Mat::zeros(depthMat.size(), CV_8UC3);
+		cv::findContours( d8clean, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
+		if( !contours.empty() && !hierarchy.empty() )
+		{
+			int idx = 0;
+			for(int i = 0; i < hierarchy.size(); i++)
+			{
+				if (cv::contourArea(contours[i]) > 10) //clear salt noise
+				{
+					cv::Moments _mu = moments( cv::Mat(contours[i]), false );
+					cv::Point2f _mc( _mu.m10/_mu.m00 , _mu.m01/_mu.m00);
+
+					cv::Scalar color(_mc.x * 255 / d8thrMean.cols, 255,  _mc.y * 255 / d8thrMean.rows);
+					cv::drawContours(contoursMat, contours, i, color, 2, 8, hierarchy );
+				}
+
+				//find biggest cc
+				if (cv::contourArea(contours[idx]) < cv::contourArea(contours[i]))
+					idx = i;
+			}
+
+			cv::drawContours(contoursMat, contours, idx, white, CV_FILLED);//, 8, hierarchy );
+
+		}
+		
+		cv::imshow("invMask", d8thrMean);
+		cv::imshow("contoursMat", contoursMat);
+
+
+	
+		/*
+		cv::Mat ba;
+		depthHistory[0].convertTo(ba, CV_8UC1, 0.25);
+		ba.setTo(0, mask);
+
+		cv::cvtColor(ba, ba, CV_GRAY2RGB);
+
+		IplImage image = ba;
+
+		if (motion == NULL)
+		{
+			motion = cvCreateImage( cvSize(image.width, image.height), 8, 3);
+			cvZero( motion );
+			//motion->origin = image->origin;
+		}
+
+		update_mhi(&image, motion, 30 );
+		cvShowImage( "Motion", motion );
+		*/
+
+
+/*
+		ofTexture depthTex;
+		depthTex.allocate(m8.cols, m8.rows, GL_LUMINANCE);
+		depthTex.loadData(m8.ptr(), m8.cols, m8.rows, GL_LUMINANCE);
+		*/
+
+
+		/*
+		cv::Mat d1 = depthHistory[2] - depthHistory[1]; 
+		d1.setTo(0, depthHistory[2] == 0 | depthHistory[1] == 0);
+
+		cv::Mat a = d1 - d;
+		a.setTo(0, d1 == 0 | d == 0);
+
+		
+		cv::Mat a8;	a.convertTo(a8, CV_8UC1);
+		
+		
+		
+
+		cv::Mat a8edges;
+		cv::Canny(a8, a8edges, 10, 100);
+		cv::imshow("a8edges", a8edges);
+
+		cv::Mat a8eq;
+		cv::equalizeHist(a8, a8eq);
+		cv::imshow("a8eq", a8eq);
+		*/
+
+	}
+
+
 
 
 #ifdef OPENNI1
@@ -348,23 +535,27 @@ void testApp::draw(){
 			ofSphere(fingers[i].getFilteredPosition(0.5), 5);
 
 			//handCam.end();
+		}
 
+	}
+
+#endif
 
 			if(faceTracker.getFound())
 			{
 				ofPushStyle();
 				ofSetLineWidth(3);
 				ofSetColor(ofColor::green);
-				ofDrawArrow(facePos, fingers[i].getFilteredPosition());
+				ofDrawArrow(facePos, handTracker.getHandPoint());
 				ofSetLineWidth(1);
 				ofSetColor(ofColor::yellow);
-				ofLine(facePos, fingers[i].getFilteredPosition().interpolated(facePos, -3));
+				ofLine(facePos, handTracker.getHandPoint().interpolated(facePos, -3));
 				ofPopStyle();
 
 				ofSetColor(ofColor::magenta);
 
 				ofxProfileSectionPush("getIntersectionPointWithLine");
-				ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, fingers[i].getFilteredPosition());
+				ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, handTracker.getHandPoint());
 				ofxProfileSectionPop();
 
 				ofSphere(screenIntersectionPoint, 10);
@@ -378,12 +569,35 @@ void testApp::draw(){
 					screenPointHistory.pop_back();
 				}
 
+				int score = 0;
+				for (int i = 0; i < screenPointHistory.size(); i++)
+				{
+					if (screenPointHistory[i].y > 0 && screenPointHistory[i].y < ofGetScreenHeight())
+					{
+						if (i < screenPointHistory.size() / 2)
+						{
+							if (screenPointHistory[i].x < 0)// || abs(screenPointHistory[i].x - ofGetScreenWidth()) < 40)
+								score++;
+						}
+						else
+						{
+							if (screenPointHistory[i].x > 0)
+								score++;
+						}
+					}
+				}
+
+				if (score > screenPointHistory.size() - 1)
+				{
+					ofSetColor(255, 0, 0);
+					//ofCircle(screenPointHistory[0], 30);
+				}
+
+
+
 			}
 
-		}
 
-	}
-#endif
 
 	ofDisableBlendMode();
 	ofPopMatrix();
@@ -400,7 +614,7 @@ void testApp::draw(){
 		{
 			int ri = screenPointHistory.size() - i - 1;
 			ofSetColor(255,255,255,1 - 0.1*i);
-			ofCircle(screenPointHistory[ri], 11 - ri);
+			ofCircle(screenPointHistory[ri], 21 - ri);
 		}
 		debugString << "screenPoint: " << screenPoint << endl;
 	}
@@ -640,10 +854,10 @@ void testApp::setupGui()
 
 	gui1->addSpacer(length-xInit, 2); 
 	gui1->addWidgetDown(new ofxUILabel("V SLIDERS", OFX_UI_FONT_MEDIUM)); 
-	gui1->addSlider("0", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("0", 0.0, 10255.0, 150, dim, 160);
 	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_RIGHT);
 	gui1->addSlider("1", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("2", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("2", 0.0, 1.0, 1, dim, 160);
 	gui1->addSlider("3", 0.0, 255.0, 150, dim, 160);
 	gui1->addSlider("4", 0.0, 255.0, 150, dim, 160);
 	gui1->addSlider("5", 0.0, 255.0, 150, dim, 160);
@@ -720,3 +934,168 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "opencv2/video/tracking.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include <time.h>
+#include <stdio.h>
+#include <ctype.h>
+
+// various tracking parameters (in seconds)
+const double MHI_DURATION = 1;
+const double MAX_TIME_DELTA = 0.5;
+const double MIN_TIME_DELTA = 0.05;
+// number of cyclic frame buffer used for motion detection
+// (should, probably, depend on FPS)
+const int N = 4;
+
+// ring image buffer
+IplImage **buf = 0;
+int last = 0;
+
+// temporary images
+IplImage *mhi = 0; // MHI
+IplImage *orient = 0; // orientation
+IplImage *mask = 0; // valid orientation mask
+IplImage *segmask = 0; // motion segmentation map
+CvMemStorage* storage = 0; // temporary storage
+
+// parameters:
+//  img - input video frame
+//  dst - resultant motion picture
+//  args - optional parameters
+void  update_mhi( IplImage* img, IplImage* dst, int diff_threshold )
+{
+	double timestamp = (double)clock()/CLOCKS_PER_SEC; // get current time in seconds
+	CvSize size = cvSize(img->width,img->height); // get current frame size
+	int i, idx1 = last, idx2;
+	IplImage* silh;
+	CvSeq* seq;
+	CvRect comp_rect;
+	double count;
+	double angle;
+	CvPoint center;
+	double magnitude;
+	CvScalar color;
+
+	// allocate images at the beginning or
+	// reallocate them if the frame size is changed
+	if( !mhi || mhi->width != size.width || mhi->height != size.height ) {
+		if( buf == 0 ) {
+			buf = (IplImage**)malloc(N*sizeof(buf[0]));
+			memset( buf, 0, N*sizeof(buf[0]));
+		}
+
+		for( i = 0; i < N; i++ ) {
+			cvReleaseImage( &buf[i] );
+			buf[i] = cvCreateImage( size, IPL_DEPTH_8U, 1 );
+			cvZero( buf[i] );
+		}
+		cvReleaseImage( &mhi );
+		cvReleaseImage( &orient );
+		cvReleaseImage( &segmask );
+		cvReleaseImage( &mask );
+
+		mhi = cvCreateImage( size, IPL_DEPTH_32F, 1 );
+		cvZero( mhi ); // clear MHI at the beginning
+		orient = cvCreateImage( size, IPL_DEPTH_32F, 1 );
+		segmask = cvCreateImage( size, IPL_DEPTH_32F, 1 );
+		mask = cvCreateImage( size, IPL_DEPTH_8U, 1 );
+	}
+
+	cvCvtColor( img, buf[last], CV_BGR2GRAY ); // convert frame to grayscale
+	
+
+	idx2 = (last + 1) % N; // index of (last - (N-1))th frame
+	last = idx2;
+
+	silh = buf[idx2];
+	cvAbsDiff( buf[idx1], buf[idx2], silh ); // get difference between frames
+
+	cvThreshold( silh, silh, diff_threshold, 1, CV_THRESH_BINARY ); // and threshold it
+	cvUpdateMotionHistory( silh, mhi, timestamp, MHI_DURATION ); // update MHI
+
+	// convert MHI to blue 8u image
+	cvCvtScale( mhi, mask, 255./MHI_DURATION,
+		(MHI_DURATION - timestamp)*255./MHI_DURATION );
+	cvZero( dst );
+	cvMerge( mask, 0, 0, 0, dst );
+
+	// calculate motion gradient orientation and valid orientation mask
+	cvCalcMotionGradient( mhi, mask, orient, MAX_TIME_DELTA, MIN_TIME_DELTA, 3 );
+
+	if( !storage )
+		storage = cvCreateMemStorage(0);
+	else
+		cvClearMemStorage(storage);
+
+	// segment motion: get sequence of motion components
+	// segmask is marked motion components map. It is not used further
+	seq = cvSegmentMotion( mhi, segmask, storage, timestamp, MAX_TIME_DELTA );
+
+	// iterate through the motion components,
+	// One more iteration (i == -1) corresponds to the whole image (global motion)
+	for( i = -1; i < seq->total; i++ ) {
+
+		if( i < 0 ) { // case of the whole image
+			comp_rect = cvRect( 0, 0, size.width, size.height );
+			color = CV_RGB(255,255,255);
+			magnitude = 100;
+		}
+		else { // i-th motion component
+			comp_rect = ((CvConnectedComp*)cvGetSeqElem( seq, i ))->rect;
+			if( comp_rect.width + comp_rect.height < 100 ) // reject very small components
+				continue;
+			color = CV_RGB(255,0,0);
+			magnitude = 30;
+		}
+
+		// select component ROI
+		cvSetImageROI( silh, comp_rect );
+		cvSetImageROI( mhi, comp_rect );
+		cvSetImageROI( orient, comp_rect );
+		cvSetImageROI( mask, comp_rect );
+
+		// calculate orientation
+		angle = cvCalcGlobalOrientation( orient, mask, mhi, timestamp, MHI_DURATION);
+		angle = 360.0 - angle;  // adjust for images with top-left origin
+
+		count = cvNorm( silh, 0, CV_L1, 0 ); // calculate number of points within silhouette ROI
+
+		cvResetImageROI( mhi );
+		cvResetImageROI( orient );
+		cvResetImageROI( mask );
+		cvResetImageROI( silh );
+
+		// check for the case of little motion
+		if( count < comp_rect.width*comp_rect.height * 0.05 )
+			continue;
+
+		// draw a clock with arrow indicating the direction
+		center = cvPoint( (comp_rect.x + comp_rect.width/2),
+			(comp_rect.y + comp_rect.height/2) );
+
+		cvCircle( dst, center, cvRound(magnitude*1.2), color, 3, CV_AA, 0 );
+		cvLine( dst, center, cvPoint( cvRound( center.x + magnitude*cos(angle*CV_PI/180)),
+			cvRound( center.y - magnitude*sin(angle*CV_PI/180))), color, 3, CV_AA, 0 );
+	}
+}
+
+
+
