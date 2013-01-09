@@ -498,11 +498,11 @@ void testApp::keyPressed(int key){
 		return;
 
 
-	case 'k': keypad.isActive = !keypad.isActive; return;
+	case 'k': keypad.visible = !keypad.visible; return;
 
 	}
 
-	if (keypad.isActive)
+	if (keypad.visible)
 	{
 		keypad.keyPressed(key);
 	}

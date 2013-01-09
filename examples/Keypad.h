@@ -11,7 +11,7 @@ public:
 	Keypad(void);
 	~Keypad(void);
 
-	bool isActive;
+	bool visible;
 
 	virtual void draw();
 

@@ -23,6 +23,8 @@ Keypad::Keypad(void)
 
 	timestamps.assign(cols * rows, 0);
 	preSelect.assign(cols * rows, 0);
+
+	visible = false;
 }
 
 
@@ -32,7 +34,7 @@ Keypad::~Keypad(void)
 
 void Keypad::draw()
 {
-	if (!isActive) return;
+	if (!visible) return;
 
 	const int xSpacing = 30;
 	const int ySpacing = 30;
