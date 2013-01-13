@@ -7,6 +7,15 @@
 #endif
 #include <math.h>
 
+#define showMat(x) showMatR(x, 1)
+
+#define showMatR(x, i)	\
+{						\
+	cv::Mat y;			\
+	cv::resize(x, y, cv::Size(), i, i, cv::INTER_LINEAR);\
+	cv::imshow(#x, y);	\
+}
+
 void  update_mhi( IplImage* img, IplImage* dst, int diff_threshold );
 
 const string testApp::MODULE_NAME = "testApp";
@@ -39,7 +48,7 @@ void testApp::setup() {
 
 	depthStream.setup(oniDevice.getDevice());
 	colorStream.setup(oniDevice.getDevice());
-	//oniDevice.setRegistration(true);
+	oniDevice.setRegistration(true);
 
 	recorder.setup();
 	recorder.addStream(depthStream.getStream());
@@ -72,12 +81,12 @@ void testApp::update(){
 	ofxProfileSectionPush("faceTracker update");
 
 	ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
-	ofPixels ofPixels = colorStream.getPixels();
+	ofPixels colorPixels = colorStream.getPixels();
 	ofxProfileSectionPop();
 
 
 	ofxProfileSectionPush("cv::Mat mat = ofxCv::toCv(ofPixels);");
-	cv::Mat mat = ofxCv::toCv(ofPixels);
+	cv::Mat mat = ofxCv::toCv(colorPixels);
 	ofxProfileSectionPop();
 
 	ofxProfileSectionPush("faceTracker.update(mat);");
@@ -212,6 +221,22 @@ void testApp::update(){
 		cv::imshow("invMask", d8thrMean);
 		cv::imshow("contoursMat", contoursMat);
 
+
+		cv::Mat colorMat = ofxCv::toCv(colorPixels);
+		cv::Mat grayMat;
+		cv:cvtColor(colorMat, grayMat, CV_BGR2GRAY);
+		showMat(grayMat);
+
+		cv::Mat edges;
+
+		ofxUISlider* can1 = (ofxUISlider*)gui1->getWidget("can1");		
+		double threshold1 = can1->getScaledValue();
+
+		ofxUISlider* can2 = (ofxUISlider*)gui1->getWidget("can2");		
+		double threshold2 = can2->getScaledValue();
+
+		cv::Canny(grayMat, edges, threshold1, threshold2);//, int apertureSize=3, bool L2gradient=false )¶
+		showMat(edges);
 
 	
 		/*
@@ -851,6 +876,9 @@ void testApp::setupGui()
 
 	gui1->addSpacer(length-xInit, 2);
 	gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
+	gui1->addSlider("can1", 0.0, 255.0, 10, length-xInit, dim);
+	gui1->addSlider("can2", 0.0, 255.0, 100, length-xInit, dim);
+
 
 	gui1->addSpacer(length-xInit, 2); 
 	gui1->addWidgetDown(new ofxUILabel("V SLIDERS", OFX_UI_FONT_MEDIUM)); 
