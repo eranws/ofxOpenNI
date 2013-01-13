@@ -11,6 +11,7 @@
 #include "..\Keypad.h"
 #include "..\ofxRecorder.h"
 #include "ofxUI.h"
+#include "..\ofxOpenNi2.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -39,7 +40,7 @@ public:
 private:
 
 //	void handEvent(ofxOpenNIHandEvent & event);
-
+	ofxOpenNi2 oni2;
 	ofxOniDevice oniDevice;
 	ofxDepthStream depthStream;
 	ofxColorStream colorStream;

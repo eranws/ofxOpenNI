@@ -19,6 +19,7 @@ public:
 
 	ofPtr<openni::Device> getDevice() const { return device; }
 	ofPtr<openni::VideoStream> getStream() const { return stream; }
+	bool isValid();
 
 	ofPtr<ofShortPixels> getPixels() const { return pixels[0]; }
 

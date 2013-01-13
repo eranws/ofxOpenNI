@@ -148,11 +148,13 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlerror.cpp" />
     <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlparser.cpp" />
     <ClCompile Include="..\..\ofxXmlSettings\src\ofxXmlSettings.cpp" />
+    <ClCompile Include="GroundTruthReader.cpp" />
     <ClCompile Include="Keypad.cpp" />
     <ClCompile Include="ofxColorStream.cpp" />
     <ClCompile Include="ofxDepthStream.cpp" />
     <ClCompile Include="ofxHandTracker.cpp" />
     <ClCompile Include="ofxOniDevice.cpp" />
+    <ClCompile Include="ofxOpenNi2.cpp" />
     <ClCompile Include="ofxRecorder.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -307,11 +309,13 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="..\..\ofxUI\src\ofxUIWidgetWithLabel.h" />
     <ClInclude Include="..\..\ofxXmlSettings\libs\tinyxml.h" />
     <ClInclude Include="..\..\ofxXmlSettings\src\ofxXmlSettings.h" />
+    <ClInclude Include="GroundTruthReader.h" />
     <ClInclude Include="Keypad.h" />
     <ClInclude Include="ofxColorStream.h" />
     <ClInclude Include="ofxDepthStream.h" />
     <ClInclude Include="ofxHandTracker.h" />
     <ClInclude Include="ofxOniDevice.h" />
+    <ClInclude Include="ofxOpenNi2.h" />
     <ClInclude Include="ofxRecorder.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="src\testApp.h" />

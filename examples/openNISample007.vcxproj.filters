@@ -62,6 +62,8 @@
     <ClCompile Include="..\..\ofxXmlSettings\src\ofxXmlSettings.cpp">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClCompile>
+    <ClCompile Include="GroundTruthReader.cpp" />
+    <ClCompile Include="ofxOpenNi2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.h">
@@ -245,6 +247,8 @@
     <ClInclude Include="..\..\ofxXmlSettings\src\ofxXmlSettings.h">
       <Filter>addons\ofxXmlSettings</Filter>
     </ClInclude>
+    <ClInclude Include="GroundTruthReader.h" />
+    <ClInclude Include="ofxOpenNi2.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">

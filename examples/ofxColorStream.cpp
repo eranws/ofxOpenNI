@@ -84,5 +84,10 @@ void ofxColorStream::allocateBuffers()
 //	texture.allocate(w, h, GL_RGB);
 }
 
+bool ofxColorStream::isValid()
+{
+	return (getStream().use_count() > 0 && getStream()->isValid());
+}
+
 
 

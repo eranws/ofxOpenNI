@@ -103,6 +103,9 @@ void ofxDepthStream::allocateBuffers()
 	
 }
 
-
+bool ofxDepthStream::isValid()
+{
+	return (getStream().use_count() > 0 && getStream()->isValid());
+}
 
 
