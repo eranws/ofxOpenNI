@@ -22,6 +22,7 @@ public:
 	bool isValid();
 
 	ofPtr<ofShortPixels> getPixels() const { return pixels[0]; }
+	int readFrame();
 
 	ofVec3f cameraToWorld(ofVec2f p); //Depth Camera?
 
@@ -29,6 +30,8 @@ protected:
 	ofPtr<ofShortPixels> pixels[2];
 
 	virtual void threadedFunction();
+
+
 	void allocateBuffers();
 
 	ofPtr<openni::Device> device;

@@ -28,51 +28,24 @@ void ofxDepthStream::setup(ofPtr<openni::Device> device, bool isVerbose)
 
 	}
 
-	startThread(false, isVerbose);
+	//startThread(false, isVerbose);
 }
 
 void ofxDepthStream::exit()
 {
 	stopThread();
 	waitForThread();
+	stream->stop();
+	stream->destroy();
+
 }
 
 void ofxDepthStream::threadedFunction()
 {
-	openni::Status rc;
-
 	while (isThreadRunning())
 	{
-		ofxProfileSectionPush("depthStream update");
-		
-		openni::VideoFrameRef frame;
-		rc = stream->readFrame(&frame);
-		if (rc != openni::STATUS_OK)
-		{
-			printf("Wait failed\n");
-			continue;
-		}
-
-		if (frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_1_MM && frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_100_UM)
-		{
-			printf("Unexpected frame format\n");
-			continue;
-		}
-
-		openni::DepthPixel* pDepth = (openni::DepthPixel*)frame.getData();
-		int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
-		
-		//printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], stream->getVideoMode().getFps());
-
-		pixels[1]->setFromPixels((const unsigned short*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_GRAYSCALE);
-		swap(pixels[0], pixels[1]);
-
-		ofxProfileSectionPop();
+		readFrame();
 	}
-
-	stream->stop();
-	stream->destroy();
-
 }
 
 ofVec3f ofxDepthStream::cameraToWorld(ofVec2f p)
@@ -106,6 +79,33 @@ void ofxDepthStream::allocateBuffers()
 bool ofxDepthStream::isValid()
 {
 	return (getStream().use_count() > 0 && getStream()->isValid());
+}
+
+int ofxDepthStream::readFrame()
+{
+	openni::VideoFrameRef frame;
+	openni::Status rc;
+	rc = stream->readFrame(&frame);
+	if (rc != openni::STATUS_OK)
+	{
+		printf("Wait failed\n");
+		return rc;
+	}
+
+	if (frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_1_MM && frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_DEPTH_100_UM)
+	{
+		printf("Unexpected frame format\n");
+		return rc;
+	}
+
+	openni::DepthPixel* pDepth = (openni::DepthPixel*)frame.getData();
+	//int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
+	//printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pDepth[middleIndex], stream->getVideoMode().getFps());
+
+	pixels[1]->setFromPixels((const unsigned short*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_GRAYSCALE);
+	swap(pixels[0], pixels[1]);
+
+	return openni::STATUS_OK;
 }
 
 

@@ -2,7 +2,7 @@
 #include "OpenNI.h"
 
 
-void ofxColorStream ::setup(ofPtr<openni::Device> device, bool isVerbose)
+void ofxColorStream::setup(ofPtr<openni::Device> device, bool isVerbose)
 {
 	this->device = device;
 
@@ -27,48 +27,24 @@ void ofxColorStream ::setup(ofPtr<openni::Device> device, bool isVerbose)
 
 	}
 
-	startThread(false, isVerbose);
+	//startThread(false, isVerbose);
 }
 
 void ofxColorStream ::exit()
 {
 	stopThread();
 	waitForThread();
+
+	stream->stop();
+	stream->destroy();
 }
 
 void ofxColorStream ::threadedFunction()
 {
-	openni::Status rc;
-
-	openni::VideoFrameRef frame;
 	while (isThreadRunning())
 	{
-		rc = stream->readFrame(&frame);
-		if (rc != openni::STATUS_OK)
-		{
-			printf("Wait failed\n");
-			continue;
-		}
-
-		if (frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_RGB888)
-		{
-			printf("Unexpected frame format\n");
-			continue;
-		}
-
-		openni::RGB888Pixel* pcolor = (openni::RGB888Pixel*)frame.getData();
-		int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
-
-		//printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pcolor[middleIndex].r, stream->getVideoMode().getFps());
-		
-		pixels[1]->setFromPixels((const unsigned char*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_COLOR);
-		swap(pixels[0], pixels[1]);
-
+		readFrame();
 	}
-
-	stream->stop();
-	stream->destroy();
-
 }
 
 void ofxColorStream::allocateBuffers()
@@ -87,6 +63,33 @@ void ofxColorStream::allocateBuffers()
 bool ofxColorStream::isValid()
 {
 	return (getStream().use_count() > 0 && getStream()->isValid());
+}
+
+int ofxColorStream::readFrame()
+{
+	openni::VideoFrameRef frame;
+	openni::Status rc = stream->readFrame(&frame);
+	if (rc != openni::STATUS_OK)
+	{
+		printf("Wait failed\n");
+		return rc;
+	}
+
+	if (frame.getVideoMode().getPixelFormat() != openni::PIXEL_FORMAT_RGB888)
+	{
+		printf("Unexpected frame format\n");
+		return rc;
+	}
+
+	openni::RGB888Pixel* pcolor = (openni::RGB888Pixel*)frame.getData();
+	int middleIndex = (frame.getHeight()+1)*frame.getWidth()/2;
+
+	//printf("[%08llu] %8d fps:%d\n", (long long)frame.getTimestamp(), pcolor[middleIndex].r, stream->getVideoMode().getFps());
+
+	pixels[1]->setFromPixels((const unsigned char*)frame.getData(), pixels[1]->getWidth(), pixels[1]->getHeight(), OF_IMAGE_COLOR);
+	swap(pixels[0], pixels[1]);
+
+	return openni::STATUS_OK;
 }
 
 

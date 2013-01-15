@@ -7,6 +7,15 @@
 #include "ofxColorStream.h"
 #include "ofxOpenNi2.h"
 
+#include <stdint.h>
+
+#include "ofxUI.h"
+#include "ofxUIRadio.h"
+
+
+typedef map<unsigned long, int> ClickMap;
+
+
 class GroundTruthReader : public ofBaseApp
 {
 public:
@@ -28,8 +37,8 @@ private:
 		unsigned long startTime;
 		int gridWidth;
 		int gridHeight;
-		map<unsigned long, int> selections;
-
+		ClickMap clickMap;
+		
 		RecordingGroundTruth()
 		{
 			clear();
@@ -39,9 +48,31 @@ private:
 			startTime = 0;
 			gridWidth = 0;
 			gridHeight = 0;
-			selections.clear();
+			clickMap.clear();
 		}
 	} truth;
+
+	map<uint64_t, int> timestamps;
+
+	ofPtr<ofxUICanvas> gui;   	
+	void guiEvent(ofxUIEventArgs &e);
+	
+	void setupLeftGui(); 
+	void setupBottomGui();
+	void setupRightGui(); 
+
+
+	virtual void mouseMoved( int x, int y );
+
+	virtual void keyPressed( int key );
+	void loadFile( string files );
+
+	ofPtr<ofxUICanvas> bottomPanel;
+	ofPtr<ofxUICanvas> rightPanel;
+	ofPtr<ofxUICanvas> leftPanel;
+	int nFrames; //mv to playbackcontrols
+	
+
 
 };
 
