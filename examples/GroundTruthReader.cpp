@@ -2,6 +2,7 @@
 #include "ofUtils.h"
 
 #include "OpenNI.h"
+#include "ofxHandTracker.h"
 
 openni::PlaybackControl* pbc;
 
@@ -14,6 +15,8 @@ bool extFilter(string s)
 
 void GroundTruthReader::setup()
 {
+	dirPath = "e:/gridRecordings/";
+	//dirPath = ofToDataPath(".");
 	//ofSetFrameRate(100);
 	ofSetVerticalSync(true);
 	setupLeftGui();
@@ -52,7 +55,7 @@ void GroundTruthReader::setupLeftGui()
 	vector<string> names;
 	vector<string>namesFiltered;
 
-	Poco::File dir(ofToDataPath("."));
+	Poco::File dir(dirPath);
 	dir.list(names);
 
 	for (int i=0; i < names.size(); i++)
@@ -90,7 +93,7 @@ void GroundTruthReader::guiEvent(ofxUIEventArgs &e)
 		{
 			//ofxUIRadio* clicks = (ofxUIRadio*)parent;
 			ofxUIToggle* toggle = (ofxUIToggle*)e.widget;
-			
+
 			ClickMap::const_iterator first = truth.clickMap.cbegin();
 			ClickMap::const_iterator last = truth.clickMap.cend();
 			ClickMap::const_iterator it;
@@ -108,16 +111,16 @@ void GroundTruthReader::guiEvent(ofxUIEventArgs &e)
 				{ first=++it; count-=step+1;  }
 				else count=step;
 			}
-			
+
 			cout << it->first << " " << it->second << endl;
-			
+
 			//cout << it->second << endl;
 			//seekTimestamp(name);
 		}
 	}
 
 
-	else if(name == "SEEKBAR")
+	if(name == "SEEKBAR")
 	{
 		ofxUISlider* slider = (ofxUISlider*) e.widget; 
 
@@ -179,31 +182,41 @@ void GroundTruthReader::loadFile( string filename )
 {
 	cout << "loading file:" << filename << endl;
 
-	ofFile file(filename);
+	ofFile file(dirPath + filename);
 	if (file.getExtension() == "oni")
 	{
 		if(depthStream.isValid()) depthStream.exit();
 		if(colorStream.isValid()) colorStream.exit();
 		if(oniDevice.isValid()) oniDevice.exit();
-		oniDevice.setup(file.getAbsolutePath().c_str());		depthStream.setup(oniDevice.getDevice());		colorStream.setup(oniDevice.getDevice());
+
+		oniDevice.setup(file.getAbsolutePath().c_str());
+		depthStream.setup(oniDevice.getDevice());
+		colorStream.setup(oniDevice.getDevice());
 
 		depthStream.readFrame();
 		colorStream.readFrame();
 
 		// parse ground truth text file
-		ofFile fileTruth(file.getBaseName() + ".txt");
+		ofFile fileTruth(dirPath + ofFile(filename).getBaseName() + ".txt");
 		if (fileTruth.exists())
 		{
 			/*
 			//reading file in this format:
-			testApp: verbose: 261212382 recording started 
-			testApp: verbose: 261212382 rows: 5 cols:3 
-			Keypad: verbose: 261215152 Preselect:	 5 
+			testApp: verbose: 261212382 recording started 
+
+			testApp: verbose: 261212382 rows: 5 cols:3 
+
+			Keypad: verbose: 261215152 Preselect:	 5 
+
 			Keypad: verbose: 261216023 Pressed:	 5 
-			Keypad: verbose: 261224268 Preselect:	 4 
-			Keypad: verbose: 261225192 Pressed:	 4 
-			Keypad: verbose: 261226082 Preselect:	 11 
-			Keypad: verbose: 261226743 Pressed:	 11 
+			Keypad: verbose: 261224268 Preselect:	 4 
+
+			Keypad: verbose: 261225192 Pressed:	 4 
+
+			Keypad: verbose: 261226082 Preselect:	 11 
+
+			Keypad: verbose: 261226743 Pressed:	 11 
+
 			Keypad: verbose: 261228184 Preselect:	 11 
 			...
 			*/
@@ -255,13 +268,44 @@ void GroundTruthReader::loadFile( string filename )
 		pbc->setSpeed(0);
 		pbc->seek(*depthStream.getStream().get(), 0);
 
-		timestamps.clear();
-		for (int i = 0; i < nFrames; i+=10)
+
+		string handFilename = dirPath + ofFile(filename).getBaseName() + ".hand.txt";
+
+		if (!ofFile::doesFileExist(handFilename, false))
 		{
-			cout << "read frame " << i << endl;
-			pbc->seek(*depthStream.getStream().get(), i);
-			depthStream.getStream()->readFrame(&pFrame);
-			timestamps[pFrame.getTimestamp()] = pFrame.getFrameIndex();
+
+			ofFile fileHand(handFilename, ofFile::ReadWrite);
+			{
+
+
+
+				timestamps.clear();
+
+
+				ofxHandTracker handTracker;
+				handTracker.setup(depthStream.getDevice());
+
+				stringstream handData;
+
+				for (int i = 0; i < nFrames; i++)
+				{
+					//cout << "read frame " << i << endl;
+					//pbc->seek(*depthStream.getStream().get(), i);
+					//depthStream.getStream()->readFrame(&pFrame);
+
+					handTracker.readFrame();
+					handData << handTracker.handTrackerFrame.getFrameIndex();
+					handData << " ";
+					handData << handTracker.handTrackerFrame.getTimestamp();
+					handData << " ";
+					handData << handTracker.getHandPoint();
+					handData << endl;
+					//timestamps[pFrame.getTimestamp()] = pFrame.getFrameIndex();
+				}
+
+				fileHand << handData.str();
+				fileHand.close();
+			}
 		}
 
 

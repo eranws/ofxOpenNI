@@ -2,21 +2,9 @@
 
 #include "Nite.h"
 
-#include "ofEvents.h"
-#include <deque>
-
-TrackerEvents& getTrackerEvents()
-{
-	static TrackerEvents* events = new TrackerEvents;
-	return *events;
-}
-TrackerEventArgs bangEventArgs;
-
-
-
 void ofxHandTracker::setup(ofPtr<openni::Device> device, bool isVerbose)
 {
-	nite::Status niteRc;
+	niteRc = nite::STATUS_OK;
 	niteRc = nite::NiTE::initialize();
 	if (niteRc != nite::STATUS_OK)
 	{
@@ -24,7 +12,19 @@ void ofxHandTracker::setup(ofPtr<openni::Device> device, bool isVerbose)
 	}
 	this->device = device;
 
-	startThread(false, isVerbose);
+	niteRc = handTracker.create(device.get());
+	if (niteRc != nite::STATUS_OK)
+	{
+		throw ("Couldn't create user tracker\n");
+	}
+
+	handTracker.startGestureDetection(nite::GESTURE_WAVE);
+	handTracker.startGestureDetection(nite::GESTURE_CLICK);
+	handTracker.startGestureDetection(nite::GESTURE_HAND_RAISE);
+
+
+
+//	startThread(false, isVerbose);
 }
 
 void ofxHandTracker::exit()
@@ -35,82 +35,44 @@ void ofxHandTracker::exit()
 
 void ofxHandTracker::threadedFunction()
 {
-	
-		nite::HandTracker handTracker;		
-		nite::HandTrackerFrameRef handTrackerFrame;	
-		nite::Status niteRc;
+	while (isThreadRunning())
+	{
+		readFrame();
+	}
 
-		niteRc = handTracker.create(device.get());
-		if (niteRc != nite::STATUS_OK)
+	nite::NiTE::shutdown();
+}
+
+void ofxHandTracker::readFrame()
+{
+	niteRc = handTracker.readFrame(&handTrackerFrame);
+	if (niteRc != nite::STATUS_OK)
+	{
+		printf("Get next frame failed\n");
+		return;
+	}
+
+	const nite::Array<nite::GestureData>& gestures = handTrackerFrame.getGestures();
+	for (int i = 0; i < gestures.getSize(); ++i)
+	{
+		if (gestures[i].isComplete())
 		{
-			throw ("Couldn't create user tracker\n");
+			nite::HandId newId;
+			handTracker.startHandTracking(gestures[i].getCurrentPosition(), &newId);
 		}
+	}
 
-		handTracker.startGestureDetection(nite::GESTURE_WAVE);
-		handTracker.startGestureDetection(nite::GESTURE_CLICK);
-
-
-		//if using nite thread (unsupported for now)
-		//handTracker.addListener(this);	
-
-
-		while (isThreadRunning())
+	const nite::Array<nite::HandData>& hands = handTrackerFrame.getHands();
+	for (int i = 0; i < hands.getSize(); ++i)
+	{
+		const nite::HandData& hand = hands[i];
+		if (hand.isTracking())
 		{
-			niteRc = handTracker.readFrame(&handTrackerFrame);
-			if (niteRc != nite::STATUS_OK)
-			{
-				printf("Get next frame failed\n");
-				continue;
-			}
-
-			const nite::Array<nite::GestureData>& gestures = handTrackerFrame.getGestures();
-			for (int i = 0; i < gestures.getSize(); ++i)
-			{
-				if (gestures[i].isComplete())
-				{
-					nite::HandId newId;
-					handTracker.startHandTracking(gestures[i].getCurrentPosition(), &newId);
-				}
-			}
-
-			const nite::Array<nite::HandData>& hands = handTrackerFrame.getHands();
-			for (int i = 0; i < hands.getSize(); ++i)
-			{
-				const nite::HandData& hand = hands[i];
-				if (hand.isTracking())
-				{
-					handPoint = ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
-					//printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
-
-					//raw event input
-					lock();
-					_positionHistory.push_front(ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z));
-					unlock();
-					if (_positionHistory.size() <= _historySize)
-					{
-						continue;
-					}
-					else
-					{
-						lock();
-						_positionHistory.pop_back();
-						unlock();
-					}
-
-					//process
-
-					// example: calculate speed
-					ofPoint speed = _positionHistory.back() - _positionHistory.front();
-					float velocity = speed.length();
-					ofNotifyEvent(getTrackerEvents().handVelocityUpdate, velocity); //TODO send id
-					ofNotifyEvent(getTrackerEvents().handUpdate, positionHistory().front()); //TODO send id
-
-
-				}
-			}
+			handPoint = ofPoint(hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
+			//printf("%d. (%5.2f, %5.2f, %5.2f)\n", hand.getId(), hand.getPosition().x, hand.getPosition().y, hand.getPosition().z);
 		}
+	}
 
-		nite::NiTE::shutdown();
 }
 
 

@@ -72,6 +72,7 @@ private:
 	ofPtr<ofxUICanvas> leftPanel;
 	int nFrames; //mv to playbackcontrols
 	
+	string dirPath;
 
 
 };

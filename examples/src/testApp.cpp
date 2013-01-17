@@ -42,7 +42,10 @@ void testApp::setup() {
 	}
 	catch (exception e)
 	{
-		oniDevice.setup("c:\\1.oni");
+		//oniDevice.setup("c:\\1.oni");
+		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-30-35-716.oni");
+		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
+
 	}
 
 
@@ -54,9 +57,11 @@ void testApp::setup() {
 	recorder.addStream(depthStream.getStream());
 	recorder.addStream(colorStream.getStream());
 
-
-
 	handTracker.setup(depthStream.getDevice());
+
+	depthStream.startThread();
+	colorStream.startThread();
+
 
 	handCam.setDistance(10);
 	faceTracker.setup();
@@ -224,7 +229,7 @@ void testApp::update(){
 
 		cv::Mat colorMat = ofxCv::toCv(colorPixels);
 		cv::Mat grayMat;
-		cv:cvtColor(colorMat, grayMat, CV_BGR2GRAY);
+		cv::cvtColor(colorMat, grayMat, CV_BGR2GRAY);
 		showMat(grayMat);
 
 		cv::Mat edges;
@@ -454,6 +459,8 @@ void testApp::draw(){
 
 	//////////////////////////////////////////////////////////////////////////
 	// TODO move to history Filter...
+
+	/*
 	ofxProfileSectionPush("draw hands");
 	handTracker.lock();
 
@@ -476,7 +483,7 @@ void testApp::draw(){
 	handTracker.unlock();
 
 	ofxProfileSectionPop();
-
+	*/
 
 
 
