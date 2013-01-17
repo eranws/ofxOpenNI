@@ -44,8 +44,8 @@ void testApp::setup() {
 	{
 		//oniDevice.setup("c:\\1.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-30-35-716.oni");
-		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
-
+//		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
+		oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
 	}
 
 
@@ -59,9 +59,9 @@ void testApp::setup() {
 
 	handTracker.setup(depthStream.getDevice());
 
-	depthStream.startThread();
-	colorStream.startThread();
-
+	depthStream.startThread(false);
+	colorStream.startThread(false);
+	handTracker.startThread(false);
 
 	handCam.setDistance(10);
 	faceTracker.setup();

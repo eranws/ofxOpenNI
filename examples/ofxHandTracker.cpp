@@ -27,6 +27,8 @@ void ofxHandTracker::exit()
 {
 	stopThread();
 	waitForThread();
+
+	handTrackerFrame.release();
 	handTracker.destroy();
 }
 
