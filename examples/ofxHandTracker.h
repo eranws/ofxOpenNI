@@ -24,7 +24,7 @@ private:
 	ofPtr<openni::Device> device;
 
 	nite::HandTracker handTracker;		
-	nite::HandTrackerFrameRef handTrackerFrame;	
+	ofPtr<nite::HandTrackerFrameRef> handTrackerFrame;	
 	nite::Status niteRc;
 
 	ofPoint handPoint;

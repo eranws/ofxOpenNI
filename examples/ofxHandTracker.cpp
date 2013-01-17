@@ -18,8 +18,8 @@ void ofxHandTracker::setup(ofPtr<openni::Device> device, bool isVerbose)
 	handTracker.startGestureDetection(nite::GESTURE_CLICK);
 	handTracker.startGestureDetection(nite::GESTURE_HAND_RAISE);
 
-
-
+	handTrackerFrame = ofPtr<nite::HandTrackerFrameRef>(new nite::HandTrackerFrameRef);
+	
 //	startThread(false, isVerbose);
 }
 
@@ -28,7 +28,7 @@ void ofxHandTracker::exit()
 	stopThread();
 	waitForThread();
 
-	handTrackerFrame.release();
+	handTrackerFrame->release();
 	handTracker.destroy();
 }
 
@@ -43,14 +43,14 @@ void ofxHandTracker::threadedFunction()
 
 void ofxHandTracker::readFrame()
 {
-	niteRc = handTracker.readFrame(&handTrackerFrame);
+	niteRc = handTracker.readFrame(handTrackerFrame.get());
 	if (niteRc != nite::STATUS_OK)
 	{
 		printf("Get next frame failed\n");
 		return;
 	}
 
-	const nite::Array<nite::GestureData>& gestures = handTrackerFrame.getGestures();
+	const nite::Array<nite::GestureData>& gestures = handTrackerFrame->getGestures();
 	for (int i = 0; i < gestures.getSize(); ++i)
 	{
 		if (gestures[i].isComplete())
@@ -60,7 +60,7 @@ void ofxHandTracker::readFrame()
 		}
 	}
 
-	const nite::Array<nite::HandData>& hands = handTrackerFrame.getHands();
+	const nite::Array<nite::HandData>& hands = handTrackerFrame->getHands();
 	for (int i = 0; i < hands.getSize(); ++i)
 	{
 		const nite::HandData& hand = hands[i];

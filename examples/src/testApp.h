@@ -90,6 +90,11 @@ private:
 
 	ofxUIToggle* guiAutoHide; 
 	ofxUIToggle* faceToggle; 
+	ofxUIToggle* cvDepthToggle;
+	ofxUIToggle* fullScreenToggle;
+
+	std::deque<ofPoint> handHistory;
+	int handHistorySize;
 
 	deque<cv::Mat> depthHistory;
 	int depthHistorySize;

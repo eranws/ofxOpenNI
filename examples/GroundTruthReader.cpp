@@ -294,9 +294,9 @@ void GroundTruthReader::loadFile( string filename )
 					//depthStream.getStream()->readFrame(&pFrame);
 
 					handTracker.readFrame();
-					handData << handTracker.handTrackerFrame.getFrameIndex();
+					handData << handTracker.handTrackerFrame->getFrameIndex();
 					handData << " ";
-					handData << handTracker.handTrackerFrame.getTimestamp();
+					handData << handTracker.handTrackerFrame->getTimestamp();
 					handData << " ";
 					handData << handTracker.getHandPoint();
 					handData << endl;
