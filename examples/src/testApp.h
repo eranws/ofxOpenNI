@@ -88,6 +88,7 @@ private:
 	void setupGui(); 
 	void guiEvent(ofxUIEventArgs &e);
 
+	ofxUIToggle* guiAutoHide; 
 	ofxUIToggle* faceToggle; 
 
 	deque<cv::Mat> depthHistory;

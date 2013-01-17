@@ -764,11 +764,15 @@ void testApp::keyReleased(int key){
 //--------------------------------------------------------------
 void testApp::mouseMoved(int x, int y )
 {
-	if (x < 10 && !gui1->isVisible())	
-		gui1->setVisible(true);
+	if (guiAutoHide->getValue())
+	{
+		if (x < 10 && !gui1->isVisible())	
+			gui1->setVisible(true);
 
-	if (x > gui1->getRect()->width)
-		gui1->setVisible(false);			
+		if (x > gui1->getRect()->width)
+			gui1->setVisible(false);
+	}
+
 }
 
 //--------------------------------------------------------------
@@ -860,8 +864,10 @@ void testApp::setupGui()
 
 	
 	gui1 = ofPtr<ofxUICanvas>(new ofxUICanvas(0, 0, length+xInit, ofGetHeight())); 
-	gui1->addWidgetDown(new ofxUILabel("PANEL 1: BASICS", OFX_UI_FONT_LARGE)); 
-	gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE)); 
+	gui1->addWidgetDown(new ofxUILabel("GUI", OFX_UI_FONT_LARGE)); 
+	//gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE));
+	guiAutoHide = gui1->addToggle("guiAutoHide", false, dim, dim);
+
 
 	gui1->addSpacer(length-xInit, 2);
 	gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
