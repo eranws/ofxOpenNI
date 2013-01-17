@@ -64,6 +64,7 @@
     </ClCompile>
     <ClCompile Include="GroundTruthReader.cpp" />
     <ClCompile Include="ofxOpenNi2.cpp" />
+    <ClCompile Include="ofxNite2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.h">
@@ -249,6 +250,7 @@
     </ClInclude>
     <ClInclude Include="GroundTruthReader.h" />
     <ClInclude Include="ofxOpenNi2.h" />
+    <ClInclude Include="ofxNite2.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">

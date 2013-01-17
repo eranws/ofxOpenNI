@@ -153,6 +153,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClCompile Include="ofxColorStream.cpp" />
     <ClCompile Include="ofxDepthStream.cpp" />
     <ClCompile Include="ofxHandTracker.cpp" />
+    <ClCompile Include="ofxNite2.cpp" />
     <ClCompile Include="ofxOniDevice.cpp" />
     <ClCompile Include="ofxOpenNi2.cpp" />
     <ClCompile Include="ofxRecorder.cpp" />
@@ -314,6 +315,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="ofxColorStream.h" />
     <ClInclude Include="ofxDepthStream.h" />
     <ClInclude Include="ofxHandTracker.h" />
+    <ClInclude Include="ofxNite2.h" />
     <ClInclude Include="ofxOniDevice.h" />
     <ClInclude Include="ofxOpenNi2.h" />
     <ClInclude Include="ofxRecorder.h" />

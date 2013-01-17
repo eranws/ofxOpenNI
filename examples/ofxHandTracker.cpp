@@ -5,11 +5,7 @@
 void ofxHandTracker::setup(ofPtr<openni::Device> device, bool isVerbose)
 {
 	niteRc = nite::STATUS_OK;
-	niteRc = nite::NiTE::initialize();
-	if (niteRc != nite::STATUS_OK)
-	{
-		throw ("NiTE initialization failed\n");
-	}
+
 	this->device = device;
 
 	niteRc = handTracker.create(device.get());
@@ -31,6 +27,7 @@ void ofxHandTracker::exit()
 {
 	stopThread();
 	waitForThread();
+	handTracker.destroy();
 }
 
 void ofxHandTracker::threadedFunction()
@@ -40,7 +37,6 @@ void ofxHandTracker::threadedFunction()
 		readFrame();
 	}
 
-	nite::NiTE::shutdown();
 }
 
 void ofxHandTracker::readFrame()
