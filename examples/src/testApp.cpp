@@ -8,7 +8,6 @@
 #include <math.h>
 
 #define showMat(x) showMatR(x, 1)
-
 #define showMatR(x, i)	\
 {						\
 	cv::Mat y;			\
@@ -72,6 +71,8 @@ void testApp::setup() {
 
 	depthHistorySize = 10;
 
+	handHistorySize = 10;
+
 	motion = NULL;
 }
 
@@ -81,19 +82,18 @@ void testApp::update(){
 
 	debugString = stringstream();
 
-
-	ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
+	// update colorPixels
 	ofPixels colorPixels = colorStream.getPixels();
-	ofxProfileSectionPop();
-
-
-	ofxProfileSectionPush("cv::Mat mat = ofxCv::toCv(ofPixels);");
 	cv::Mat mat = ofxCv::toCv(colorPixels);
-	ofxProfileSectionPop();
-
-
-	//if(depthStream.isNewFrame()) {
 	
+	/*
+	handHistory.push_front(handTracker.getHandPoint());
+	if (handHistory.size() > handHistorySize)
+	{
+		handHistory.pop_back();
+	}
+	*/
+
 	if (faceToggle->getValue())
 	{
 		ofxProfileSectionPush("faceTracker update");
@@ -108,6 +108,10 @@ void testApp::update(){
 
 
 	ofPtr<ofShortPixels> depthPixels = depthStream.getPixels();
+
+	if (cvDepthToggle->getValue())
+	{
+
 	cv::Mat depthMat = ofxCv::toCv(*depthPixels);
 	
 	depthHistory.push_front(depthMat.clone());
@@ -243,7 +247,6 @@ void testApp::update(){
 		cv::Canny(grayMat, edges, threshold1, threshold2);//, int apertureSize=3, bool L2gradient=false )¶
 		showMat(edges);
 
-	
 		/*
 		cv::Mat ba;
 		depthHistory[0].convertTo(ba, CV_8UC1, 0.25);
@@ -295,7 +298,7 @@ void testApp::update(){
 		*/
 
 	}
-
+	}
 
 
 
@@ -440,37 +443,21 @@ void testApp::draw(){
 	ofSetColor(255);
 	colorTexture.draw(0,0);
 
-
-
-	//////////////////////////////////////////////////////////////////////////
-	// TODO move to history Filter...
-
-	/*
-	ofxProfileSectionPush("draw hands");
-	handTracker.lock();
-
-	std::deque<ofPoint> points = handTracker.positionHistory();
-
-	for (int i = 0; i < points.size(); i++)
+	ofSphere(handTracker.getHandPoint(), 10);
+	
+	if (handHistory.size() == handHistorySize)
 	{
-		ofSphere(points[i], 10);
-	}
-
-	if (points.size() == handTracker.historySize())
-	{
-		for (int i = 1; i < points.size(); i++)
+		for (int i = 1; i < handHistorySize; i++)
 		{
-			ofSetLineWidth(points.size() - i);
-			ofLine(points[i-1], points[i]);
+			float p = 1 - float(i) / (handHistorySize - 1);
+
+			ofSphere(handHistory[i], 10 * p + 3);
+			ofSetColor(ofColor::fromHsb(255 * p, 255, 255, 1-p));
+
+			ofSetLineWidth(10 * p);
+			ofLine(handHistory[i-1], handHistory[i]);
 		}
-
 	}
-	handTracker.unlock();
-
-	ofxProfileSectionPop();
-	*/
-
-
 
 
 
@@ -748,7 +735,7 @@ void testApp::keyPressed(int key){
 		case '3': showProfilerString = !showProfilerString; break;
 		case 'C': ofxProfile::clear(); break;
 
-		case 'f': ofToggleFullscreen(); break;
+		case 'f': fullScreenToggle->toggleValue(); break;
 		default:
 			break;
 		}
@@ -867,7 +854,8 @@ void testApp::setupGui()
 	gui1->addWidgetDown(new ofxUILabel("GUI", OFX_UI_FONT_LARGE)); 
 	//gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE));
 	guiAutoHide = gui1->addToggle("guiAutoHide", false, dim, dim);
-
+	fullScreenToggle = gui1->addToggle("fullScreen", false, dim, dim);
+	cvDepthToggle = gui1->addToggle("cvDepth", false, dim, dim);
 
 	gui1->addSpacer(length-xInit, 2);
 	gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
@@ -943,6 +931,12 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 		cout << output << endl; 
 	}
 
+	else if(name == "fullScreen")
+	{
+		ofToggleFullscreen();
+	}
+
+	
 
 
 }
