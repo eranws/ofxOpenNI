@@ -34,7 +34,6 @@ void testApp::setup() {
 
 	ofSetFrameRate(100);
 
-
 	try
 	{
 		oniDevice.setup();
@@ -60,7 +59,7 @@ void testApp::setup() {
 
 	depthStream.startThread(false);
 	colorStream.startThread(false);
-	handTracker.startThread(false);
+	//handTracker.startThread(false);
 
 	handCam.setDistance(10);
 	faceTracker.setup();
@@ -71,7 +70,7 @@ void testApp::setup() {
 
 	depthHistorySize = 10;
 
-	handHistorySize = 10;
+	handHistorySize = 100;
 
 	motion = NULL;
 }
@@ -86,13 +85,15 @@ void testApp::update(){
 	ofPixels colorPixels = colorStream.getPixels();
 	cv::Mat mat = ofxCv::toCv(colorPixels);
 	
-	/*
+	ofxProfileSectionPush("handTracker update");
+	handTracker.readFrame();
+	ofxProfileSectionPop();
+
 	handHistory.push_front(handTracker.getHandPoint());
 	if (handHistory.size() > handHistorySize)
 	{
 		handHistory.pop_back();
 	}
-	*/
 
 	if (faceToggle->getValue())
 	{
@@ -437,22 +438,24 @@ void testApp::draw(){
 
 
 	sceneCam.begin();
-	ofEnableBlendMode(OF_BLENDMODE_ADD);
+	//ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
 
 	ofSetColor(255);
 	colorTexture.draw(0,0);
 
-	ofSphere(handTracker.getHandPoint(), 10);
-	
+	//ofSphere(handTracker.getHandPoint(), 10);
+	glEnable(GL_DEPTH_TEST);       	
 	if (handHistory.size() == handHistorySize)
 	{
 		for (int i = 1; i < handHistorySize; i++)
 		{
-			float p = 1 - float(i) / (handHistorySize - 1);
+			float p = 1 - (float(i) / (handHistorySize));
 
-			ofSphere(handHistory[i], 10 * p + 3);
-			ofSetColor(ofColor::fromHsb(255 * p, 255, 255, 1-p));
+			ofColor c = ofColor::fromHsb(255 * p, 255, 255);
+			ofSetColor(c);
+			ofSphere(handHistory[i], 20 * p + 3);
+			//ofSphere(handHistory[i], 20);
 
 			ofSetLineWidth(10 * p);
 			ofLine(handHistory[i-1], handHistory[i]);
@@ -759,7 +762,6 @@ void testApp::mouseMoved(int x, int y )
 		if (x > gui1->getRect()->width)
 			gui1->setVisible(false);
 	}
-
 }
 
 //--------------------------------------------------------------
