@@ -88,6 +88,8 @@ private:
 	void setupGui(); 
 	void guiEvent(ofxUIEventArgs &e);
 
+	ofxUIToggle* faceToggle; 
+
 	deque<cv::Mat> depthHistory;
 	int depthHistorySize;
 

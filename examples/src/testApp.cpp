@@ -82,9 +82,6 @@ void testApp::update(){
 	debugString = stringstream();
 
 
-	//if(depthStream.isNewFrame()) {
-	ofxProfileSectionPush("faceTracker update");
-
 	ofxProfileSectionPush("ofPixels ofPixels = openNIDevice.getImagePixels();");
 	ofPixels colorPixels = colorStream.getPixels();
 	ofxProfileSectionPop();
@@ -94,13 +91,16 @@ void testApp::update(){
 	cv::Mat mat = ofxCv::toCv(colorPixels);
 	ofxProfileSectionPop();
 
-	ofxProfileSectionPush("faceTracker.update(mat);");
-	faceTracker.update(mat);
-	ofxProfileSectionPop();
 
-	ofxProfileSectionPop();
-
-	if(!faceTracker.getFound())
+	//if(depthStream.isNewFrame()) {
+	
+	if (faceToggle->getValue())
+	{
+		ofxProfileSectionPush("faceTracker update");
+		faceTracker.update(mat);
+		ofxProfileSectionPop();
+	}
+	if(!faceToggle->getValue() || !faceTracker.getFound())
 	{
 		facePos = ofVec3f();
 		screenPoint = ofVec2f();
@@ -396,21 +396,6 @@ void testApp::draw(){
 	ofxProfileThisFunction();
 	ofBackground(0);
 
-
-	if (drawOpenNiDebug)
-	{
-		ofxProfileSectionPush("draw OpenNiDebug");
-
-		ofPushMatrix();
-		ofPushStyle();
-
-#ifdef OPENNI1
-		openNIDevice.drawDebug(); // draw debug (ie., image, depth, skeleton)
-#endif
-		ofPopMatrix();
-		ofxProfileSectionPop();
-	}
-
 	ofSetColor(255);
 
 	ofTexture colorTexture;
@@ -502,7 +487,8 @@ void testApp::draw(){
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 
 
-	if(faceTracker.getFound()) {
+	if(faceToggle->getValue() && faceTracker.getFound())
+	{
 
 		ofPushMatrix();
 
@@ -573,7 +559,7 @@ void testApp::draw(){
 
 #endif
 
-			if(faceTracker.getFound())
+			if(faceToggle->getValue() && faceTracker.getFound())
 			{
 				ofPushStyle();
 				ofSetLineWidth(3);
@@ -636,7 +622,7 @@ void testApp::draw(){
 
 	sceneCam.end();
 
-	if(faceTracker.getFound())
+	if(faceToggle->getValue() && faceTracker.getFound())
 	{
 		ofFill();
 		ofSetColor(255);
@@ -872,11 +858,7 @@ void testApp::setupGui()
 	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 
 	float length = 255-xInit; 
 
-	vector<string> names; 
-	names.push_back("RAD1");
-	names.push_back("RAD2");
-	names.push_back("RAD3");	
-
+	
 	gui1 = ofPtr<ofxUICanvas>(new ofxUICanvas(0, 0, length+xInit, ofGetHeight())); 
 	gui1->addWidgetDown(new ofxUILabel("PANEL 1: BASICS", OFX_UI_FONT_LARGE)); 
 	gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE)); 
@@ -901,27 +883,16 @@ void testApp::setupGui()
 	gui1->addSlider("8", 0.0, 255.0, 150, dim, 160);
 	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_DOWN);
 
+	
 	gui1->addSpacer(length-xInit, 2);
-	gui1->addRadio("RADIO HORIZONTAL", names, OFX_UI_ORIENTATION_HORIZONTAL, dim, dim); 
-	gui1->addRadio("RADIO VERTICAL", names, OFX_UI_ORIENTATION_VERTICAL, dim, dim); 
+	gui1->addWidgetDown(new ofxUILabel("TOGGLES", OFX_UI_FONT_MEDIUM));
 
-	gui1->addSpacer(length-xInit, 2);
-	gui1->addWidgetDown(new ofxUILabel("BUTTONS", OFX_UI_FONT_MEDIUM)); 
-	gui1->addButton("DRAW GRID", false, dim, dim);
-	gui1->addWidgetDown(new ofxUILabel("TOGGLES", OFX_UI_FONT_MEDIUM)); 
-	gui1->addToggle( "D_GRID", false, dim, dim);
+	faceToggle = gui1->addToggle("FaceTracker", false, dim, dim);
 
-	gui1->addSpacer(length-xInit, 2);
-	gui1->addWidgetDown(new ofxUILabel("RANGE SLIDER", OFX_UI_FONT_MEDIUM)); 
-	gui1->addRangeSlider("RSLIDER", 0.0, 255.0, 50.0, 100.0, length-xInit,dim);
-
-	gui1->addSpacer(length-xInit, 2);
-	gui1->addWidgetDown(new ofxUILabel("2D PAD", OFX_UI_FONT_MEDIUM)); 
-	gui1->add2DPad("PAD", ofPoint(0,length-xInit), ofPoint(0,120), ofPoint((length-xInit)*.5,120*.5), length-xInit,120);
+	
 
 	gui1->setColorBack(ofColor::gray);
 	//gui1->setDrawBack(true);
-
 	gui1->setColorFill(ofColor::gray);
 	gui1->setDrawFill(true);
 
@@ -940,7 +911,7 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 		ofxUIButton *button = (ofxUIButton *) e.widget; 
 		//bdrawGrid = button->getValue(); 
 	}
-	else if(name == "D_GRID")
+	else if(name == "FaceTracker")
 	{
 		ofxUIToggle *toggle = (ofxUIToggle *) e.widget; 
 		//bdrawGrid = toggle->getValue(); 
