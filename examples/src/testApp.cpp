@@ -744,7 +744,7 @@ void testApp::keyPressed(int key){
 		case '3': showProfilerString = !showProfilerString; break;
 		case 'C': ofxProfile::clear(); break;
 
-		case 'f': fullScreenToggle->toggleValue(); break;
+		case 'f': fullScreenToggle->toggleValue(); fullScreenToggle->triggerSelf(); break;
 		default:
 			break;
 		}
