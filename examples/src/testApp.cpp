@@ -42,7 +42,7 @@ void testApp::setup() {
 	{
 		//oniDevice.setup("c:\\1.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-30-35-716.oni");
-//		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
+		//		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
 		oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
 	}
 
@@ -84,7 +84,7 @@ void testApp::update(){
 	// update colorPixels
 	ofPixels colorPixels = colorStream.getPixels();
 	cv::Mat mat = ofxCv::toCv(colorPixels);
-	
+
 	ofxProfileSectionPush("handTracker update");
 	handTracker.readFrame();
 	ofxProfileSectionPop();
@@ -113,194 +113,200 @@ void testApp::update(){
 	if (cvDepthToggle->getValue())
 	{
 
-	cv::Mat depthMat = ofxCv::toCv(*depthPixels);
-	
-	depthHistory.push_front(depthMat.clone());
-	if (depthHistory.size() > depthHistorySize)
-	{
-		depthHistory.pop_back();
-	}
-	if (depthHistory.size() == depthHistorySize)
-	{
-		const int s = 5;
-		cv::Mat d = depthHistory[0].clone();
-		
-		cv::Mat d8 = depthHistory[0].clone();
-		//cv::sqrt(d8, d8);
-		d8.convertTo(d8, CV_8UC1, 0.1);
+		cv::Mat depthMat = ofxCv::toCv(*depthPixels);
 
 
-		cv::Mat d0 = depthHistory[1] - depthHistory[0];
-		
-		ofxUISlider* s0 = (ofxUISlider*)gui1->getWidget("0");		
-		ofxUISlider* s1 = (ofxUISlider*)gui1->getWidget("1");		
-		ofxUISlider* s2 = (ofxUISlider*)gui1->getWidget("2");		
 
-		cv::Mat mask;
-		//mask.create(depthHistory[0].size(), CV_8UC1);
-		mask = (depthHistory[0] == 0);
-		
-		//mask = (depthHistory[s] == 0);
-		//mask += (d > s1->getScaledValue());
-		for (int i = 1; i < s; i++)
+		if (computeHistory->getValue())
 		{
-			cv::Mat diff = depthHistory[i] - depthHistory[i-1];
-			mask |= (diff < 1);
-		}
-		d.setTo(0, mask);
-		
-		cv::imshow("mask", mask);
 
-		int morph_size = 2;
-		cv::Mat element = getStructuringElement( 2, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) );
-
-		cv::Mat morphMask;
-		morphologyEx(mask, morphMask, CV_MOP_OPEN, element, cv::Point(-1, -1), 5);
-		cv::imshow("morphMask", morphMask);
-
-
-		double maxVal;
-		cv::Point maxLoc;
-		cv::minMaxLoc(d, 0, &maxVal, 0, &maxLoc);
-
-		cv::Mat drgb;
-		
-		d.convertTo(drgb, CV_8UC1);
-		cv::cvtColor(drgb, drgb, CV_GRAY2RGB);
-
-		cv::circle(drgb, maxLoc, 1 + maxVal * s2->getScaledValue(), CV_RGB(255, 0, 0), CV_FILLED);
-		cv::putText(drgb, ofToString(maxVal), cv::Point(11, 11), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(255, 255, 255));
-		cv::putText(drgb, ofToString(maxVal), cv::Point(10, 10), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(0, 255, 0));
-		//cv::circle(drgb, cv::Point(100,100), 30, CV_RGB(255, 0, 0), CV_FILLED);
-		cv::imshow("d", d * s0->getScaledValue());
-		cv::imshow("drgb", drgb);// * s2->getScaledValue());
-
-
-		//
-
-		cv::Mat invMask;
-		cv::bitwise_not(morphMask, invMask);
-
-		std::vector<std::vector<cv::Point> > contours;
-		std::vector<cv::Vec4i> hierarchy;
-
-		cv::Mat d0mask = d0 > 0;
-
-		morphologyEx(d0mask, d0mask, CV_MOP_OPEN, element, cv::Point(-1, -1), 2);
-
-		cv::Mat d8thrMean;
-		
-		adaptiveThreshold(d8, d8thrMean, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 3, 0);
-		
-		
-		cv::Mat d8clean = d8thrMean.clone();
-		for (int i = 2; i < 6; i++)
-		{
-			cv::Mat d8thrMeanBlurred;
-			blur(d8thrMean, d8thrMeanBlurred, cv::Size(i, i));
-			d8clean &= d8thrMeanBlurred >= (255 / i);
-		}
-		cv::imshow("d8clean", d8clean);
-
-
-		cv::Mat contoursMat = cv::Mat::zeros(depthMat.size(), CV_8UC3);
-		cv::findContours( d8clean, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
-		if( !contours.empty() && !hierarchy.empty() )
-		{
-			int idx = 0;
-			for(int i = 0; i < hierarchy.size(); i++)
+			depthHistory.push_front(depthMat.clone());
+			if (depthHistory.size() > depthHistorySize)
 			{
-				if (cv::contourArea(contours[i]) > 10) //clear salt noise
-				{
-					cv::Moments _mu = moments( cv::Mat(contours[i]), false );
-					cv::Point2f _mc( _mu.m10/_mu.m00 , _mu.m01/_mu.m00);
-
-					cv::Scalar color(_mc.x * 255 / d8thrMean.cols, 255,  _mc.y * 255 / d8thrMean.rows);
-					cv::drawContours(contoursMat, contours, i, color, 2, 8, hierarchy );
-				}
-
-				//find biggest cc
-				if (cv::contourArea(contours[idx]) < cv::contourArea(contours[i]))
-					idx = i;
+				depthHistory.pop_back();
 			}
+			if (depthHistory.size() == depthHistorySize)
+			{
 
-			cv::drawContours(contoursMat, contours, idx, white, CV_FILLED);//, 8, hierarchy );
+				cv::Mat d = depthHistory[0].clone();
+				cv::Mat d8 = depthHistory[0].clone();
+				d8.convertTo(d8, CV_8UC1, 0.1);
 
-		}
-		
-		cv::imshow("invMask", d8thrMean);
-		cv::imshow("contoursMat", contoursMat);
+				if (velocityMasking->getValue())
+				{
+					cv::Mat d0 = depthHistory[1] - depthHistory[0];
+					ofxUISlider* s0 = (ofxUISlider*)gui1->getWidget("0");		
+					ofxUISlider* s1 = (ofxUISlider*)gui1->getWidget("1");		
+					ofxUISlider* s2 = (ofxUISlider*)gui1->getWidget("2");		
 
+					cv::Mat mask;
+					//mask.create(depthHistory[0].size(), CV_8UC1);
+					mask = (depthHistory[0] == 0);
 
-		cv::Mat colorMat = ofxCv::toCv(colorPixels);
-		cv::Mat grayMat;
-		cv::cvtColor(colorMat, grayMat, CV_BGR2GRAY);
-		showMat(grayMat);
+					const int s = 5; //make slider (caution!)
 
-		cv::Mat edges;
+					//mask = (depthHistory[s] == 0);
+					//mask += (d > s1->getScaledValue());
+					for (int i = 1; i < s; i++)
+					{
+						cv::Mat diff = depthHistory[i] - depthHistory[i-1];
+						mask |= (diff < 1);
+					}
+					d.setTo(0, mask);
 
-		ofxUISlider* can1 = (ofxUISlider*)gui1->getWidget("can1");		
-		double threshold1 = can1->getScaledValue();
+					cv::imshow("mask", mask);
 
-		ofxUISlider* can2 = (ofxUISlider*)gui1->getWidget("can2");		
-		double threshold2 = can2->getScaledValue();
+					int morph_size = 2;
+					cv::Mat element = getStructuringElement( 2, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) );
 
-		cv::Canny(grayMat, edges, threshold1, threshold2);//, int apertureSize=3, bool L2gradient=false )¶
-		showMat(edges);
-
-		/*
-		cv::Mat ba;
-		depthHistory[0].convertTo(ba, CV_8UC1, 0.25);
-		ba.setTo(0, mask);
-
-		cv::cvtColor(ba, ba, CV_GRAY2RGB);
-
-		IplImage image = ba;
-
-		if (motion == NULL)
-		{
-			motion = cvCreateImage( cvSize(image.width, image.height), 8, 3);
-			cvZero( motion );
-			//motion->origin = image->origin;
-		}
-
-		update_mhi(&image, motion, 30 );
-		cvShowImage( "Motion", motion );
-		*/
+					cv::Mat morphMask;
+					morphologyEx(mask, morphMask, CV_MOP_OPEN, element, cv::Point(-1, -1), 5);
+					cv::imshow("morphMask", morphMask);
 
 
-/*
-		ofTexture depthTex;
-		depthTex.allocate(m8.cols, m8.rows, GL_LUMINANCE);
-		depthTex.loadData(m8.ptr(), m8.cols, m8.rows, GL_LUMINANCE);
-		*/
+					double maxVal;
+					cv::Point maxLoc;
+					cv::minMaxLoc(d, 0, &maxVal, 0, &maxLoc);
+
+					//cv::Mat drgb;
+
+#define addMat(x) cv::Mat& x = matMap[#x] = cv::Mat();
+					addMat(drgb);
+					d.convertTo(drgb, CV_8UC1);
+					cv::cvtColor(drgb, drgb, CV_GRAY2RGB);
+
+					cv::circle(drgb, maxLoc, 1 + maxVal * s2->getScaledValue(), CV_RGB(255, 0, 0), CV_FILLED);
+					cv::putText(drgb, ofToString(maxVal), cv::Point(11, 11), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(255, 255, 255));
+					cv::putText(drgb, ofToString(maxVal), cv::Point(10, 10), CV_FONT_HERSHEY_PLAIN, 1, CV_RGB(0, 255, 0));
+					//cv::circle(drgb, cv::Point(100,100), 30, CV_RGB(255, 0, 0), CV_FILLED);
+					cv::imshow("d", d * s0->getScaledValue());
+					cv::imshow("drgb", drgb);// * s2->getScaledValue());
 
 
-		/*
-		cv::Mat d1 = depthHistory[2] - depthHistory[1]; 
-		d1.setTo(0, depthHistory[2] == 0 | depthHistory[1] == 0);
+					//
+					cv::Mat invMask;
+					cv::bitwise_not(morphMask, invMask);
+					cv::Mat d0mask = d0 > 0;
+					morphologyEx(d0mask, d0mask, CV_MOP_OPEN, element, cv::Point(-1, -1), 2);
+				} //end if(velocityMasking)
 
-		cv::Mat a = d1 - d;
-		a.setTo(0, d1 == 0 | d == 0);
 
-		
-		cv::Mat a8;	a.convertTo(a8, CV_8UC1);
-		
-		
-		
+				if (depthThresholding->getValue())
+				{
+					cv::Mat d8thrMean;
+					adaptiveThreshold(d8, d8thrMean, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 3, 0);
+					cv::Mat d8clean = d8thrMean.clone();
+					for (int i = 2; i < 6; i++)
+					{
+						cv::Mat d8thrMeanBlurred;
+						blur(d8thrMean, d8thrMeanBlurred, cv::Size(i, i));
+						d8clean &= d8thrMeanBlurred >= (255 / i);
+					}
+					cv::imshow("d8clean", d8clean);
 
-		cv::Mat a8edges;
-		cv::Canny(a8, a8edges, 10, 100);
-		cv::imshow("a8edges", a8edges);
+					//contours
+					std::vector<std::vector<cv::Point> > contours;
+					std::vector<cv::Vec4i> hierarchy;
+					cv::Mat contoursMat = cv::Mat::zeros(depthMat.size(), CV_8UC3);
+					cv::findContours( d8clean, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
+					if( !contours.empty() && !hierarchy.empty() )
+					{
+						int idx = 0;
+						for(int i = 0; i < hierarchy.size(); i++)
+						{
+							if (cv::contourArea(contours[i]) > 10) //clear salt noise
+							{
+								cv::Moments _mu = moments( cv::Mat(contours[i]), false );
+								cv::Point2f _mc( _mu.m10/_mu.m00 , _mu.m01/_mu.m00);
 
-		cv::Mat a8eq;
-		cv::equalizeHist(a8, a8eq);
-		cv::imshow("a8eq", a8eq);
-		*/
+								cv::Scalar color(_mc.x * 255 / d8thrMean.cols, 255,  _mc.y * 255 / d8thrMean.rows);
+								cv::drawContours(contoursMat, contours, i, color, 2, 8, hierarchy );
+							}
 
-	}
-	}
+							//find biggest cc
+							if (cv::contourArea(contours[idx]) < cv::contourArea(contours[i]))
+								idx = i;
+						}
 
+						cv::drawContours(contoursMat, contours, idx, white, CV_FILLED);//, 8, hierarchy );
+
+					}
+
+					cv::imshow("invMask", d8thrMean);
+					cv::imshow("contoursMat", contoursMat);
+
+
+					//Color
+					cv::Mat colorMat = ofxCv::toCv(colorPixels);
+					cv::Mat grayMat;
+					cv::cvtColor(colorMat, grayMat, CV_BGR2GRAY);
+					showMat(grayMat);
+
+					cv::Mat edges;
+
+					ofxUISlider* can1 = (ofxUISlider*)gui1->getWidget("can1");		
+					double threshold1 = can1->getScaledValue();
+
+					ofxUISlider* can2 = (ofxUISlider*)gui1->getWidget("can2");		
+					double threshold2 = can2->getScaledValue();
+
+					cv::Canny(grayMat, edges, threshold1, threshold2);//, int apertureSize=3, bool L2gradient=false )¶
+					showMat(edges);
+
+					/*
+					cv::Mat ba;
+					depthHistory[0].convertTo(ba, CV_8UC1, 0.25);
+					ba.setTo(0, mask);
+
+					cv::cvtColor(ba, ba, CV_GRAY2RGB);
+
+					IplImage image = ba;
+
+					if (motion == NULL)
+					{
+					motion = cvCreateImage( cvSize(image.width, image.height), 8, 3);
+					cvZero( motion );
+					//motion->origin = image->origin;
+					}
+
+					update_mhi(&image, motion, 30 );
+					cvShowImage( "Motion", motion );
+					*/
+
+
+					/*
+					ofTexture depthTex;
+					depthTex.allocate(m8.cols, m8.rows, GL_LUMINANCE);
+					depthTex.loadData(m8.ptr(), m8.cols, m8.rows, GL_LUMINANCE);
+					*/
+
+
+					/*
+					cv::Mat d1 = depthHistory[2] - depthHistory[1]; 
+					d1.setTo(0, depthHistory[2] == 0 | depthHistory[1] == 0);
+
+					cv::Mat a = d1 - d;
+					a.setTo(0, d1 == 0 | d == 0);
+
+
+					cv::Mat a8;	a.convertTo(a8, CV_8UC1);
+
+
+
+
+					cv::Mat a8edges;
+					cv::Canny(a8, a8edges, 10, 100);
+					cv::imshow("a8edges", a8edges);
+
+					cv::Mat a8eq;
+					cv::equalizeHist(a8, a8eq);
+					cv::imshow("a8eq", a8eq);
+					*/
+
+				}//end if (depthThresholding)
+			}//end if (depthHistory.size() == depthHistorySize)
+		}//end if (computeHistory)
+	}//end if (cvDepthToggle->getValue())
 
 
 #ifdef OPENNI1
@@ -549,61 +555,61 @@ void testApp::draw(){
 
 #endif
 
-			if(faceToggle->getValue() && faceTracker.getFound())
+	if(faceToggle->getValue() && faceTracker.getFound())
+	{
+		ofPushStyle();
+		ofSetLineWidth(3);
+		ofSetColor(ofColor::green);
+		ofDrawArrow(facePos, handTracker.getHandPoint());
+		ofSetLineWidth(1);
+		ofSetColor(ofColor::yellow);
+		ofLine(facePos, handTracker.getHandPoint().interpolated(facePos, -3));
+		ofPopStyle();
+
+		ofSetColor(ofColor::magenta);
+
+		ofxProfileSectionPush("getIntersectionPointWithLine");
+		ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, handTracker.getHandPoint());
+		ofxProfileSectionPop();
+
+		ofSphere(screenIntersectionPoint, 10);
+
+		const float b = (screenPoint==ofVec2f()) ? 0 : 0.5;
+		screenPoint = (b*screenPoint) + (1-b) * scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
+
+		screenPointHistory.push_front(screenPoint);
+		if (screenPointHistory.size() > 10)
+		{
+			screenPointHistory.pop_back();
+		}
+
+		int score = 0;
+		for (int i = 0; i < screenPointHistory.size(); i++)
+		{
+			if (screenPointHistory[i].y > 0 && screenPointHistory[i].y < ofGetScreenHeight())
 			{
-				ofPushStyle();
-				ofSetLineWidth(3);
-				ofSetColor(ofColor::green);
-				ofDrawArrow(facePos, handTracker.getHandPoint());
-				ofSetLineWidth(1);
-				ofSetColor(ofColor::yellow);
-				ofLine(facePos, handTracker.getHandPoint().interpolated(facePos, -3));
-				ofPopStyle();
-
-				ofSetColor(ofColor::magenta);
-
-				ofxProfileSectionPush("getIntersectionPointWithLine");
-				ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, handTracker.getHandPoint());
-				ofxProfileSectionPop();
-
-				ofSphere(screenIntersectionPoint, 10);
-
-				const float b = (screenPoint==ofVec2f()) ? 0 : 0.5;
-				screenPoint = (b*screenPoint) + (1-b) * scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
-
-				screenPointHistory.push_front(screenPoint);
-				if (screenPointHistory.size() > 10)
+				if (i < screenPointHistory.size() / 2)
 				{
-					screenPointHistory.pop_back();
+					if (screenPointHistory[i].x < 0)// || abs(screenPointHistory[i].x - ofGetScreenWidth()) < 40)
+						score++;
 				}
-
-				int score = 0;
-				for (int i = 0; i < screenPointHistory.size(); i++)
+				else
 				{
-					if (screenPointHistory[i].y > 0 && screenPointHistory[i].y < ofGetScreenHeight())
-					{
-						if (i < screenPointHistory.size() / 2)
-						{
-							if (screenPointHistory[i].x < 0)// || abs(screenPointHistory[i].x - ofGetScreenWidth()) < 40)
-								score++;
-						}
-						else
-						{
-							if (screenPointHistory[i].x > 0)
-								score++;
-						}
-					}
+					if (screenPointHistory[i].x > 0)
+						score++;
 				}
-
-				if (score > screenPointHistory.size() - 1)
-				{
-					ofSetColor(255, 0, 0);
-					//ofCircle(screenPointHistory[0], 30);
-				}
-
-
-
 			}
+		}
+
+		if (score > screenPointHistory.size() - 1)
+		{
+			ofSetColor(255, 0, 0);
+			//ofCircle(screenPointHistory[0], 30);
+		}
+
+
+
+	}
 
 
 
@@ -851,13 +857,18 @@ void testApp::setupGui()
 	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 
 	float length = 255-xInit; 
 
-	
+
 	gui1 = ofPtr<ofxUICanvas>(new ofxUICanvas(0, 0, length+xInit, ofGetHeight())); 
 	gui1->addWidgetDown(new ofxUILabel("GUI", OFX_UI_FONT_LARGE)); 
 	//gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE));
 	guiAutoHide = gui1->addToggle("guiAutoHide", false, dim, dim);
 	fullScreenToggle = gui1->addToggle("fullScreen", false, dim, dim);
 	cvDepthToggle = gui1->addToggle("cvDepth", false, dim, dim);
+
+	computeHistory = gui1->addToggle("computeHistory", false, dim, dim);
+	velocityMasking = gui1->addToggle("velocityMasking", false, dim, dim);
+	depthThresholding =	gui1->addToggle("depthThresholding", false, dim, dim);
+
 
 	gui1->addSpacer(length-xInit, 2);
 	gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
@@ -879,13 +890,13 @@ void testApp::setupGui()
 	gui1->addSlider("8", 0.0, 255.0, 150, dim, 160);
 	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_DOWN);
 
-	
+
 	gui1->addSpacer(length-xInit, 2);
 	gui1->addWidgetDown(new ofxUILabel("TOGGLES", OFX_UI_FONT_MEDIUM));
 
 	faceToggle = gui1->addToggle("FaceTracker", false, dim, dim);
 
-	
+
 
 	gui1->setColorBack(ofColor::gray);
 	//gui1->setDrawBack(true);
@@ -938,7 +949,7 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 		ofToggleFullscreen();
 	}
 
-	
+
 
 
 }
@@ -1028,7 +1039,7 @@ void  update_mhi( IplImage* img, IplImage* dst, int diff_threshold )
 	}
 
 	cvCvtColor( img, buf[last], CV_BGR2GRAY ); // convert frame to grayscale
-	
+
 
 	idx2 = (last + 1) % N; // index of (last - (N-1))th frame
 	last = idx2;
@@ -1104,6 +1115,3 @@ void  update_mhi( IplImage* img, IplImage* dst, int diff_threshold )
 			cvRound( center.y - magnitude*sin(angle*CV_PI/180))), color, 3, CV_AA, 0 );
 	}
 }
-
-
-

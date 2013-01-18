@@ -93,11 +93,17 @@ private:
 	ofxUIToggle* cvDepthToggle;
 	ofxUIToggle* fullScreenToggle;
 
+	ofxUIToggle* depthThresholding;
+	ofxUIToggle* velocityMasking;
+	ofxUIToggle* computeHistory;
+
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;
 
 	deque<cv::Mat> depthHistory;
 	int depthHistorySize;
+
+	std::map<const char*, cv::Mat> matMap;
 
 	IplImage* motion;
 
