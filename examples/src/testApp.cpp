@@ -8,14 +8,6 @@
 #include <math.h>
 #include "../cvUtils.h"
 
-#define showMat(x) showMatR(x, 1)
-#define showMatR(x, i)	\
-{						\
-	cv::Mat y;			\
-	cv::resize(x, y, cv::Size(), i, i, cv::INTER_LINEAR);\
-	cv::imshow(#x, y);	\
-}
-
 void  update_mhi( IplImage* img, IplImage* dst, int diff_threshold );
 
 const string testApp::MODULE_NAME = "testApp";
@@ -127,8 +119,14 @@ void testApp::update(){
 		}
 		else
 		{
+			cv::Mat fgimg;
+			depthMat.convertTo(fgimg, CV_8UC1, 1, -(handHistory.front().z - 128));
+
 			cv::Mat handFrame;
-			colorMat(handRect).copyTo(handFrame);
+			fgimg(handRect).copyTo(handFrame);
+
+			detectFinger(handFrame, handRect);
+
 			showMat(handFrame);
 		}
 
