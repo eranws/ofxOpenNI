@@ -6,6 +6,7 @@
 #include "src\ofxProfile.h"
 #endif
 #include <math.h>
+#include "../cvUtils.h"
 
 #define showMat(x) showMatR(x, 1)
 #define showMatR(x, i)	\
@@ -83,7 +84,7 @@ void testApp::update(){
 
 	// update colorPixels
 	ofPixels colorPixels = colorStream.getPixels();
-	cv::Mat mat = ofxCv::toCv(colorPixels);
+	cv::Mat colorMat = ofxCv::toCv(colorPixels);
 
 	ofxProfileSectionPush("handTracker update");
 	handTracker.readFrame();
@@ -95,10 +96,12 @@ void testApp::update(){
 		handHistory.pop_back();
 	}
 
+
+
 	if (faceToggle->getValue())
 	{
 		ofxProfileSectionPush("faceTracker update");
-		faceTracker.update(mat);
+		faceTracker.update(colorMat);
 		ofxProfileSectionPop();
 	}
 	if(!faceToggle->getValue() || !faceTracker.getFound())
@@ -115,6 +118,19 @@ void testApp::update(){
 
 		cv::Mat depthMat = ofxCv::toCv(*depthPixels);
 
+		
+		cv::Rect handRect = getHandFrameFromFG(depthMat, handHistory.front(), *depthStream.getStream());
+		
+
+		if (handRect.width == 0 || handRect.height == 0)
+		{
+		}
+		else
+		{
+			cv::Mat handFrame;
+			colorMat(handRect).copyTo(handFrame);
+			showMat(handFrame);
+		}
 
 
 		if (computeHistory->getValue())

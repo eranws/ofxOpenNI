@@ -251,6 +251,9 @@
     <ClInclude Include="GroundTruthReader.h" />
     <ClInclude Include="ofxOpenNi2.h" />
     <ClInclude Include="ofxNite2.h" />
+    <ClInclude Include="cvUtils.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">

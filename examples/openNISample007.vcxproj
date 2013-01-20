@@ -310,6 +310,7 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="..\..\ofxUI\src\ofxUIWidgetWithLabel.h" />
     <ClInclude Include="..\..\ofxXmlSettings\libs\tinyxml.h" />
     <ClInclude Include="..\..\ofxXmlSettings\src\ofxXmlSettings.h" />
+    <ClInclude Include="cvUtils.h" />
     <ClInclude Include="GroundTruthReader.h" />
     <ClInclude Include="Keypad.h" />
     <ClInclude Include="ofxColorStream.h" />
