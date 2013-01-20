@@ -102,6 +102,8 @@ private:
 	ofxUIToggle* drawHand;
 	ofxUIToggle* drawHandHistory;
 
+	ofxUIMovingGraph* mg; 
+
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;
 
