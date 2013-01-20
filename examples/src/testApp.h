@@ -97,6 +97,11 @@ private:
 	ofxUIToggle* velocityMasking;
 	ofxUIToggle* computeHistory;
 
+	ofxUIToggle* detectFingerToggle;
+
+	ofxUIToggle* drawHand;
+	ofxUIToggle* drawHandHistory;
+
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;
 

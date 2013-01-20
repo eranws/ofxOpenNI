@@ -16,10 +16,15 @@ public:
 	void exit();
 
 	ofPoint getHandPoint() const { return handPoint; }
+
+	bool hasHand() {return !handTrackerFrame->getHands().isEmpty();} //HACKHACK awful Hack!
+
+
 	void readFrame();
 
 protected:
 	virtual void threadedFunction();
+
 private:
 	ofPtr<openni::Device> device;
 

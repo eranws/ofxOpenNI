@@ -82,10 +82,19 @@ void testApp::update(){
 	handTracker.readFrame();
 	ofxProfileSectionPop();
 
-	handHistory.push_front(handTracker.getHandPoint());
-	if (handHistory.size() > handHistorySize)
+	ofPoint handPoint = ofPoint();
+	if (handTracker.hasHand())
 	{
-		handHistory.pop_back();
+		handPoint = handTracker.getHandPoint();
+		handHistory.push_front(handPoint);
+		if (handHistory.size() > handHistorySize)
+		{
+			handHistory.pop_back();
+		}
+	}
+	else
+	{
+		handHistory.clear();
 	}
 
 
@@ -107,29 +116,164 @@ void testApp::update(){
 
 	if (cvDepthToggle->getValue())
 	{
-
 		cv::Mat depthMat = ofxCv::toCv(*depthPixels);
 
-		
-		cv::Rect handRect = getHandFrameFromFG(depthMat, handHistory.front(), *depthStream.getStream());
-		
-
-		if (handRect.width == 0 || handRect.height == 0)
+		if (handTracker.hasHand())
 		{
+			cv::Rect handRect = getHandFrameFromFG(depthMat, handPoint, *depthStream.getStream());
+
+			if (handRect.width == 0 || handRect.height == 0)
+			{
+			}
+			else
+			{
+				cv::Mat fgimg;
+				depthMat.convertTo(fgimg, CV_8UC1, 1, 128 - handPoint.z);
+
+				cv::Mat handFrame;
+				fgimg(handRect).copyTo(handFrame);
+
+				cv::Mat handFrameColor;// = cv::Mat::zeros(handLabel.size(), CV_8UC3);
+				cv::cvtColor(handFrame, handFrameColor, CV_GRAY2RGB);
+
+				if (detectFingerToggle->getValue())
+				{
+					detectFinger(handFrame, handRect);
+				}
+
+				cv::Mat handMask;
+				handFrame.copyTo(handMask);
+				cv::inRange(handMask, 1, 254, handMask);
+
+				// get topmost white pixel
+				uchar* data = handMask.data;
+				int idx = 0;
+				int x = 0;
+				int y = 0;
+				while (idx < handMask.rows * handMask.cols)
+				{
+					if (*data != 0)
+					{
+						x = idx % handMask.cols;
+						y = idx / handMask.cols;
+						break;
+					}
+					idx++, data++;
+				}
+				
+
+				bool findWrist = true;
+				if (findWrist) //
+				{
+				ofPoint topReal;
+				ofPoint topProj;
+				topProj.x = handRect.x + x;
+				topProj.y = handRect.y + y;
+				topProj.z = handFrame.at<uchar>(y, x) + handPoint.z;
+
+				openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
+					topProj.x, topProj.y, topProj.z,
+					&topReal.x, &topReal.y, &topReal.z);
+
+				bool found = false;
+				ofPoint wristRealTotal;
+				int wristRealCount = 0;
+				for (int j = 0; !found && j < handMask.rows; j++)
+				{
+					for (int i = 0; i < handMask.cols; i++)
+					{
+						//printf("%d %d\n", i, j);
+						if (handMask.at<uchar>(j,i) > 0) //find first white pixel
+						{
+
+							ofPoint d(handRect.x + i, handRect.y + j, handFrame.at<uchar>(j, i) + handPoint.z);
+
+							ofPoint dReal;
+							openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
+								d.x, d.y, d.z, &dReal.x, &dReal.y, &dReal.z);
+
+							if (topReal.y - dReal.y > 170)
+							{
+								found = true;
+								for (; i < handMask.cols && handMask.at<uchar>(j,i) > 0; i++)
+								{
+									ofPoint wristProj(handRect.x + i, handRect.y + j, handFrame.at<uchar>(j, i));
+
+									ofPoint wristReal;
+									openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
+										wristProj.x, wristProj.y, wristProj.z, &wristReal.x, &wristReal.y, &wristReal.z);
+
+									wristRealTotal += wristReal;
+									wristRealCount++;
+								}
+							}
+							else
+							{
+								break;
+							}
+
+						}
+					}
+				}
+
+				if (found)
+				{
+
+				ofPoint wristAvgReal = wristRealTotal / wristRealCount;
+				ofPoint wristAvgProj;
+
+				openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), wristAvgReal.x, wristAvgReal.y, wristAvgReal.z,
+					&wristAvgProj.x, &wristAvgProj.y, &wristAvgProj.z);
+				
+				cv::circle(handFrameColor, cv::Point2i(wristAvgProj.x, wristAvgProj.y) - cv::Point2i(handRect.x, handRect.y), 6, green, CV_FILLED); //closest point
+				}
+
+				}
+
+				//find better finger:
+				// compensate higher y values
+				cv::Mat grad = cv::Mat::zeros(handMask.size(), CV_8UC1);
+				for (int i=0; i<grad.rows - y; i++)
+				{
+					grad.row(y + i) = i * 3;
+				}
+				cv::Mat handFrameGrad = handFrame.clone() + grad;
+				showMat(grad);
+				showMat(handFrameGrad);
+
+				double minVal;
+				cv::Point minLoc;
+				cv::minMaxLoc(handFrameGrad, &minVal, 0, &minLoc, 0, handMask);
+
+
+				cv::Mat handMaskColReduce;
+				cv::reduce(handMask, handMaskColReduce, 1, CV_REDUCE_AVG);
+				cv::Mat handMaskSpectrum;
+				handMaskSpectrum = cv::Mat::zeros(handMask.size(), CV_8UC1);
+				for (int j = 0; j < grad.rows; j++)
+				{
+					for (int i = 0; i < handMaskColReduce.at<uchar>(j) * grad.cols / 255; i++)
+					{
+						handMaskSpectrum.row(j).col(i) = 255;
+					}
+				}
+				showMat(handMaskSpectrum);
+
+
+
+
+				ofPoint handProj;
+				openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), handPoint.x, handPoint.y, handPoint.z, &handProj.x, &handProj.y, &handProj.z);
+
+				cv::circle(handFrameColor, cv::Point2i(handProj.x, handProj.y) - cv::Point2i(handRect.x, handRect.y), 3, green, CV_FILLED);
+				cv::circle(handFrameColor, cv::Point2i(x, y), 3, blue, CV_FILLED);
+				cv::circle(handFrameColor, minLoc, 3, red, CV_FILLED); //closest point
+
+
+				showMat(handFrame);
+				showMat(handFrameColor);
+			}
 		}
-		else
-		{
-			cv::Mat fgimg;
-			depthMat.convertTo(fgimg, CV_8UC1, 1, -(handHistory.front().z - 128));
-
-			cv::Mat handFrame;
-			fgimg(handRect).copyTo(handFrame);
-
-			detectFinger(handFrame, handRect);
-
-			showMat(handFrame);
-		}
-
 
 		if (computeHistory->getValue())
 		{
@@ -464,21 +608,30 @@ void testApp::draw(){
 	ofSetColor(255);
 	colorTexture.draw(0,0);
 
-	//ofSphere(handTracker.getHandPoint(), 10);
-	glEnable(GL_DEPTH_TEST);       	
-	if (handHistory.size() == handHistorySize)
+
+	if (drawHand->getValue() && !handHistory.empty())
 	{
-		for (int i = 1; i < handHistorySize; i++)
+		ofSphere(handHistory.front(), 10);
+	}
+
+	if (drawHandHistory->getValue())
+	{
+
+		glEnable(GL_DEPTH_TEST);       	
+		if (handHistory.size() == handHistorySize)
 		{
-			float p = 1 - (float(i) / (handHistorySize));
+			for (int i = 1; i < handHistorySize; i++)
+			{
+				float p = 1 - (float(i) / (handHistorySize));
 
-			ofColor c = ofColor::fromHsb(255 * p, 255, 255);
-			ofSetColor(c);
-			ofSphere(handHistory[i], 20 * p + 3);
-			//ofSphere(handHistory[i], 20);
+				ofColor c = ofColor::fromHsb(255 * p, 255, 255);
+				ofSetColor(c);
+				ofSphere(handHistory[i], 10 * p + 3);
+				//ofSphere(handHistory[i], 20);
 
-			ofSetLineWidth(10 * p);
-			ofLine(handHistory[i-1], handHistory[i]);
+				ofSetLineWidth(10 * p + 3);
+				ofLine(handHistory[i-1], handHistory[i]);
+			}
 		}
 	}
 
@@ -874,10 +1027,10 @@ void testApp::setupGui()
 
 	gui1 = ofPtr<ofxUICanvas>(new ofxUICanvas(0, 0, length+xInit, ofGetHeight())); 
 	gui1->addWidgetDown(new ofxUILabel("GUI", OFX_UI_FONT_LARGE)); 
-	//gui1->addWidgetDown(new ofxUILabel("Press 'h' to Hide GUIs", OFX_UI_FONT_LARGE));
+
 	guiAutoHide = gui1->addToggle("guiAutoHide", false, dim, dim);
 	fullScreenToggle = gui1->addToggle("fullScreen", false, dim, dim);
-	cvDepthToggle = gui1->addToggle("cvDepth", false, dim, dim);
+	cvDepthToggle = gui1->addToggle("cvDepth", true, dim, dim);
 
 	computeHistory = gui1->addToggle("computeHistory", false, dim, dim);
 	velocityMasking = gui1->addToggle("velocityMasking", false, dim, dim);
@@ -910,6 +1063,9 @@ void testApp::setupGui()
 
 	faceToggle = gui1->addToggle("FaceTracker", false, dim, dim);
 
+	detectFingerToggle = gui1->addToggle("detectFinger", false, dim, dim);
+	drawHand = gui1->addToggle("drawHand", true, dim, dim);
+	drawHandHistory = gui1->addToggle("drawHandHistory", false, dim, dim);
 
 
 	gui1->setColorBack(ofColor::gray);
