@@ -65,11 +65,13 @@ void testApp::setup() {
 
 	handHistorySize = 100;
 
-	cv::Mat A(fingerWristHistorySize, 2, CV_32FC1);
+	A = cv::Mat(fingerWristHistorySize, 3, CV_32FC1);
 	for (int i = 0; i < fingerWristHistorySize; i++)
 	{
-		A.at<float>(i, 0) = powf(fingerWristHistorySize/2 - i, 2);
-		A.at<float>(i, 1) = 1;
+		int t = fingerWristHistorySize/2 - i;
+		A.at<float>(i, 0) = t * t;
+		A.at<float>(i, 1) = t;
+		A.at<float>(i, 2) = 1;
 	}
 	cout << A << endl;
 
@@ -375,9 +377,17 @@ void testApp::update(){
 
 				cv::Mat X = AA * B;
 
+				cv::Mat diff = A * X - B;
+				cv::Mat sd;
+				cv::pow(diff, 2, sd);
+
+				float ssd = cv::sum(sd)[0];
+
+				mgErr->addPoint(ssd);
 				mgA->addPoint(X.at<float>(0));
-				mgC->addPoint(X.at<float>(1));
-				cout << X << endl;
+				mgB->addPoint(X.at<float>(1));
+				mgC->addPoint(X.at<float>(2));
+				cout << ssd << " " << X << endl;
 
 			}
 		}
@@ -1185,14 +1195,16 @@ void testApp::setupGui()
 	}
 	mgZ = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -150, 150, "MOVING GRAPH Z");
 	mgA = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH A");
+	mgB = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH B");
 	mgC = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 150, 250, "MOVING GRAPH C");
 	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 100, 250, "MOVING GRAPH Err");
 
 	gui1->addSpacer(length-xInit, 2);
 	gui1->addWidgetDown(mgZ);
-	gui1->addWidgetDown(mgA);
-	gui1->addWidgetDown(mgC);
 	gui1->addWidgetDown(mgErr);
+	gui1->addWidgetDown(mgA);
+	gui1->addWidgetDown(mgB);
+	gui1->addWidgetDown(mgC);
 
 	//gui->addWidgetDown(new ofxUIWaveform(length-xInit, 64, buffer, 256, 0.0, 1.0, "WAVEFORM")); 
 

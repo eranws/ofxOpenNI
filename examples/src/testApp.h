@@ -104,13 +104,14 @@ private:
 
 	ofxUIMovingGraph* mgZ; 
 	ofxUIMovingGraph* mgA; 
+	ofxUIMovingGraph* mgB; 
 	ofxUIMovingGraph* mgC; 
 	ofxUIMovingGraph* mgErr; 
 
 	deque<ofPoint> fingerWristHistory;
 	static const int fingerWristHistorySize = 11;
-	cv::Mat AA;
-
+	cv::Mat AA; // [(At * A) ^(-1)] * At
+	cv::Mat A;
 
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;
