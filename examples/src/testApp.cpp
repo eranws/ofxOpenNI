@@ -65,7 +65,24 @@ void testApp::setup() {
 
 	handHistorySize = 100;
 
-	motion = NULL;
+	cv::Mat A(fingerWristHistorySize, 2, CV_32FC1);
+	for (int i = 0; i < fingerWristHistorySize; i++)
+	{
+		A.at<float>(i, 0) = powf(fingerWristHistorySize/2 - i, 2);
+		A.at<float>(i, 1) = 1;
+	}
+	cout << A << endl;
+
+	AA = (A.t() * A);
+	cout << AA;
+
+	AA = AA.inv();
+	cout << AA;
+
+	AA = AA * A.t();
+	cout << AA;
+
+ 	motion = NULL;
 }
 
 //--------------------------------------------------------------
@@ -118,8 +135,16 @@ void testApp::update(){
 	{
 		cv::Mat depthMat = ofxCv::toCv(*depthPixels);
 
-		if (handTracker.hasHand())
+		bool wristFound = false;
+		bool fingerFound = false;
+		bool handFound = false;
+
+		handFound = handTracker.hasHand();
+		if (handFound)
 		{
+			ofPoint handProj;
+			openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), handPoint.x, handPoint.y, handPoint.z, &handProj.x, &handProj.y, &handProj.z);
+
 			cv::Rect handRect = getHandFrameFromFG(depthMat, handPoint, *depthStream.getStream());
 
 			if (handRect.width == 0 || handRect.height == 0)
@@ -127,18 +152,16 @@ void testApp::update(){
 			}
 			else
 			{
-				cv::Mat fgimg;
-				depthMat.convertTo(fgimg, CV_8UC1, 1, 128 - handPoint.z);
+				cv::Mat fgimgHand;
+				depthMat.convertTo(fgimgHand, CV_8UC1, 1, 128 - handPoint.z);
 
 				cv::Mat handFrame;
-				fgimg(handRect).copyTo(handFrame);
+				fgimgHand(handRect).copyTo(handFrame);
 
 				cv::Mat handFrameColor;// = cv::Mat::zeros(handLabel.size(), CV_8UC3);
 				cv::cvtColor(handFrame, handFrameColor, CV_GRAY2RGB);
 
-				ofPoint handProj;
-				openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), handPoint.x, handPoint.y, handPoint.z, &handProj.x, &handProj.y, &handProj.z);
-				cv::circle(handFrameColor, cv::Point2i(handProj.x, handProj.y) - cv::Point2i(handRect.x, handRect.y), 3, green, CV_FILLED);
+				cv::circle(handFrameColor, cv::Point2i(handProj.x, handProj.y) - cv::Point2i(handRect.x, handRect.y), 3, blue, CV_FILLED);
 
 				if (detectFingerToggle->getValue())
 				{
@@ -167,7 +190,7 @@ void testApp::update(){
 					}
 					idx++, data++;
 				}
-				cv::circle(handFrameColor, cv::Point2i(x, y), 3, blue, CV_FILLED);
+				cv::circle(handFrameColor, cv::Point2i(x, y), 3, green, CV_FILLED);
 
 				//find better finger:
 				// compensate higher y values
@@ -183,15 +206,15 @@ void testApp::update(){
 				double minVal;
 				cv::Point minLoc;
 				cv::minMaxLoc(handFrameGrad, &minVal, 0, &minLoc, 0, handMask);
-				bool fingerFound = (minLoc.x > 0 && minLoc.y > 0);
+				fingerFound = (minLoc.x > 0 && minLoc.y > 0);
 				if (fingerFound)
 				{
 					// spatially averaged finger point
 					cv::circle(handFrameColor, minLoc, 3, red, CV_FILLED); //closest point
 
-					ofPoint fingerProj(handRect.x + minLoc.x, handRect.y + minLoc.y, depthMat.at<ushort>(handRect.y + minLoc.y,  handRect.x + minLoc.x));
-					ofPoint fingerReal;
-					openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), fingerProj.x, fingerProj.y, fingerProj.z, &fingerReal.x, &fingerReal.y, &fingerReal.z);
+					ofPoint fingerCandidateProj(handRect.x + minLoc.x, handRect.y + minLoc.y, depthMat.at<ushort>(handRect.y + minLoc.y,  handRect.x + minLoc.x));
+					ofPoint fingerCandidateReal;
+					openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), fingerCandidateProj.x, fingerCandidateProj.y, fingerCandidateProj.z, &fingerCandidateReal.x, &fingerCandidateReal.y, &fingerCandidateReal.z);
 
 					ofPoint fingerOffsetRealTotal = ofPoint();
 					int fingerOffsetRealCount = 0;
@@ -211,9 +234,9 @@ void testApp::update(){
 								fingProj.x, fingProj.y, fingProj.z,
 								&fingReal.x, &fingReal.y, &fingReal.z);
 
-							ofPoint offset = fingReal - fingerReal;
+							ofPoint offset = fingReal - fingerCandidateReal;
 
-							if (fabs(offset.y) < 15 && fabs(offset.x) < 35)
+							if (fabs(offset.y) < 30 && fabs(offset.x) < 70)
 							{
 								fingDebug.row(j).col(i) = green;
 								//float p = offset.length() / 30;
@@ -225,86 +248,110 @@ void testApp::update(){
 
 					assert(fingerOffsetRealCount && "Should be at least the finger itself!");
 					ofPoint fingerOffsetAvgReal = fingerOffsetRealTotal / fingerOffsetRealCount;
-					
-					showMat(fingDebug);
-
-					ofPoint fingerAveragedReal = fingerReal + fingerOffsetAvgReal;
-					ofPoint fingerAveragedProj;
-					openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), fingerAveragedReal.x, fingerAveragedReal.y, fingerAveragedReal.z, &fingerAveragedProj.x, &fingerAveragedProj.y, &fingerAveragedProj.z);
-					cv::circle(handFrameColor, cv::Point2i(fingerAveragedProj.x, fingerAveragedProj.y) - cv::Point2i(handRect.x, handRect.y), 6, blue, CV_FILLED); //closest point
+					ofPoint fingerReal = fingerCandidateReal + fingerOffsetAvgReal;
+					ofPoint fingerProj;
+					openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), fingerReal.x, fingerReal.y, fingerReal.z, &fingerProj.x, &fingerProj.y, &fingerProj.z);
+					cv::circle(handFrameColor, cv::Point2i(fingerProj.x, fingerProj.y) - cv::Point2i(handRect.x, handRect.y), 3, green, 3);
 
 
 
 
-					bool findWrist = true;
-					bool wristFound = false;
 					ofPoint wristAvgReal = ofPoint();
-					if (findWrist) //
+					ofPoint wristReal;
+					int wristRealCount = 0;
+					for (int j = 0; !wristFound && j < handMask.rows; j++)
 					{
-						ofPoint topReal;
-						ofPoint topProj;
-						topProj.x = handRect.x + x;
-						topProj.y = handRect.y + y;
-						topProj.z = depthMat.at<ushort>(handRect.y + y,  handRect.x + x);
-
-						openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
-							topProj.x, topProj.y, topProj.z,
-							&topReal.x, &topReal.y, &topReal.z);
-
-						ofPoint wristRealTotal;
-						int wristRealCount = 0;
-						for (int j = 0; !wristFound && j < handMask.rows; j++)
+						for (int i = 0; i < handMask.cols; i++)
 						{
-							for (int i = 0; i < handMask.cols; i++)
+							if (handMask.at<uchar>(j,i) > 0) //find first white pixel
 							{
-								//printf("%d %d\n", i, j);
-								if (handMask.at<uchar>(j,i) > 0) //find first white pixel
+								ofPoint d(handRect.x + i, handRect.y + j, depthMat.at<ushort>(handRect.y + j,  handRect.x + i));
+
+								ofPoint tempReal;
+								openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), d.x, d.y, d.z, &tempReal.x, &tempReal.y, &tempReal.z);
+
+								ofPoint diff = fingerReal - tempReal;
+								if (diff.y > 170)
 								{
-									ofPoint d(handRect.x + i, handRect.y + j, depthMat.at<ushort>(handRect.y + j,  handRect.x + i));
-
-									ofPoint dReal;
-									openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
-										d.x, d.y, d.z, &dReal.x, &dReal.y, &dReal.z);
-
-									if (topReal.y - dReal.y > 170)
+									wristFound = true;
+									ofPoint wristCandidateReal = tempReal;
+									float minDist = diff.length();
+									for (; i < handMask.cols && handMask.at<uchar>(j,i) > 0; i++)
 									{
-										wristFound = true;
-										for (; i < handMask.cols && handMask.at<uchar>(j,i) > 0; i++)
+
+										ofPoint wristProj(handRect.x + i, handRect.y + j, depthMat.at<ushort>(handRect.y + j,  handRect.x + i));
+										ofPoint wristReal;
+										openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), wristProj.x, wristProj.y, wristProj.z, &wristReal.x, &wristReal.y, &wristReal.z);
+
+										//find closest 'wrist' point
+										float dist = (wristReal - fingerReal).length();
+										if (dist < minDist)
 										{
-
-											ofPoint wristProj(handRect.x + i, handRect.y + j, depthMat.at<ushort>(handRect.y + j,  handRect.x + i));
-
-											ofPoint wristReal;
-											openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
-												wristProj.x, wristProj.y, wristProj.z, &wristReal.x, &wristReal.y, &wristReal.z);
-
-											wristRealTotal += wristReal;
-											wristRealCount++;
+											wristCandidateReal = wristReal;
+											minDist = dist;
 										}
 									}
-									else
+
+
+									ofPoint wristOffsetRealTotal = ofPoint();
+									int wristOffsetRealCount = 0;
+
+									for (int j = 0; j < handFrame.rows; j++)
 									{
-										break;
+										for (int i = 0; i < handFrame.cols; i++)
+										{
+											if (handMask.at<uchar>(j, i) == 0) continue;
+											ofPoint wristReal;
+											ofPoint wristProj;
+											wristProj.x = handRect.x + i;
+											wristProj.y = handRect.y + j;
+											wristProj.z = depthMat.at<ushort>(handRect.y + j,  handRect.x + i);
+
+											openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(),
+												wristProj.x, wristProj.y, wristProj.z,
+												&wristReal.x, &wristReal.y, &wristReal.z);
+
+											ofPoint wristOffset = wristReal - wristCandidateReal;
+
+											if (fabs(wristOffset.y) < 30 && fabs(wristOffset.x) < 10)
+											{
+												fingDebug.row(j).col(i) = red;
+												//float p = offset.length() / 30;
+												wristOffsetRealTotal += wristOffset;// * (1-p);
+												wristOffsetRealCount++;
+											}
+										}
 									}
 
+									assert(wristOffsetRealCount && "Should be at least the finger itself!");
+									ofPoint wristOffsetAvgReal = wristOffsetRealTotal / wristOffsetRealCount;
+									wristReal = wristCandidateReal + wristOffsetAvgReal;
 								}
+								else
+								{
+									break; //goto next line
+								}
+
 							}
 						}
+					}
 
-						if (wristFound)
+					if (wristFound)
+					{
+						ofPoint wristProj;
+						openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), wristReal.x, wristReal.y, wristReal.z, &wristProj.x, &wristProj.y, &wristProj.z);
+						cv::circle(handFrameColor, cv::Point2i(wristProj.x, wristProj.y) - cv::Point2i(handRect.x, handRect.y), 3, blue, 3); //closest point
+
+						ofPoint fingerWrist = wristReal - fingerReal;
+						mgZ->addPoint(fingerWrist.z);
+
+						fingerWristHistory.push_front(fingerWrist);
+						if (fingerWristHistory.size() > fingerWristHistorySize)
 						{
-
-							wristAvgReal = wristRealTotal / wristRealCount;
-							ofPoint wristAvgProj;
-
-							openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), wristAvgReal.x, wristAvgReal.y, wristAvgReal.z,
-								&wristAvgProj.x, &wristAvgProj.y, &wristAvgProj.z);
-
-							cv::circle(handFrameColor, cv::Point2i(wristAvgProj.x, wristAvgProj.y) - cv::Point2i(handRect.x, handRect.y), 6, green, CV_FILLED); //closest point
-							mg->addPoint(wristAvgReal.z - fingerAveragedReal.z);
-
+							fingerWristHistory.pop_back();
 						}
 
+						showMat(fingDebug);
 					}
 				}
 
@@ -312,6 +359,31 @@ void testApp::update(){
 				showMat(handFrame);
 				showMat(handFrameColor);
 			}
+		}
+
+
+
+		if (handFound && wristFound && fingerFound)
+		{
+			if (fingerWristHistory.size() == fingerWristHistorySize)
+			{
+				cv::Mat B(fingerWristHistorySize, 1, CV_32FC1);
+				for (int i = 0; i < fingerWristHistorySize; i++)
+				{
+					B.at<float>(i) = fingerWristHistory[i].length();
+				}
+
+				cv::Mat X = AA * B;
+
+				mgA->addPoint(X.at<float>(0));
+				mgC->addPoint(X.at<float>(1));
+				cout << X << endl;
+
+			}
+		}
+		else
+		{
+			fingerWristHistory.clear();
 		}
 
 		if (computeHistory->getValue())
@@ -1111,9 +1183,17 @@ void testApp::setupGui()
 	{
 		buffer.push_back(0.0);
 	}
-	mg = new ofxUIMovingGraph(length-xInit, 300, buffer, 256, -150, 150, "MOVING GRAPH");
+	mgZ = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -150, 150, "MOVING GRAPH Z");
+	mgA = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH A");
+	mgC = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 150, 250, "MOVING GRAPH C");
+	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 100, 250, "MOVING GRAPH Err");
+
 	gui1->addSpacer(length-xInit, 2);
-	gui1->addWidgetDown(mg);
+	gui1->addWidgetDown(mgZ);
+	gui1->addWidgetDown(mgA);
+	gui1->addWidgetDown(mgC);
+	gui1->addWidgetDown(mgErr);
+
 	//gui->addWidgetDown(new ofxUIWaveform(length-xInit, 64, buffer, 256, 0.0, 1.0, "WAVEFORM")); 
 
 

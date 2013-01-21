@@ -102,7 +102,15 @@ private:
 	ofxUIToggle* drawHand;
 	ofxUIToggle* drawHandHistory;
 
-	ofxUIMovingGraph* mg; 
+	ofxUIMovingGraph* mgZ; 
+	ofxUIMovingGraph* mgA; 
+	ofxUIMovingGraph* mgC; 
+	ofxUIMovingGraph* mgErr; 
+
+	deque<ofPoint> fingerWristHistory;
+	static const int fingerWristHistorySize = 11;
+	cv::Mat AA;
+
 
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;
