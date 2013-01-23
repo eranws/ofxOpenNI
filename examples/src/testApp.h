@@ -109,11 +109,26 @@ private:
 	ofxUIMovingGraph* mgErr; 
 
 	deque<ofPoint> fingerWristHistory;
-	static const int fingerWristHistorySize = 11;
+	static const int fingerWristHistorySize = 7;
 	cv::Mat AA; // [(At * A) ^(-1)] * At
 	cv::Mat A;
 	ofxUISlider* aThreshold;
 	ofxUISlider* errThreshold;
+
+	struct Joint
+	{
+		ofPoint pos;
+		int frame;
+
+		void setFrameNum() {frame = ofGetFrameNum();}
+		bool isValid(){return frame == ofGetFrameNum();}
+		operator ofPoint(){return pos;}
+	};
+
+	Joint wrist;
+	Joint hand;
+	Joint finger;
+
 
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;

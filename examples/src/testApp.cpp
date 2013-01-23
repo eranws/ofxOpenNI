@@ -89,6 +89,8 @@ void testApp::setup() {
 
 //--------------------------------------------------------------
 void testApp::update(){
+
+	
 	ofxProfileThisFunction();
 
 	debugString = stringstream();
@@ -104,6 +106,9 @@ void testApp::update(){
 	ofPoint handPoint = ofPoint();
 	if (handTracker.hasHand())
 	{
+		hand.pos = handTracker.getHandPoint();
+		hand.setFrameNum();
+
 		handPoint = handTracker.getHandPoint();
 		handHistory.push_front(handPoint);
 		if (handHistory.size() > handHistorySize)
@@ -344,8 +349,15 @@ void testApp::update(){
 						openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), wristReal.x, wristReal.y, wristReal.z, &wristProj.x, &wristProj.y, &wristProj.z);
 						cv::circle(handFrameColor, cv::Point2i(wristProj.x, wristProj.y) - cv::Point2i(handRect.x, handRect.y), 3, blue, 3); //closest point
 
+						wrist.pos = wristReal;
+						wrist.setFrameNum();
+
+						finger.pos = fingerReal;
+						finger.setFrameNum();
+
+
+
 						ofPoint fingerWrist = wristReal - fingerReal;
-						mgZ->addPoint(fingerWrist.z);
 
 						fingerWristHistory.push_front(fingerWrist);
 						if (fingerWristHistory.size() > fingerWristHistorySize)
@@ -381,28 +393,45 @@ void testApp::update(){
 				float b = X.at<float>(1);
 				float c = X.at<float>(2);
 				
-				mgA->addPoint(a);
-				mgB->addPoint(b);
-				mgC->addPoint(c);
 
 				cv::Mat diff = A * X - B;
 				cv::Mat sd;
 				cv::pow(diff, 2, sd);
 
 				float ssd = cv::sum(sd)[0];
-				mgErr->addPoint(ssd);
+				
 
+				for (int i = 0; i < 3; i++)
+				{
+					mgZ->addPoint((wrist.pos - finger.pos).z);
+					mgA->addPoint(a);
+					mgB->addPoint(b);
+					mgC->addPoint(c);
+					mgErr->addPoint(ssd);
+				}
+
+				cout << X;
+				cout << ssd;
+
+				ofPoint fw = fingerWristHistory.front();
+				float ang = atan2f(fw.z, fw.x) / PI; // -1 < a < 1
+				cout << "atan: " << ang;
 				if (a < aThreshold->getScaledValue())
 				{
 					if (ssd < errThreshold->getScaledValue())
 					{
-						keypad.keyPressed('8');
-						cout << "CLICK!";
-						cout << endl;
+							
+						int k = floor(5 * ofMap(ang, 0.2, 0.8, 0, 1, true));
+						k += '6';
+						cout << " key" << k;
+
+						keypad.keyPressed(k);
 					}
-					//cout << X;
-					//cout << ssd;
+
+					
 				}
+				cout << endl;
+
 				
 			}
 		}
@@ -737,6 +766,11 @@ void testApp::draw(){
 	depthTexture.draw(320,0);
 
 
+	if (hand.isValid())
+	{
+		//sceneCam.setGlobalPosition(0,0,hand.pos.z + 400);
+	}
+
 	sceneCam.begin();
 	//ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
@@ -745,8 +779,36 @@ void testApp::draw(){
 	colorTexture.draw(0,0);
 
 
+
+	if (finger.isValid())
+	{
+		ofSetColor(ofColor::green);
+		ofSphere(finger.pos, 10);
+	}
+	if (wrist.isValid())
+	{
+		ofSetColor(ofColor::red);
+		ofSphere(wrist.pos, 10);
+	}
+	if (wrist.isValid() && finger.isValid())
+	{
+		ofSetColor(ofColor::white);
+		ofSetLineWidth(10);
+		ofLine(wrist.pos, finger.pos);
+
+		float p = wrist.pos.z / (wrist.pos.z - finger.pos.z);
+		ofSetLineWidth(3);
+		ofLine(wrist.pos, wrist.pos.getInterpolated(finger.pos, p));
+
+	}
+
+
+
+
+
 	if (drawHand->getValue() && !handHistory.empty())
 	{
+		ofSetColor(ofColor::blue);
 		ofSphere(handHistory.front(), 10);
 	}
 
@@ -1213,10 +1275,10 @@ void testApp::setupGui()
 	mgA = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH A");
 	mgB = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH B");
 	mgC = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 150, 250, "MOVING GRAPH C");
-	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 100, 250, "MOVING GRAPH Err");
+	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 0, 100, "MOVING GRAPH Err");
 
 	gui1->addSpacer(length-xInit, 2);
-	aThreshold = gui1->addSlider("aThreshold", 0.0, -2.0, -0.2, length-xInit, dim);
+	aThreshold = gui1->addSlider("aThreshold", -2.0, 0, -0.2, length-xInit, dim);
 	errThreshold = gui1->addSlider("errThreshold", 0.0, 1000, 200, length-xInit, dim);
 
 	gui1->addWidgetDown(mgZ);
