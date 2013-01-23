@@ -315,7 +315,7 @@ void testApp::update(){
 
 											ofPoint wristOffset = wristReal - wristCandidateReal;
 
-											if (fabs(wristOffset.y) < 30 && fabs(wristOffset.x) < 10)
+											if (fabs(wristOffset.y) < 30 && fabs(wristOffset.x) < 40)
 											{
 												fingDebug.row(j).col(i) = red;
 												//float p = offset.length() / 30;
@@ -377,18 +377,33 @@ void testApp::update(){
 
 				cv::Mat X = AA * B;
 
+				float a = X.at<float>(0);
+				float b = X.at<float>(1);
+				float c = X.at<float>(2);
+				
+				mgA->addPoint(a);
+				mgB->addPoint(b);
+				mgC->addPoint(c);
+
 				cv::Mat diff = A * X - B;
 				cv::Mat sd;
 				cv::pow(diff, 2, sd);
 
 				float ssd = cv::sum(sd)[0];
-
 				mgErr->addPoint(ssd);
-				mgA->addPoint(X.at<float>(0));
-				mgB->addPoint(X.at<float>(1));
-				mgC->addPoint(X.at<float>(2));
-				cout << ssd << " " << X << endl;
 
+				if (a < aThreshold->getScaledValue())
+				{
+					if (ssd < errThreshold->getScaledValue())
+					{
+						keypad.keyPressed('8');
+						cout << "CLICK!";
+						cout << endl;
+					}
+					//cout << X;
+					//cout << ssd;
+				}
+				
 			}
 		}
 		else
@@ -1159,23 +1174,24 @@ void testApp::setupGui()
 
 
 	gui1->addSpacer(length-xInit, 2);
-	gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
+	//gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
 	gui1->addSlider("can1", 0.0, 255.0, 10, length-xInit, dim);
 	gui1->addSlider("can2", 0.0, 255.0, 100, length-xInit, dim);
 
 
+	int sliderHeight = 30;
 	gui1->addSpacer(length-xInit, 2); 
 	gui1->addWidgetDown(new ofxUILabel("V SLIDERS", OFX_UI_FONT_MEDIUM)); 
-	gui1->addSlider("0", 0.0, 10255.0, 150, dim, 160);
+	gui1->addSlider("0", 0.0, 10255.0, 150, dim, sliderHeight);
 	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_RIGHT);
-	gui1->addSlider("1", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("2", 0.0, 1.0, 1, dim, 160);
-	gui1->addSlider("3", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("4", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("5", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("6", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("7", 0.0, 255.0, 150, dim, 160);
-	gui1->addSlider("8", 0.0, 255.0, 150, dim, 160);
+	gui1->addSlider("1", 0.0, 255.0, 150, dim, sliderHeight);
+	gui1->addSlider("2", 0.0, 1.0, 1, dim, sliderHeight);
+	gui1->addSlider("3", 0.0, 255.0, 150, dim, sliderHeight);
+	gui1->addSlider("4", 0.0, 255.0, 150, dim, sliderHeight);
+	gui1->addSlider("5", 0.0, 255.0, 150, dim, sliderHeight);
+	gui1->addSlider("6", 0.0, 255.0, 150, dim, sliderHeight);
+	gui1->addSlider("7", 0.0, 255.0, 150, dim, sliderHeight);
+	gui1->addSlider("8", 0.0, 255.0, 150, dim, sliderHeight);
 	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_DOWN);
 
 
@@ -1200,6 +1216,9 @@ void testApp::setupGui()
 	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 100, 250, "MOVING GRAPH Err");
 
 	gui1->addSpacer(length-xInit, 2);
+	aThreshold = gui1->addSlider("aThreshold", 0.0, -2.0, -0.2, length-xInit, dim);
+	errThreshold = gui1->addSlider("errThreshold", 0.0, 1000, 200, length-xInit, dim);
+
 	gui1->addWidgetDown(mgZ);
 	gui1->addWidgetDown(mgErr);
 	gui1->addWidgetDown(mgA);

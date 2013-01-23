@@ -112,6 +112,8 @@ private:
 	static const int fingerWristHistorySize = 11;
 	cv::Mat AA; // [(At * A) ^(-1)] * At
 	cv::Mat A;
+	ofxUISlider* aThreshold;
+	ofxUISlider* errThreshold;
 
 	std::deque<ofPoint> handHistory;
 	int handHistorySize;
