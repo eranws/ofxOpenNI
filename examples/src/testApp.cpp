@@ -21,9 +21,13 @@ cv::Scalar black(0,0,0);
 //--------------------------------------------------------------
 void testApp::setup() {
 
-	ofSetLogLevel(OF_LOG_SILENT);
+	//ofSetLogLevel(OF_LOG_SILENT);
 	ofSetLogLevel(MODULE_NAME, OF_LOG_VERBOSE);
 	ofLog::setAutoSpace(true);
+
+	ofLogToFile("a.log");
+
+	cout.precision(2);
 
 	ofSetFrameRate(100);
 
@@ -57,7 +61,9 @@ void testApp::setup() {
 	handCam.setDistance(10);
 	faceTracker.setup();
 
-	sceneCam.setGlobalPosition(0,0,2000);
+	sceneCam.setGlobalPosition(0,0,0);
+	sceneCam.setTarget(ofPoint(0, 0, 2000));
+	sceneCam.setDistance(2000);
 
 	setupGui(); 
 
@@ -85,6 +91,8 @@ void testApp::setup() {
 	cout << AA;
 
  	motion = NULL;
+
+	lastClicked = 0;
 }
 
 //--------------------------------------------------------------
@@ -381,13 +389,69 @@ void testApp::update(){
 		{
 			if (fingerWristHistory.size() == fingerWristHistorySize)
 			{
+				
+
+
+				cv::Mat pcaset(fingerWristHistorySize, 2, CV_32FC1);
+				for (int i = 0; i < fingerWristHistorySize; i++)
+				{
+					pcaset.at<float>(i, 0) = fingerWristHistory[i].x;
+					pcaset.at<float>(i, 1) = fingerWristHistory[i].z;
+				}
+
+				//! PCA compressPCA(InputArray pcaset, int maxComponents, const Mat& testset, OutputArray compressed)
+				cv::PCA pca(pcaset, // pass the data
+					cv::Mat(), // there is no pre-computed mean vector,
+					// so let the PCA engine to compute it
+					CV_PCA_DATA_AS_ROW // indicate that the vectors
+					// are stored as matrix rows
+					// (use CV_PCA_DATA_AS_COL if the vectors are
+					// the matrix columns)					
+					//! maxComponents // specify how many principal components to retain
+					);
+					
+					/*			
+				cout << pcaset << endl;
+				cout << pca.eigenvalues << endl;
+				cout << pca.eigenvectors << endl;
+				cout << pca.mean << endl;
+				*/
+			
 				cv::Mat B(fingerWristHistorySize, 1, CV_32FC1);
+				cv::Mat Bpca(fingerWristHistorySize, 1, CV_32FC1);
+				
+				
+				Bpca = pca.project(pcaset).col(0);
+				
+
 				for (int i = 0; i < fingerWristHistorySize; i++)
 				{
 					B.at<float>(i) = fingerWristHistory[i].length();
 				}
+				
+
+				
+				cv::Mat pcaProj = pca.project(pcaset);
+				cv::Mat pcaShow;
+
+				const int S = 500;
+				cv::Point center(S/2, S/2);
+				pcaShow.create(S, S, CV_8UC3);
+				
+				for (int i = 0; i < fingerWristHistorySize; i++)
+				{
+					cv::circle(pcaShow, center + cv::Point(pcaProj.at<float>(i, 0), pcaProj.at<float>(i, 1)), 5 + i, blue, 2);
+				}
+
+				cv::line(pcaShow, center, center - cv::Point(S * pca.eigenvectors.at<float>(0, 0), S * pca.eigenvectors.at<float>(0, 1)), red, 3);
+				//cv::line(pcaShow, center, center + cv::Point(S * pca.eigenvectors.at<float>(1, 0), S * pca.eigenvectors.at<float>(1, 1)), green, 2);
+				showMat(pcaShow);
+				
+				//cout << B;
+
 
 				cv::Mat X = AA * B;
+				cv::Mat Xpca = AA * Bpca;
 
 				float a = X.at<float>(0);
 				float b = X.at<float>(1);
@@ -399,33 +463,55 @@ void testApp::update(){
 				cv::pow(diff, 2, sd);
 
 				float ssd = cv::sum(sd)[0];
+	
 				
+				float apca = Xpca.at<float>(0);
+				cv::Mat sdpca;
+				cv::pow(A * Xpca - Bpca, 2, sdpca);
+				float ssdpca = cv::sum(sdpca)[0];
+
+				ofLog() << ofGetSystemTime() << a << ssd << apca << ssdpca;
+
 
 				for (int i = 0; i < 3; i++)
 				{
-					mgZ->addPoint((wrist.pos - finger.pos).z);
+					mgZ->addPoint(B.at<float>(0));//(wrist.pos - finger.pos).z);
 					mgA->addPoint(a);
+					mgApca->addPoint(apca);
+
 					mgB->addPoint(b);
 					mgC->addPoint(c);
 					mgErr->addPoint(ssd);
+					mgErrPca->addPoint(pca.eigenvalues.at<float>(1));
 				}
 
-				cout << X;
-				cout << ssd;
+				//cout << X;
+				//cout << ssd;
 
+				/*
 				ofPoint fw = fingerWristHistory.front();
 				float ang = atan2f(fw.z, fw.x) / PI; // -1 < a < 1
+				*/
+				float ang = 
+					atan2f(
+					pca.eigenvectors.at<float>(0, 1),
+					pca.eigenvectors.at<float>(0, 0)
+					) / PI;
+
 				cout << "atan: " << ang;
-				if (a < aThreshold->getScaledValue())
+				if (apca < apcaThreshold->getScaledValue())
 				{
-					if (ssd < errThreshold->getScaledValue())
+					if (ssdpca < errpcaThreshold->getScaledValue())
 					{
-							
+						if (ofGetFrameNum() > lastClicked + 5)
+						{
+							lastClicked = ofGetFrameNum();
 						int k = floor(5 * ofMap(ang, 0.2, 0.8, 0, 1, true));
 						k += '6';
 						cout << " key" << k;
 
 						keypad.keyPressed(k);
+						}
 					}
 
 					
@@ -766,12 +852,9 @@ void testApp::draw(){
 	depthTexture.draw(320,0);
 
 
-	if (hand.isValid())
-	{
-		//sceneCam.setGlobalPosition(0,0,hand.pos.z + 400);
-	}
 
 	sceneCam.begin();
+	
 	//ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
 
@@ -1272,20 +1355,29 @@ void testApp::setupGui()
 		buffer.push_back(0.0);
 	}
 	mgZ = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -150, 150, "MOVING GRAPH Z");
-	mgA = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH A");
-	mgB = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -2, 2, "MOVING GRAPH B");
+	mgA = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -10, 10, "MOVING GRAPH A");
+	mgApca = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -3, 1, "MOVING GRAPH Apca");
+	mgB = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, -5, 5, "MOVING GRAPH B");
 	mgC = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 150, 250, "MOVING GRAPH C");
-	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 0, 100, "MOVING GRAPH Err");
+	mgErr = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 0, 500, "MOVING GRAPH Err");
+	mgErrPca = new ofxUIMovingGraph(length-xInit, 100, buffer, 256, 0, 10, "MOVING GRAPH Errpca");
 
 	gui1->addSpacer(length-xInit, 2);
 	aThreshold = gui1->addSlider("aThreshold", -2.0, 0, -0.2, length-xInit, dim);
 	errThreshold = gui1->addSlider("errThreshold", 0.0, 1000, 200, length-xInit, dim);
 
-	gui1->addWidgetDown(mgZ);
-	gui1->addWidgetDown(mgErr);
+	apcaThreshold = gui1->addSlider("aThreshold", -2.0, 0, -1, length-xInit, dim);
+	errpcaThreshold = gui1->addSlider("errThreshold", 0.0, 1000, 500, length-xInit, dim);
+
+
+	//gui1->addWidgetDown(mgZ);
 	gui1->addWidgetDown(mgA);
-	gui1->addWidgetDown(mgB);
-	gui1->addWidgetDown(mgC);
+	gui1->addWidgetDown(mgErr);
+
+	gui1->addWidgetDown(mgApca);
+	gui1->addWidgetDown(mgErrPca);
+	//gui1->addWidgetDown(mgB);
+	//gui1->addWidgetDown(mgC);
 
 	//gui->addWidgetDown(new ofxUIWaveform(length-xInit, 64, buffer, 256, 0.0, 1.0, "WAVEFORM")); 
 

@@ -55,6 +55,9 @@ private:
 	ofEasyCam handCam;
 	ofEasyCam sceneCam;
 
+	ofFbo pcaFbo;
+	
+
 
 	struct Finger
 	{
@@ -103,10 +106,13 @@ private:
 	ofxUIToggle* drawHandHistory;
 
 	ofxUIMovingGraph* mgZ; 
-	ofxUIMovingGraph* mgA; 
+	ofxUIMovingGraph* mgA;
+	ofxUIMovingGraph* mgApca;
 	ofxUIMovingGraph* mgB; 
 	ofxUIMovingGraph* mgC; 
-	ofxUIMovingGraph* mgErr; 
+	ofxUIMovingGraph* mgErr;
+	ofxUIMovingGraph* mgErrPca;
+
 
 	deque<ofPoint> fingerWristHistory;
 	static const int fingerWristHistorySize = 7;
@@ -114,6 +120,11 @@ private:
 	cv::Mat A;
 	ofxUISlider* aThreshold;
 	ofxUISlider* errThreshold;
+
+	ofxUISlider* apcaThreshold;
+	ofxUISlider* errpcaThreshold;
+
+	int lastClicked;
 
 	struct Joint
 	{

@@ -11,7 +11,7 @@ const string Keypad::MODULE_NAME = "Keypad";
 
 Keypad::Keypad(void)
 {
-	ofSetLogLevel(MODULE_NAME, OF_LOG_VERBOSE);
+	ofSetLogLevel(MODULE_NAME, OF_LOG_SILENT);
 
 	cols = 5;
 	rows = 3;
