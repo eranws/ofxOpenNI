@@ -24,7 +24,7 @@ cv::Rect getHandFrameFromFG(cv::Mat& img, const ofPoint& handPosition, const ope
 	}
 	const int handPointToTopLength = 240; //[millimeters]
 	const int handPointToSideLength = 120; //[millimeters]
-	const int handPointToBottomLength = 200; //[millimeters]
+	const int handPointToBottomLength = 240; //[millimeters]
 
 	ofPoint projTopLeft;
 	ofPoint projBottomRight;

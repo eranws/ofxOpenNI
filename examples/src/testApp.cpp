@@ -168,7 +168,8 @@ void testApp::update(){
 			else
 			{
 				cv::Mat fgimgHand;
-				depthMat.convertTo(fgimgHand, CV_8UC1, 1, 128 - handPoint.z);
+				float alpha = 0.8f;
+				depthMat.convertTo(fgimgHand, CV_8UC1, alpha, alpha * (128 - handPoint.z));
 
 				cv::Mat handFrame;
 				fgimgHand(handRect).copyTo(handFrame);
@@ -507,10 +508,9 @@ void testApp::update(){
 						{
 							lastClicked = ofGetFrameNum();
 						int k = floor(5 * ofMap(ang, 0.2, 0.8, 0, 1, true));
-						k += '6';
 						cout << " key" << k;
 
-						keypad.keyPressed(k);
+						keypad.keypadPressed(k + 5);
 						}
 					}
 
