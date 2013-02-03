@@ -95,6 +95,22 @@ void testApp::setup() {
 	lastClicked = 0;
 }
 
+
+
+
+ofPoint projToReal(const openni::VideoStream& stream, const cv::Mat depthMat, int i, int j) 
+{
+	ofPoint real;
+
+	openni::CoordinateConverter::convertDepthToWorld(stream,
+		j, i, depthMat.at<ushort>(i,  j),
+		&real.x, &real.y, &real.z);
+
+	return real;
+}
+
+
+
 //--------------------------------------------------------------
 void testApp::update(){
 
@@ -183,6 +199,66 @@ void testApp::update(){
 				{
 					detectFinger(handFrame, handRect);
 				}
+
+				
+
+				cv::Mat depth8;
+				depthMat.convertTo(depth8, CV_8UC1, 0.1);
+				cvtColor(depth8, depth8, CV_GRAY2RGB);
+				
+
+				cv::Mat grayQ = cv::Mat::zeros(depthMat.size(), CV_8UC1);
+				cv::Mat blackQ = cv::Mat::zeros(depthMat.size(), CV_8UC1);
+
+				deque<int> q;
+				q.push_back(int(handProj.x) + depthMat.cols * int(handProj.y));
+
+				while (!q.empty())
+				{
+					
+
+					int p = q.front();
+					cv::Point pt(p % depthMat.cols, p / depthMat.cols);
+					
+					short z = depthMat.at<ushort>(pt.y, pt.x);
+					depth8.row(pt.y).col(pt.x) = green;
+					
+					if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 1 && pt.x < depthMat.cols - 2)
+					{
+						int maxJ = (pt.y < handProj.y + 30) ? 2 : 1; // allow search down for 30 pixels
+						for (int j = -1; j < maxJ; j++)
+						{
+							for (int i = -2; i < 3; i++)
+							{
+								short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
+								if(fabs(z - handPoint.z) < 200 && cz < z + 30)
+								{
+									int idx = int(pt.x + i) + depthMat.cols * int(pt.y + j);
+									if (blackQ.at<uchar>(pt.y + j, pt.x + i) == 0 && grayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
+									{
+										grayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
+										q.push_back(idx);
+									}
+
+								}
+							}
+						}
+					}
+					
+
+					blackQ.at<uchar>(pt.y, pt.x) = 1;
+					q.pop_front();
+				}
+		
+
+				showMat(depth8);
+				showMat(grayQ * 200);
+
+					
+
+
+
+
 
 				cv::Mat handMask;
 				handFrame.copyTo(handMask);
