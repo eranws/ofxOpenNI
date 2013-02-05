@@ -299,7 +299,7 @@ void testApp::update(){
 			}
 
 			cv::circle(depth8Color, fingerCandidate, 3, green, CV_FILLED);
-			fingerFound = (handProj.y - fingerCandidate.y) > 10;
+			fingerFound = (handProj.y - fingerCandidate.y) > 3;
 
 			if (fingerFound)
 			{
@@ -330,7 +330,7 @@ void testApp::update(){
 
 						ofPoint offset = fingReal - fingerCandidateReal;
 
-						if (fabs(offset.y) < 30 && fabs(offset.x) < 70)
+						if (fabs(offset.y) < 30 && fabs(offset.x) < 70 && fabs(offset.x) < 50)
 						{
 							depth8Color.row(j).col(i) = green;
 							//float p = offset.length() / 30;
@@ -370,8 +370,8 @@ void testApp::update(){
 						ofPoint tempReal;
 						openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), d.x, d.y, d.z, &tempReal.x, &tempReal.y, &tempReal.z);
 
-						ofPoint diff = fingerReal - tempReal;
-						if (diff.length() > 170)
+						ofPoint diff = handPoint - tempReal;
+						if (diff.length() > 150)
 						{
 
 							wristFoundCounter++;
@@ -382,11 +382,11 @@ void testApp::update(){
 								wristCandidateXY = pt;
 							}
 						}
+					}
 
-
-						if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 2 && pt.x < depthMat.cols - 2)
+						if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 3 && pt.x < depthMat.cols - 2)
 						{
-							for (int j = 0; j < 2; j++)
+							for (int j = 0; j < 4; j++)
 							{
 								for (int i = -2; i < 3; i++)
 								{
@@ -406,7 +406,7 @@ void testApp::update(){
 								}
 							}
 						}
-					}
+					
 					wristQ.pop_front();
 				}
 
