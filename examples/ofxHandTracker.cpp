@@ -20,6 +20,7 @@ void ofxHandTracker::setup(ofPtr<openni::Device> device, bool isVerbose)
 
 	handTrackerFrame = ofPtr<nite::HandTrackerFrameRef>(new nite::HandTrackerFrameRef);
 	
+	frameIndex = -1;
 //	startThread(false, isVerbose);
 }
 
@@ -49,6 +50,7 @@ void ofxHandTracker::readFrame()
 		printf("Get next frame failed\n");
 		return;
 	}
+	frameIndex = handTrackerFrame->getFrameIndex();
 
 	const nite::Array<nite::GestureData>& gestures = handTrackerFrame->getGestures();
 	for (int i = 0; i < gestures.getSize(); ++i)

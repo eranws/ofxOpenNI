@@ -18,6 +18,7 @@ public:
 	ofPoint getHandPoint() const { return handPoint; }
 
 	bool hasHand() {return !handTrackerFrame->getHands().isEmpty();} //HACKHACK awful Hack!
+	int getFrameIndex() const { return frameIndex; }
 
 
 	void readFrame();
@@ -34,6 +35,7 @@ private:
 
 	ofPoint handPoint;
 
+	int frameIndex;
 	friend class GroundTruthReader;
 };
 

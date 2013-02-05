@@ -15,8 +15,59 @@ const string testApp::MODULE_NAME = "testApp";
 cv::Scalar white(255, 255, 255);
 cv::Scalar blue(255,0,0);
 cv::Scalar green(0,255,0);
+cv::Scalar yellow(255,255,0);
 cv::Scalar red(0,0,255);
+cv::Scalar purple(255,0,255);
 cv::Scalar black(0,0,0);
+
+void depthOnMouse( int event, int x, int y, int flags, void* thisApp)
+{
+	switch( event )
+	{
+	case CV_EVENT_LBUTTONDOWN:
+		{
+			testApp* app = (testApp*)thisApp;
+			cv::Mat mat = app->depthMat.clone();
+
+			ofPoint proj;
+			proj.x = (float)x;
+			proj.y = (float)y;
+			proj.z = mat.at<ushort>(y, x);
+
+
+			stringstream ss;
+			ss << proj.z;
+			cv::putText(mat, ss.str(), cv::Point(15,15),cv::FONT_HERSHEY_PLAIN,1, cv::Scalar(0,0,0));
+			cv::putText(mat, ss.str(), cv::Point(14,16),cv::FONT_HERSHEY_PLAIN,1, cv::Scalar(255,255,255));
+
+			imshow("Depth", mat * 32);
+
+			printf("%.2f\n", proj.z);
+			//oni.depthGenerator().ConvertProjectiveToRealWorld(1, &proj, &g_handPosition);
+
+
+		}
+		break;
+	case CV_EVENT_RBUTTONDOWN: 
+		{
+		}
+		break;
+	case CV_EVENT_LBUTTONUP:
+		{		
+		}
+		break;
+	case CV_EVENT_RBUTTONUP:
+		{
+		}
+		break;
+	case CV_EVENT_MOUSEMOVE:
+		{
+
+		}	
+		break;
+	}	
+}
+
 
 //--------------------------------------------------------------
 void testApp::setup() {
@@ -40,7 +91,9 @@ void testApp::setup() {
 		//oniDevice.setup("c:\\1.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-30-35-716.oni");
 		//		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
-		oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
+		//oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
+		oniDevice.setup("130204_1518.oni");
+		
 	}
 
 
@@ -54,9 +107,17 @@ void testApp::setup() {
 
 	handTracker.setup(depthStream.getDevice());
 
-	depthStream.startThread(false);
-	colorStream.startThread(false);
-	//handTracker.startThread(false);
+
+	if (oniDevice.getDevice()->isFile())
+	{
+		oniDevice.getDevice()->getPlaybackControl()->setSpeed(-1); // manual mode
+	}
+	else
+	{
+		depthStream.startThread(false);
+		colorStream.startThread(false);
+		handTracker.startThread(false);
+	}
 
 	handCam.setDistance(10);
 	faceTracker.setup();
@@ -93,6 +154,11 @@ void testApp::setup() {
 	motion = NULL;
 
 	lastClicked = 0;
+	frameIndex = 0;
+	toUpdate = true;
+
+	cv::namedWindow("Depth");
+	cvSetMouseCallback("Depth", depthOnMouse, this);
 }
 
 
@@ -114,24 +180,30 @@ ofPoint projToReal(const openni::VideoStream& stream, const cv::Mat depthMat, in
 //--------------------------------------------------------------
 void testApp::update(){
 
-
 	ofxProfileThisFunction();
-
 	debugString = stringstream();
+
+	
+	if (!toUpdate && frameIndex == handTracker.getFrameIndex())
+	{
+		return;
+	}
+	else
+	{
+		frameIndex = handTracker.getFrameIndex();
+		toUpdate = false;
+	}
 
 	// update colorPixels
 	ofPixels colorPixels = colorStream.getPixels();
 	cv::Mat colorMat = ofxCv::toCv(colorPixels);
 
-	ofxProfileSectionPush("handTracker update");
-	handTracker.readFrame();
-	ofxProfileSectionPop();
 
 	ofPoint handPoint = ofPoint();
 	if (handTracker.hasHand())
 	{
 		hand.pos = handTracker.getHandPoint();
-		hand.setFrameNum();
+		hand.frame = frameIndex;
 
 		handPoint = handTracker.getHandPoint();
 		handHistory.push_front(handPoint);
@@ -164,8 +236,10 @@ void testApp::update(){
 
 	if (cvDepthToggle->getValue())
 	{
-		cv::Mat depthMat = ofxCv::toCv(*depthPixels);
+		depthMat = ofxCv::toCv(*depthPixels);
+		
 
+		int wristFoundCounter = 0;
 		bool wristFound = false;
 		bool fingerFound = false;
 		bool handFound = false;
@@ -183,21 +257,29 @@ void testApp::update(){
 			cvtColor(depth8, depth8Color, CV_GRAY2RGB);
 
 
+			//find finger
 			cv::Mat grayQ = cv::Mat::zeros(depthMat.size(), CV_8UC1);
 
 			deque<cv::Point> q;
 			q.push_back(cv::Point(handProj.x, handProj.y));
+			cv::Point fingerCandidate = q.front();
 
 			while (!q.empty())
 			{
 				cv::Point pt = q.front();
-
+				q.pop_front();
 				short z = depthMat.at<ushort>(pt.y, pt.x);
-				depth8Color.row(pt.y).col(pt.x) = green;
+
+				if (pt.y < fingerCandidate.y && z > 0)
+				{
+					fingerCandidate = pt;
+				}
+
+				depth8Color.row(pt.y).col(pt.x) = yellow;
 
 				if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 1 && pt.x < depthMat.cols - 2)
 				{
-					int maxJ = (pt.y < handProj.y + 0) ? 2 : 1; // allow search down for 50 pixels
+					int maxJ = (pt.y < handProj.y + 0) ? 2 : 1; // allow search down for 0 pixels
 					for (int j = -1; j < maxJ; j++)
 					{
 						for (int i = -2; i < 3; i++)
@@ -210,52 +292,21 @@ void testApp::update(){
 									grayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
 									q.push_back(cv::Point(pt.x + i, pt.y + j));
 								}
-
 							}
 						}
 					}
 				}
-
-				q.pop_front();
 			}
 
-
-
-
-
-			cv::Mat handMask;
-			depth8.copyTo(handMask);
-			cv::inRange(grayQ, 1, 255, handMask);
-
-			cv::Mat fingDebug;
-			cv::cvtColor(handMask, fingDebug, CV_GRAY2RGB);
-
-			// get topmost white pixel
-			uchar* data = handMask.data;
-			int idx = 0;
-			int x = 0;
-			int y = 0;
-			while (idx < handMask.rows * handMask.cols)
-			{
-				if (*data != 0)
-				{
-					x = idx % handMask.cols;
-					y = idx / handMask.cols;
-					break;
-				}
-				idx++, data++;
-			}
-			cv::circle(fingDebug, cv::Point2i(x, y), 3, green, CV_FILLED);
-
-			cv::Point minLoc(x,y);
-			fingerFound = (minLoc.x > 0 && minLoc.y > 0);
+			cv::circle(depth8Color, fingerCandidate, 3, green, CV_FILLED);
+			fingerFound = (handProj.y - fingerCandidate.y) > 10;
 
 			if (fingerFound)
 			{
 				// spatially averaged finger point
-				cv::circle(depth8Color, minLoc, 1, red, CV_FILLED); //closest point
+				cv::circle(depth8Color, fingerCandidate, 1, red, CV_FILLED); //closest point
 
-				ofPoint fingerCandidateProj(minLoc.x, minLoc.y, depthMat.at<ushort>(minLoc.y, minLoc.x));
+				ofPoint fingerCandidateProj(fingerCandidate.x, fingerCandidate.y, depthMat.at<ushort>(fingerCandidate.y, fingerCandidate.x));
 				ofPoint fingerCandidateReal;
 				openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), fingerCandidateProj.x, fingerCandidateProj.y, fingerCandidateProj.z, &fingerCandidateReal.x, &fingerCandidateReal.y, &fingerCandidateReal.z);
 
@@ -266,7 +317,7 @@ void testApp::update(){
 				{
 					for (int i = 0; i < depthMat.cols; i++)
 					{
-						if (handMask.at<uchar>(j, i) == 0) continue;
+						if (grayQ.at<uchar>(j, i) == 0) continue;
 						ofPoint fingReal;
 						ofPoint fingProj;
 						fingProj.x = i;
@@ -281,7 +332,7 @@ void testApp::update(){
 
 						if (fabs(offset.y) < 30 && fabs(offset.x) < 70)
 						{
-							fingDebug.row(j).col(i) = green;
+							depth8Color.row(j).col(i) = green;
 							//float p = offset.length() / 30;
 							fingerOffsetRealTotal += offset;// * (1-p);
 							fingerOffsetRealCount++;
@@ -322,9 +373,14 @@ void testApp::update(){
 						ofPoint diff = fingerReal - tempReal;
 						if (diff.length() > 170)
 						{
-							wristFound = true;
-							wristCandidateReal = tempReal;
-							wristCandidateXY = pt;
+
+							wristFoundCounter++;
+							if (wristFoundCounter > 20)
+							{
+								wristFound = true;
+								wristCandidateReal = tempReal;
+								wristCandidateXY = pt;
+							}
 						}
 
 
@@ -334,11 +390,14 @@ void testApp::update(){
 							{
 								for (int i = -2; i < 3; i++)
 								{
-									short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
-									if(fabs(z - handPoint.z) < 300 && cz < z + 50)
+									if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
 									{
-										if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
+										short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
+										int zDiff = (i==0) ? 120 : 30;
+										if(fabs(z - handPoint.z) < 300 && abs(cz - z) < zDiff)
+											
 										{
+										
 											wristGrayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
 											wristQ.push_back(cv::Point(pt.x + i, pt.y + j));
 										}
@@ -379,7 +438,7 @@ void testApp::update(){
 
 
 							ofPoint wristOffset = tempReal - wristCandidateReal;
-							if (fabs(wristOffset.y) < 30 && fabs(wristOffset.x) < 70)
+							if (fabs(wristOffset.y) < 30 && fabs(wristOffset.x) < 70 && fabs(wristOffset.z) < 50)
 							{
 								depth8Color.row(pt.y).col(pt.x) = red;
 								//float p = offset.length() / 30;
@@ -398,10 +457,12 @@ void testApp::update(){
 								{
 									for (int i = -2; i < 3; i++)
 									{
-										short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
-										if(fabs(z - wristCandidateReal.z) < 300 && cz < z + 10 && pt.y < wristCandidateXY.y + 10)
+
+										if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
 										{
-											if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
+											short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
+											int zDiff = (i==0) ? 15 : 10;
+											if(fabs(z - handPoint.z) < 300 && abs(cz - z) < zDiff && pt.y < wristCandidateXY.y + 20)
 											{
 												wristGrayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
 												wristQ.push_back(cv::Point(pt.x + i, pt.y + j));
@@ -427,10 +488,10 @@ void testApp::update(){
 					cv::circle(depth8Color, cv::Point2i(wristProj.x, wristProj.y), 3, blue, 3); //closest point
 
 					wrist.pos = wristReal;
-					wrist.setFrameNum();
+					wrist.frame = frameIndex;
 
 					finger.pos = fingerReal;
-					finger.setFrameNum();
+					finger.frame = frameIndex;
 
 
 
@@ -442,10 +503,11 @@ void testApp::update(){
 						fingerWristHistory.pop_back();
 					}
 
-					showMat(fingDebug);
 				} // if (wristFound)
 			}
 			showMat(depth8Color);
+			imshow("Depth", depthMat * 32);
+
 		}
 
 
@@ -557,11 +619,7 @@ void testApp::update(){
 				ofPoint fw = fingerWristHistory.front();
 				float ang = atan2f(fw.z, fw.x) / PI; // -1 < a < 1
 				*/
-				float ang = 
-					atan2f(
-					pca.eigenvectors.at<float>(0, 1),
-					pca.eigenvectors.at<float>(0, 0)
-					) / PI;
+				float ang = atan2f(pca.eigenvectors.at<float>(0, 1), pca.eigenvectors.at<float>(0, 0)) / PI;
 
 				//cout << "atan: " << ang;
 				if (apca < apcaThreshold->getScaledValue())
@@ -782,93 +840,6 @@ void testApp::update(){
 	}//end if (cvDepthToggle->getValue())
 
 
-#ifdef OPENNI1
-	// reset all depthThresholds to 0,0,0
-	for(int i = 0; i < openNIDevice.getMaxNumHands(); i++){
-		ofxOpenNIDepthThreshold & depthThreshold = openNIDevice.getDepthThreshold(i);
-		ofPoint leftBottomNearWorld = ofPoint(0,0,0);
-		ofPoint rightTopFarWorld = ofPoint(0,0,0);
-		ofxOpenNIROI roi = ofxOpenNIROI(leftBottomNearWorld, rightTopFarWorld);
-		depthThreshold.setROI(roi);
-	}
-
-	for (int i = 0; i < MAX_HANDS; i++)
-	{
-		fingers[i].isTracked = false;
-	}
-	// iterate through users
-
-	ofxProfileSectionPush("iterate hands");
-	for (int i = 0; i < openNIDevice.getNumTrackedHands(); i++)
-	{
-		// get a reference to this user
-		ofxOpenNIHand & hand = openNIDevice.getTrackedHand(i);
-
-		// get hand position
-		ofPoint & handWorldPosition = hand.getWorldPosition(); // remember to use world position for setting ROIs!!!
-
-		// set depthThresholds based on handPosition
-		ofxOpenNIDepthThreshold & depthThreshold = openNIDevice.getDepthThreshold(i); // we just use hand index for the depth threshold index
-		ofPoint leftBottomNearWorld = handWorldPosition - 100; // ofPoint has operator overloading so it'll subtract/add 50 to x, y, z
-		ofPoint rightTopFarWorld = handWorldPosition + 100;
-
-		ofxOpenNIROI roi = ofxOpenNIROI(leftBottomNearWorld, rightTopFarWorld);
-		depthThreshold.setROI(roi);
-
-
-		openNIDevice.lock();
-		ofMesh& pc = depthThreshold.getPointCloud();
-		vector<ofVec3f> vRef = pc.getVertices();
-		vector<ofVec3f> v(vRef.begin(), vRef.end());
-		openNIDevice.unlock();
-
-		if (v.size() > 0)
-		{
-			fingers[i].isTracked = true;
-		}
-
-		//TODO: export to finger tracker module
-		if (fingers[i].isTracked)
-		{
-			ofVec3f minV = v[0];
-			for (int iv=1; iv < v.size(); iv++)
-			{
-				// closest topmost
-				if (v[iv].y - v[iv].z > minV.y - minV.z) minV = v[iv];
-			}
-
-			//get finger center of mass
-			ofVec3f fingerCoM;
-			int count = 0;
-			for (int iv=0; iv < v.size(); iv++)
-			{
-
-				if (minV.distanceSquared(v[iv]) < 100)
-				{
-					fingerCoM += v[iv];
-					count++;
-				}
-
-			}
-			fingerCoM /= count;
-			debugString << "count" << count;
-
-
-			fingers[i].position.push_front(fingerCoM);
-			if (fingers[i].position.size() > Finger::historySize)
-			{
-				fingers[i].position.pop_back();
-			}
-
-
-		}
-		else
-		{
-			fingers[i].position.clear();
-		}
-
-	}
-#endif
 
 	ofxProfileSectionPop();
 
@@ -917,6 +888,7 @@ void testApp::draw(){
 
 
 
+
 	sceneCam.begin();
 
 	//ofEnableBlendMode(OF_BLENDMODE_ADD);
@@ -927,17 +899,17 @@ void testApp::draw(){
 
 
 
-	if (finger.isValid())
+	if (finger.frame == frameIndex)
 	{
 		ofSetColor(ofColor::green);
 		ofSphere(finger.pos, 10);
 	}
-	if (wrist.isValid())
+	if (wrist.frame == frameIndex)
 	{
 		ofSetColor(ofColor::red);
 		ofSphere(wrist.pos, 10);
 	}
-	if (wrist.isValid() && finger.isValid())
+	if (wrist.frame == frameIndex && finger.frame == frameIndex)
 	{
 		ofSetColor(ofColor::white);
 		ofSetLineWidth(10);
@@ -946,7 +918,6 @@ void testApp::draw(){
 		float p = wrist.pos.z / (wrist.pos.z - finger.pos.z);
 		ofSetLineWidth(3);
 		ofLine(wrist.pos, wrist.pos.getInterpolated(finger.pos, p));
-
 	}
 
 
@@ -1069,19 +1040,20 @@ void testApp::draw(){
 
 	if(faceToggle->getValue() && faceTracker.getFound())
 	{
+		ofPoint tip = finger.frame == frameIndex ? finger.pos : handTracker.getHandPoint();
 		ofPushStyle();
 		ofSetLineWidth(3);
 		ofSetColor(ofColor::green);
-		ofDrawArrow(facePos, handTracker.getHandPoint());
+		ofDrawArrow(facePos, tip);
 		ofSetLineWidth(1);
 		ofSetColor(ofColor::yellow);
-		ofLine(facePos, handTracker.getHandPoint().interpolated(facePos, -3));
+		ofLine(facePos, tip.interpolated(facePos, -3));
 		ofPopStyle();
 
 		ofSetColor(ofColor::magenta);
 
 		ofxProfileSectionPush("getIntersectionPointWithLine");
-		ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, handTracker.getHandPoint());
+		ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(facePos, tip);
 		ofxProfileSectionPop();
 
 		ofSphere(screenIntersectionPoint, 10);
@@ -1130,6 +1102,25 @@ void testApp::draw(){
 
 	sceneCam.end();
 
+	//2D (gui) drawing
+
+	if (wrist.frame == frameIndex && finger.frame == frameIndex)
+	{
+
+		ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(wrist.pos, finger.pos);
+		ofSetColor(ofColor::yellow);
+		//ofSphere(screenIntersectionPoint, 10);
+
+		ofVec2f hwscreenPoint = scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
+		ofCircle(hwscreenPoint, 10);
+		ofLine(ofGetScreenWidth()/2, ofGetScreenHeight()/2, hwscreenPoint.x, hwscreenPoint.y);
+		ofCircle(0, hwscreenPoint.y, 10);
+		ofCircle(ofGetScreenWidth(), hwscreenPoint.y, 10);
+		ofCircle(hwscreenPoint.x, 0, 10);
+		ofCircle(hwscreenPoint.x, ofGetScreenHeight(), 10);
+	}
+
+
 	if(faceToggle->getValue() && faceTracker.getFound())
 	{
 		ofFill();
@@ -1164,7 +1155,11 @@ void testApp::draw(){
 	debugString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
 	debugString << "frameRate: " << frameRate << endl;
 	debugString << "fps: " << ofGetFrameRate() << endl;
-	debugString << "Recording: " << (recorder.IsRecording() ? "On" : "Off") << endl;
+	debugString << "Is Recording: " << (recorder.IsRecording() ? "On" : "Off") << endl;
+	debugString << endl;
+	debugString << "frame #" << frameIndex << endl;
+
+	
 
 	//	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
 
@@ -1215,6 +1210,42 @@ void testApp::keyPressed(int key){
 
 	switch (key)
 	{
+	case OF_KEY_RIGHT:
+	case OF_KEY_LEFT:
+	case 'l':
+	case 'k':
+	case 'L':
+	case 'K':
+		{		
+			openni::PlaybackControl* pbc = oniDevice.getDevice()->getPlaybackControl();
+			if (pbc != NULL && !playToggle->getValue())
+			{
+				int inc = (key == OF_KEY_RIGHT || key == 'l' || key == 'L') ? 1 : -1;
+				inc *= (key == 'L' || key == 'K') ? 10 : 1;
+				frameIndex += inc;
+
+				// check bounds
+				if (frameIndex < 0)
+				{
+					frameIndex = 0;
+				}
+				int nFrames = pbc->getNumberOfFrames(*depthStream.getStream().get());
+				if (frameIndex > nFrames)
+				{
+					frameIndex = nFrames;
+				}
+
+				pbc->seek(*depthStream.getStream().get(), frameIndex);
+				depthStream.readFrame();
+				colorStream.readFrame();
+				handTracker.readFrame();
+
+				toUpdate = true;
+
+			}
+		}
+
+		break;
 
 	case OF_KEY_F8:
 		if (!recorder.IsRecording())
@@ -1238,7 +1269,7 @@ void testApp::keyPressed(int key){
 		return;
 
 
-	case 'k': keypad.visible = !keypad.visible; return;
+	case 'z': keypad.visible = !keypad.visible; return;
 
 	}
 
@@ -1257,6 +1288,9 @@ void testApp::keyPressed(int key){
 		case 'C': ofxProfile::clear(); break;
 
 		case 'f': fullScreenToggle->toggleValue(); fullScreenToggle->triggerSelf(); break;
+		case ' ': playToggle->toggleValue(); playToggle->triggerSelf(); break;
+
+
 		default:
 			break;
 		}
@@ -1375,6 +1409,9 @@ void testApp::setupGui()
 
 	guiAutoHide = gui1->addToggle("guiAutoHide", false, dim, dim);
 	fullScreenToggle = gui1->addToggle("fullScreen", false, dim, dim);
+	
+	playToggle = gui1->addToggle("play/pause", false, dim, dim);
+
 	cvDepthToggle = gui1->addToggle("cvDepth", true, dim, dim);
 
 	computeHistory = gui1->addToggle("computeHistory", false, dim, dim);
@@ -1497,6 +1534,23 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 	else if(name == "fullScreen")
 	{
 		ofToggleFullscreen();
+	}
+
+	else if(name == "play/pause")
+	{
+		if(playToggle->getValue())
+		{
+			depthStream.startThread(false);
+			colorStream.startThread(false);
+			handTracker.startThread(false);
+		}
+		else
+		{
+			depthStream.stopThread();
+			colorStream.stopThread();
+			handTracker.stopThread();
+		}
+		
 	}
 
 

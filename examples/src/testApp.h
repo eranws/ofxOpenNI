@@ -38,6 +38,8 @@ public:
 
 	void handUpdate(ofPoint& p);
 
+	cv::Mat depthMat;
+
 private:
 
 //	void handEvent(ofxOpenNIHandEvent & event);
@@ -91,7 +93,8 @@ private:
 	void setupGui(); 
 	void guiEvent(ofxUIEventArgs &e);
 
-	ofxUIToggle* guiAutoHide; 
+	ofxUIToggle* guiAutoHide;
+	ofxUIToggle* playToggle;
 	ofxUIToggle* faceToggle; 
 	ofxUIToggle* cvDepthToggle;
 	ofxUIToggle* fullScreenToggle;
@@ -126,13 +129,15 @@ private:
 
 	int lastClicked;
 
+	int frameIndex;
+	bool toUpdate;
+
+
 	struct Joint
 	{
 		ofPoint pos;
 		int frame;
-
-		void setFrameNum() {frame = ofGetFrameNum();}
-		bool isValid(){return frame == ofGetFrameNum();}
+		
 		operator ofPoint(){return pos;}
 	};
 
