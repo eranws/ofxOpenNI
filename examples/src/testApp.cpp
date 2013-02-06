@@ -90,9 +90,9 @@ void testApp::setup() {
 	{
 		//oniDevice.setup("c:\\1.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-30-35-716.oni");
-		//		oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
+				oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
-		oniDevice.setup("130204_1518.oni");
+				
 		
 	}
 
@@ -123,7 +123,7 @@ void testApp::setup() {
 	faceTracker.setup();
 
 	sceneCam.setGlobalPosition(0,0,0);
-	sceneCam.setTarget(ofPoint(0, 0, 2000));
+	sceneCam.setTarget(ofPoint(0, 0, 3000));
 	sceneCam.setDistance(2000);
 
 	setupGui(); 
@@ -330,7 +330,7 @@ void testApp::update(){
 
 						ofPoint offset = fingReal - fingerCandidateReal;
 
-						if (fabs(offset.y) < 30 && fabs(offset.x) < 70 && fabs(offset.x) < 50)
+						if (fabs(offset.y) < 30 && fabs(offset.x) < 70 && fabs(offset.z) < 30)
 						{
 							depth8Color.row(j).col(i) = green;
 							//float p = offset.length() / 30;
@@ -450,18 +450,20 @@ void testApp::update(){
 
 
 
-							if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 1 && pt.x < depthMat.cols - 2)
-							{
 
-								for (int j = -1; j < 2; j++)
+
+
+
+							if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 3 && pt.x < depthMat.cols - 2)
+							{
+								for (int j = 0; j < 4; j++)
 								{
 									for (int i = -2; i < 3; i++)
 									{
-
 										if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
 										{
 											short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
-											int zDiff = (i==0) ? 15 : 10;
+											int zDiff = (i==0) ? 120 : 30;
 											if(fabs(z - handPoint.z) < 300 && abs(cz - z) < zDiff && pt.y < wristCandidateXY.y + 20)
 											{
 												wristGrayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
