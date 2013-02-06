@@ -90,10 +90,11 @@ void testApp::setup() {
 	{
 		//oniDevice.setup("c:\\1.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-30-35-716.oni");
-				oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
+		//oniDevice.setup("E:/gridRecordings/2013-01-07-17-43-01-955.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
-				
-		
+		//oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
+		//oniDevice.setup("130602_1058.oni");
+		oniDevice.setup("5.oni");
 	}
 
 
@@ -912,11 +913,9 @@ void testApp::draw(){
 
 	sceneCam.begin();
 
-	//ofEnableBlendMode(OF_BLENDMODE_ADD);
 	scene.draw();
 
 	ofSetColor(255);
-	colorTexture.draw(0,0);
 
 
 
@@ -938,7 +937,7 @@ void testApp::draw(){
 
 		float p = wrist.pos.z / (wrist.pos.z - finger.pos.z);
 		ofSetLineWidth(3);
-		ofLine(wrist.pos, wrist.pos.getInterpolated(finger.pos, p));
+		//ofLine(wrist.pos, wrist.pos.getInterpolated(finger.pos, p));
 	}
 
 
@@ -975,10 +974,41 @@ void testApp::draw(){
 
 	if (drawFingerHistory->getValue())
 	{
-
-		glEnable(GL_DEPTH_TEST);       	
+//		glEnable(GL_DEPTH_TEST);       	
 		if (fingerHistory.size() == fingerHistorySize)
 		{
+
+
+			cv::Mat pcaset(fingerHistorySize, 3, CV_32FC1);
+				for (int i = 0; i < fingerHistorySize; i++)
+				{
+					pcaset.at<float>(i, 0) = fingerHistory[i].x;
+					pcaset.at<float>(i, 1) = fingerHistory[i].y;
+					pcaset.at<float>(i, 2) = fingerHistory[i].z;
+				}
+
+				
+				cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
+				
+				/*			
+				cout << pcaset << endl;
+				*/
+
+				/*
+				cout << pca.eigenvalues << endl;
+				cout << pca.eigenvectors << endl;
+				cout << pca.mean << endl;
+				*/
+
+
+			stringstream fingerDebugString;
+
+			cv::Mat pcaproj = pca.project(pcaset).col(0);
+			fingerDebugString << pcaproj << endl;
+			ofSetColor(ofColor::green);
+			ofDrawBitmapString(fingerDebugString.str(), 100, ofGetScreenHeight() - 200);
+
+
 			for (int i = 1; i < fingerHistorySize; i++)
 			{
 				float p = 1 - (float(i) / (fingerHistorySize));
@@ -990,7 +1020,34 @@ void testApp::draw(){
 
 				ofSetLineWidth(10 * p + 3);
 				ofLine(fingerHistory[i-1], fingerHistory[i]);
+				
 			}
+
+			ofPoint ev1(pca.eigenvectors.at<float>(0, 0),
+				pca.eigenvectors.at<float>(0, 1),
+				pca.eigenvectors.at<float>(0, 2));
+
+			ofPoint pcaMean(pca.mean.at<float>(0),
+				pca.mean.at<float>(1),
+				pca.mean.at<float>(2));
+
+			if (ev1.z > 0) ev1 = -ev1; //force point towards screen
+
+
+			if (pca.eigenvalues.at<float>(0) / pca.eigenvalues.at<float>(1) > 50 && ev1.z < 0.5)
+			{
+				fingerHistoryScreenIntersectionPoint = scene.screen.getIntersectionPointWithLine(pcaMean, fingerHistory[0] + ev1);
+				ofSetColor(255);
+				ofLine(pcaMean, fingerHistoryScreenIntersectionPoint);
+				ofSphere(fingerHistoryScreenIntersectionPoint, 20);
+			}
+			else
+			{
+				fingerHistoryScreenIntersectionPoint = ofPoint();
+			}
+				
+
+
 		}
 	}
 
@@ -1149,15 +1206,11 @@ void testApp::draw(){
 	sceneCam.end();
 
 	//2D (gui) drawing
-
-	if (wrist.frame == frameIndex && finger.frame == frameIndex)
+	
+	if (drawFingerHistory->getValue() && fingerHistory.size() == fingerHistorySize && fingerHistoryScreenIntersectionPoint != ofPoint())
 	{
-
-		ofPoint screenIntersectionPoint = scene.screen.getIntersectionPointWithLine(wrist.pos, finger.pos);
 		ofSetColor(ofColor::yellow);
-		//ofSphere(screenIntersectionPoint, 10);
-
-		ofVec2f hwscreenPoint = scene.screen.getScreenPointFromWorld(screenIntersectionPoint);
+		ofVec2f hwscreenPoint = scene.screen.getScreenPointFromWorld(fingerHistoryScreenIntersectionPoint);
 		ofCircle(hwscreenPoint, 10);
 		ofLine(ofGetScreenWidth()/2, ofGetScreenHeight()/2, hwscreenPoint.x, hwscreenPoint.y);
 		ofCircle(0, hwscreenPoint.y, 10);
@@ -1165,7 +1218,7 @@ void testApp::draw(){
 		ofCircle(hwscreenPoint.x, 0, 10);
 		ofCircle(hwscreenPoint.x, ofGetScreenHeight(), 10);
 	}
-
+	
 
 	if(faceToggle->getValue() && faceTracker.getFound())
 	{
@@ -1223,8 +1276,7 @@ void testApp::draw(){
 	if (drawDebugString)
 	{
 		ofSetColor(ofColor::green);
-		ofDrawBitmapString(debugString.str(), 10, 20);
-		//verdana.drawString(msg, 20, 480 - 20);
+		ofDrawBitmapString(debugString.str(), 240 + 10, 20);
 	}
 
 	keypad.draw();

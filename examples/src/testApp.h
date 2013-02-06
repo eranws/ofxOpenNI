@@ -120,7 +120,7 @@ private:
 
 	deque<ofPoint> fingerHistory;
 	static const int fingerHistorySize = 7;
-
+	ofPoint fingerHistoryScreenIntersectionPoint;
 
 	deque<ofPoint> fingerWristHistory;
 	static const int fingerWristHistorySize = 7;

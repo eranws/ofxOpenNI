@@ -4,7 +4,8 @@
 
 Scene::Scene(void)
 {
-	screen.setGlobalPosition(0, -50-163, 0);
+//	screen.setGlobalPosition(0, -50-163, 0); //sensor on screen
+	screen.setGlobalPosition(0, 65 + 163, 0);//sensor below screen
 	screen.color = ofColor::red; 
 
 	sensor.setGlobalPosition(0, 0, 0);
