@@ -107,6 +107,7 @@ private:
 
 	ofxUIToggle* drawHand;
 	ofxUIToggle* drawHandHistory;
+	ofxUIToggle* drawFingerHistory;
 
 	ofxUIMovingGraph* mgZ; 
 	ofxUIMovingGraph* mgA;
@@ -115,6 +116,10 @@ private:
 	ofxUIMovingGraph* mgC; 
 	ofxUIMovingGraph* mgErr;
 	ofxUIMovingGraph* mgErrPca;
+
+
+	deque<ofPoint> fingerHistory;
+	static const int fingerHistorySize = 7;
 
 
 	deque<ofPoint> fingerWristHistory;

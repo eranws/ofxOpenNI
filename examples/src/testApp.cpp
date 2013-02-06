@@ -347,6 +347,11 @@ void testApp::update(){
 				openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), fingerReal.x, fingerReal.y, fingerReal.z, &fingerProj.x, &fingerProj.y, &fingerProj.z);
 				cv::circle(depth8Color, cv::Point2i(fingerProj.x, fingerProj.y), 3, red, 2);
 
+				fingerHistory.push_front(fingerReal);
+				if (fingerHistory.size() > fingerHistorySize)
+				{
+					fingerHistory.pop_back();
+				}
 
 
 				cv::Mat wristGrayQ = cv::Mat::zeros(depthMat.size(), CV_8UC1);
@@ -499,6 +504,8 @@ void testApp::update(){
 
 					ofPoint fingerWrist = wristReal - fingerReal;
 
+					
+
 					fingerWristHistory.push_front(fingerWrist);
 					if (fingerWristHistory.size() > fingerWristHistorySize)
 					{
@@ -510,6 +517,18 @@ void testApp::update(){
 			showMat(depth8Color);
 			imshow("Depth", depthMat * 32);
 
+		}
+
+
+		if (fingerFound)
+		{
+			if (fingerHistory.size() == fingerHistorySize)
+			{
+			}
+		}
+		else
+		{
+			fingerHistory.clear();
 		}
 
 
@@ -952,6 +971,31 @@ void testApp::draw(){
 			}
 		}
 	}
+
+
+	if (drawFingerHistory->getValue())
+	{
+
+		glEnable(GL_DEPTH_TEST);       	
+		if (fingerHistory.size() == fingerHistorySize)
+		{
+			for (int i = 1; i < fingerHistorySize; i++)
+			{
+				float p = 1 - (float(i) / (fingerHistorySize));
+
+				ofColor c = ofColor::fromHsb(255 * p, 255, 255);
+				ofSetColor(c);
+				ofSphere(fingerHistory[i], 10 * p + 3);
+				//ofSphere(handHistory[i], 20);
+
+				ofSetLineWidth(10 * p + 3);
+				ofLine(fingerHistory[i-1], fingerHistory[i]);
+			}
+		}
+	}
+
+
+
 
 
 
@@ -1451,6 +1495,7 @@ void testApp::setupGui()
 	detectFingerToggle = gui1->addToggle("detectFinger", false, dim, dim);
 	drawHand = gui1->addToggle("drawHand", true, dim, dim);
 	drawHandHistory = gui1->addToggle("drawHandHistory", false, dim, dim);
+	drawFingerHistory = gui1->addToggle("drawFingerHistory", false, dim, dim);
 
 	vector<float> buffer; 
 	for(int i = 0; i < 256; i++)
