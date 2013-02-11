@@ -13,7 +13,7 @@ void ofxRecorder::start(string filename)
 	recorder->create(filename.append(".oni").c_str()); 
 	for (int i = 0; i < _streams.size(); i++)
 	{
-		recorder->attach(*_streams[i]);
+		recorder->attach(*_streams[i], true);
 	}
 	openni::Status rc = recorder->start();
 	if (rc == openni::STATUS_OK)
