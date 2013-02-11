@@ -21,6 +21,11 @@ public:
 
 	void keypadPreselect(int mappedKey, int delay = 0);
 	void keypadPressed(int mappedKey);
+
+	int getLastPreselect() const { return lastPreselect; }
+	int getKeypadPressOffset() const { return keypadPressOffset; }
+
+	
 private:
 	
 	int cols, rows;
@@ -32,6 +37,6 @@ private:
 	vector<unsigned long> preSelect;
 
 	int lastPreselect;
-
+	int keypadPressOffset;
 };
 

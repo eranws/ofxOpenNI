@@ -94,7 +94,7 @@ private:
 	ofPtr<ofxUICanvas> gui1;   	
 	void setupGui(); 
 	void guiEvent(ofxUIEventArgs &e);
-
+	void dumpGroundTruth();
 	ofxUIToggle* guiAutoHide;
 	ofxUIToggle* playToggle;
 	ofxUIToggle* faceToggle; 
@@ -142,6 +142,9 @@ private:
 	bool logToFile;
 
 	vector<string> clicks;
+	
+	int recordingStartFrame;
+	string recordingFilename;
 
 	struct Joint
 	{

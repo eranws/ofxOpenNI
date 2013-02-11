@@ -76,10 +76,7 @@ void testApp::setup() {
 	ofSetLogLevel(MODULE_NAME, OF_LOG_VERBOSE);
 	ofLog::setAutoSpace(true);
 
-	ofLogToFile("a.log");
-
 	cout.precision(2);
-
 	ofSetFrameRate(100);
 
 	try
@@ -100,7 +97,7 @@ void testApp::setup() {
 
 	depthStream.setup(oniDevice.getDevice());
 	colorStream.setup(oniDevice.getDevice());
-	oniDevice.setRegistration(true);
+	//oniDevice.setRegistration(true);
 
 	recorder.setup();
 	recorder.addStream(depthStream.getStream());
@@ -133,6 +130,7 @@ void testApp::setup() {
 
 	handHistorySize = 100;
 
+	//parabola filter
 	A = cv::Mat(fingerWristHistorySize, 3, CV_32FC1);
 	for (int i = 0; i < fingerWristHistorySize; i++)
 	{
@@ -141,16 +139,9 @@ void testApp::setup() {
 		A.at<float>(i, 1) = t;
 		A.at<float>(i, 2) = 1;
 	}
-	cout << A << endl;
-
 	AA = (A.t() * A);
-	cout << AA;
-
 	AA = AA.inv();
-	cout << AA;
-
 	AA = AA * A.t();
-	cout << AA;
 
 	motion = NULL;
 
@@ -167,6 +158,7 @@ void testApp::setup() {
 	drawOpenNiDebug = false;
 	logToFile = false;
 
+	recordingStartFrame = 0;
 }
 
 
@@ -1332,6 +1324,12 @@ void testApp::handEvent(ofxOpenNIHandEvent & event){
 //--------------------------------------------------------------
 void testApp::exit(){
 
+	if (recorder.IsRecording())
+	{
+		recorder.stop();
+	}
+	dumpGroundTruth();
+
 	faceTracker.stopThread();
 	faceTracker.waitForThread();
 
@@ -1429,31 +1427,40 @@ void testApp::keyPressed(int key){
 	case '4':
 	case '5':
 	case '0':
-		clicks.push_back(ofToString(handTracker.getFrameIndex()) + " " + ofToString(handTracker.getTimestamp()) + " " + ofToString(key - '0'));
-		break;
-	case 'P':
 		{
-			string filename = ofGetTimestampString();
-			ofLogToFile(filename + "_clicks" + ".txt", true);
-			for (int i = 0; i < clicks.size(); i++)
-			{
-				ofLogVerbose(MODULE_NAME) << clicks[i];
-			}
-			clicks.clear();
+		stringstream ss;
+		ss << handTracker.getFrameIndex() - recordingStartFrame;
+		ss << " ";
+		ss << key - '0';
+		clicks.push_back(ss.str());
 		}
+		break;
+
+	case '-':
+		{
+			int lastps = keypad.getLastPreselect();
+			if (lastps != -1)
+			{
+				stringstream ss;
+				ss << handTracker.getFrameIndex() - recordingStartFrame;
+				ss << " ";
+				ss << lastps - keypad.getKeypadPressOffset() + 1;
+				clicks.push_back(ss.str());
+			}
+		}
+		break;
+
+	case 'P':
+		dumpGroundTruth();
 		break;
 
 
 	case OF_KEY_F8:
 		if (!recorder.IsRecording())
 		{
-			string filename = ofGetTimestampString();
-
-			ofLogToFile(filename + ".txt", true);
-			ofLogVerbose(MODULE_NAME) << ofGetSystemTime() << "recording started";
-			ofLogVerbose(MODULE_NAME) << ofGetSystemTime() << keypad.toString();
-
-			recorder.start(filename);
+			recordingStartFrame = handTracker.getFrameIndex();
+			recordingFilename = ofGetTimestampString();
+			recorder.start(recordingFilename);
 			toast.addText("Start Recording");
 		}
 
@@ -1756,6 +1763,21 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 
 
 
+}
+
+void testApp::dumpGroundTruth()
+{
+	if (clicks.size() > 0)
+	{
+		ofstream of;
+		of.open(recordingFilename + "_clicks" + ".txt");
+		for (int i = 0; i < clicks.size(); i++)
+		{
+			of << clicks[i] << endl;
+		}
+		clicks.clear();
+		of.close();
+	}
 }
 
 

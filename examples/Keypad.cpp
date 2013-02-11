@@ -25,6 +25,7 @@ Keypad::Keypad(void)
 	preSelect.assign(cols * rows, 0);
 
 	visible = false;
+	keypadPressOffset = cols; //select from middle row
 }
 
 
@@ -130,7 +131,7 @@ void Keypad::keyPressed( int key )
 	case '8':
 	case '9':
 		{
-			int k = key - '1';
+			int k = key - '1' + keypadPressOffset;
 			int i = k % cols;
 			int j = k / cols;
 			int mappedKey = (xFlip ? (cols-i-1) : i) + (yFlip ? (rows-1-j) : j) * cols;
@@ -138,11 +139,11 @@ void Keypad::keyPressed( int key )
 			break;
 		}
 
-	case ' ':
+	case '-':
 		if (lastPreselect == -1)
 		{
 			const int delay = 0;//1000;
-			keypadPreselect(ofRandom(cols * rows), delay);
+			keypadPreselect(ofRandom(cols, 2 * cols), delay);
 		}
 		else
 		{
@@ -155,7 +156,7 @@ void Keypad::keyPressed( int key )
 		{
 			keypadPressed(lastPreselect);
 			const int delay = 0;
-			keypadPreselect(ofRandom(cols * rows), delay);
+			keypadPreselect(ofRandom(cols, 2 * cols), delay);
 		}
 		break;
 
