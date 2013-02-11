@@ -94,7 +94,7 @@ void testApp::setup() {
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
 		//oniDevice.setup("E:/gridRecordings/2013-01-07-19-02-28-215.oni");
 		//oniDevice.setup("130602_1058.oni");
-		oniDevice.setup("5.oni");
+		oniDevice.setup("130206_1633.oni");
 	}
 
 
@@ -157,9 +157,16 @@ void testApp::setup() {
 	lastClicked = 0;
 	frameIndex = 0;
 	toUpdate = true;
+	readOnUpdate = false;
 
 	cv::namedWindow("Depth");
 	cvSetMouseCallback("Depth", depthOnMouse, this);
+
+	showProfilerString = false;
+	drawDebugString = false;
+	drawOpenNiDebug = false;
+	logToFile = false;
+
 }
 
 
@@ -182,9 +189,26 @@ ofPoint projToReal(const openni::VideoStream& stream, const cv::Mat depthMat, in
 void testApp::update(){
 
 	ofxProfileThisFunction();
-	debugString = stringstream();
-
 	
+	if (readOnUpdate)
+	{
+		depthStream.readFrame();
+		colorStream.readFrame();
+		handTracker.readFrame();
+
+		openni::PlaybackControl* pbc = oniDevice.getDevice()->getPlaybackControl();
+		if (pbc != NULL && !playToggle->getValue())
+		{
+			int nFrames = pbc->getNumberOfFrames(*depthStream.getStream().get());
+			if (frameIndex >= nFrames)
+			{
+				readOnUpdate = false;
+				logToFile = false;
+				pbc->seek(*depthStream.getStream().get(), 0);
+			}
+		}
+	}
+
 	if (!toUpdate && frameIndex == handTracker.getFrameIndex())
 	{
 		return;
@@ -195,6 +219,12 @@ void testApp::update(){
 		toUpdate = false;
 	}
 
+	debugString = stringstream();
+	logString = stringstream();
+
+	logString << frameIndex << " ";
+	logString << handTracker.getTimestamp() << " ";
+
 	// update colorPixels
 	ofPixels colorPixels = colorStream.getPixels();
 	cv::Mat colorMat = ofxCv::toCv(colorPixels);
@@ -203,6 +233,7 @@ void testApp::update(){
 	ofPoint handPoint = ofPoint();
 	if (handTracker.hasHand())
 	{
+
 		hand.pos = handTracker.getHandPoint();
 		hand.frame = frameIndex;
 
@@ -217,6 +248,8 @@ void testApp::update(){
 	{
 		handHistory.clear();
 	}
+
+	logString << handPoint << " ";
 
 
 
@@ -348,11 +381,13 @@ void testApp::update(){
 				openni::CoordinateConverter::convertWorldToDepth(*depthStream.getStream(), fingerReal.x, fingerReal.y, fingerReal.z, &fingerProj.x, &fingerProj.y, &fingerProj.z);
 				cv::circle(depth8Color, cv::Point2i(fingerProj.x, fingerProj.y), 3, red, 2);
 
+
 				fingerHistory.push_front(fingerReal);
 				if (fingerHistory.size() > fingerHistorySize)
 				{
 					fingerHistory.pop_back();
 				}
+
 
 
 				cv::Mat wristGrayQ = cv::Mat::zeros(depthMat.size(), CV_8UC1);
@@ -523,12 +558,15 @@ void testApp::update(){
 
 		if (fingerFound)
 		{
+			logString << fingerHistory.front() << " ";
+
 			if (fingerHistory.size() == fingerHistorySize)
 			{
 			}
 		}
 		else
 		{
+			logString << ofPoint();
 			fingerHistory.clear();
 		}
 
@@ -594,10 +632,7 @@ void testApp::update(){
 
 				cv::line(pcaShow, center, center - cv::Point(S * pca.eigenvectors.at<float>(0, 0), S * pca.eigenvectors.at<float>(0, 1)), red, 3);
 				//cv::line(pcaShow, center, center + cv::Point(S * pca.eigenvectors.at<float>(1, 0), S * pca.eigenvectors.at<float>(1, 1)), green, 2);
-				showMat(pcaShow);
-
-				//cout << B;
-
+				//showMat(pcaShow);
 
 				cv::Mat X = AA * B;
 				cv::Mat Xpca = AA * Bpca;
@@ -619,7 +654,7 @@ void testApp::update(){
 				cv::pow(A * Xpca - Bpca, 2, sdpca);
 				float ssdpca = cv::sum(sdpca)[0];
 
-				ofLog() << ofGetSystemTime() << a << ssd << apca << ssdpca;
+				//ofLog() << ofGetSystemTime() << a << ssd << apca << ssdpca;
 
 
 				for (int i = 0; i < 3; i++)
@@ -861,7 +896,10 @@ void testApp::update(){
 		}//end if (computeHistory)
 	}//end if (cvDepthToggle->getValue())
 
-
+	if (logToFile)
+	{
+		ofLogVerbose(MODULE_NAME) << logString.str();
+	}
 
 	ofxProfileSectionPop();
 
@@ -1251,7 +1289,7 @@ void testApp::draw(){
 
 	// draw some info regarding frame counts etc
 	ofSetColor(0, 255, 0);
-	debugString << " Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
+	debugString << "Run Time: " << ofToString(ofGetElapsedTimeMillis() / 1000) << "." << ofToString(ofGetElapsedTimeMillis() % 1000) << endl;
 	debugString << "frameRate: " << frameRate << endl;
 	debugString << "fps: " << ofGetFrameRate() << endl;
 	debugString << "Is Recording: " << (recorder.IsRecording() ? "On" : "Off") << endl;
@@ -1276,7 +1314,7 @@ void testApp::draw(){
 	if (drawDebugString)
 	{
 		ofSetColor(ofColor::green);
-		ofDrawBitmapString(debugString.str(), 240 + 10, 20);
+		ofDrawBitmapString(debugString.str(), 10, 240 + 20);
 	}
 
 	keypad.draw();
@@ -1342,8 +1380,69 @@ void testApp::keyPressed(int key){
 
 			}
 		}
-
 		break;
+
+
+	case 'r':
+		{
+			openni::PlaybackControl* pbc = oniDevice.getDevice()->getPlaybackControl();
+			if (pbc != NULL && !playToggle->getValue())
+			{
+				readOnUpdate = !readOnUpdate;
+			}
+		}
+		break;
+
+
+	case 'R':
+		{
+			openni::PlaybackControl* pbc = oniDevice.getDevice()->getPlaybackControl();
+			if (pbc != NULL && !playToggle->getValue())
+			{	
+				pbc->seek(*depthStream.getStream().get(), 0);
+			}
+		}
+		break;
+
+
+	case 'O':
+		{
+			string filename = ofGetTimestampString();
+			ofLogToFile(filename + ".txt", true);
+
+			openni::PlaybackControl* pbc = oniDevice.getDevice()->getPlaybackControl();
+			if (pbc != NULL && !playToggle->getValue())
+			{
+				pbc->seek(*depthStream.getStream().get(), 0);
+			}
+
+			logToFile = true;
+			readOnUpdate = true;
+
+		}
+		break;
+
+
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '0':
+		clicks.push_back(ofToString(handTracker.getFrameIndex()) + " " + ofToString(handTracker.getTimestamp()) + " " + ofToString(key - '0'));
+		break;
+	case 'P':
+		{
+			string filename = ofGetTimestampString();
+			ofLogToFile(filename + "_clicks" + ".txt", true);
+			for (int i = 0; i < clicks.size(); i++)
+			{
+				ofLogVerbose(MODULE_NAME) << clicks[i];
+			}
+			clicks.clear();
+		}
+		break;
+
 
 	case OF_KEY_F8:
 		if (!recorder.IsRecording())
@@ -1360,7 +1459,7 @@ void testApp::keyPressed(int key){
 		return;
 
 	case OF_KEY_F7:
-		if (!recorder.IsRecording())
+		if (recorder.IsRecording())
 		{
 			recorder.stop();
 		}
@@ -1379,14 +1478,13 @@ void testApp::keyPressed(int key){
 	{
 		switch (key)
 		{
-		case '1': drawDebugString = !drawDebugString; break;
-		case '2': drawOpenNiDebug = !drawOpenNiDebug; break;
-
-		case '3': showProfilerString = !showProfilerString; break;
+		//case '1': drawDebugString = !drawDebugString; break;
+		//case '2': showProfilerString = !showProfilerString; break;
 		case 'C': ofxProfile::clear(); break;
 
 		case 'f': fullScreenToggle->toggleValue(); fullScreenToggle->triggerSelf(); break;
 		case ' ': playToggle->toggleValue(); playToggle->triggerSelf(); break;
+
 
 
 		default:
@@ -1398,6 +1496,7 @@ void testApp::keyPressed(int key){
 
 //--------------------------------------------------------------
 void testApp::keyReleased(int key){
+	
 
 }
 

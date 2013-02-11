@@ -51,7 +51,7 @@ void ofxHandTracker::readFrame()
 		return;
 	}
 	frameIndex = handTrackerFrame->getFrameIndex();
-
+	timestamp = handTrackerFrame->getTimestamp();
 	const nite::Array<nite::GestureData>& gestures = handTrackerFrame->getGestures();
 	for (int i = 0; i < gestures.getSize(); ++i)
 	{

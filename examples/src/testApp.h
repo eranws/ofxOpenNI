@@ -80,6 +80,7 @@ private:
 	bool drawOpenNiDebug;
 
 	stringstream debugString;
+	stringstream logString;
 
 	ofVec3f facePos;
 	ofVec2f screenPoint;
@@ -136,7 +137,10 @@ private:
 
 	int frameIndex;
 	bool toUpdate;
+	bool readOnUpdate;
+	bool logToFile;
 
+	vector<string> clicks;
 
 	struct Joint
 	{
