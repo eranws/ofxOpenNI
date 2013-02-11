@@ -1454,6 +1454,7 @@ void testApp::keyPressed(int key){
 			ofLogVerbose(MODULE_NAME) << ofGetSystemTime() << keypad.toString();
 
 			recorder.start(filename);
+			toast.addText("Start Recording");
 		}
 
 		return;
@@ -1462,6 +1463,7 @@ void testApp::keyPressed(int key){
 		if (recorder.IsRecording())
 		{
 			recorder.stop();
+			toast.addText("Stop Recording");
 		}
 		return;
 

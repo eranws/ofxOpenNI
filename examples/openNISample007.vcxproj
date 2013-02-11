@@ -144,6 +144,8 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.cpp" />
     <ClCompile Include="..\..\..\addons\ofxFaceTracker\src\ofxFaceTracker.cpp" />
     <ClCompile Include="..\..\ofxProfile\src\ofxProfile.cpp" />
+    <ClCompile Include="..\..\ofxToast\src\ofxToast.cpp" />
+    <ClCompile Include="..\..\ofxToast\src\ToastMessage.cpp" />
     <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxml.cpp" />
     <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlerror.cpp" />
     <ClCompile Include="..\..\ofxXmlSettings\libs\tinyxmlparser.cpp" />
@@ -267,6 +269,8 @@ if not exist "$(ProjectDir)\bin\data" mkdir  "$(ProjectDir)\bin\data"
     <ClInclude Include="..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video\tracking.hpp" />
     <ClInclude Include="..\..\..\addons\ofxOpenCv\libs\opencv\include\opencv2\video\video.hpp" />
     <ClInclude Include="..\..\ofxProfile\src\ofxProfile.h" />
+    <ClInclude Include="..\..\ofxToast\src\ofxToast.h" />
+    <ClInclude Include="..\..\ofxToast\src\ToastMessage.h" />
     <ClInclude Include="..\..\ofxUI\src\ofxUI.h" />
     <ClInclude Include="..\..\ofxUI\src\ofxUI2DPad.h" />
     <ClInclude Include="..\..\ofxUI\src\ofxUIBaseDraws.h" />

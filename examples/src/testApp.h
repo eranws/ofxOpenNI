@@ -13,6 +13,7 @@
 #include "ofxUI.h"
 #include "..\ofxOpenNi2.h"
 #include "..\ofxNite2.h"
+#include "ofxToast\src\ofxToast.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -59,7 +60,7 @@ private:
 
 	ofFbo pcaFbo;
 	
-
+	ofxToast toast;
 
 	struct Finger
 	{

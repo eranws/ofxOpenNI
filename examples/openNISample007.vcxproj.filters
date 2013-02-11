@@ -65,6 +65,12 @@
     <ClCompile Include="GroundTruthReader.cpp" />
     <ClCompile Include="ofxOpenNi2.cpp" />
     <ClCompile Include="ofxNite2.cpp" />
+    <ClCompile Include="..\..\ofxToast\src\ofxToast.cpp">
+      <Filter>addons\ofxToast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ofxToast\src\ToastMessage.cpp">
+      <Filter>addons\ofxToast</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.h">
@@ -254,6 +260,12 @@
     <ClInclude Include="cvUtils.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\ofxToast\src\ofxToast.h">
+      <Filter>addons\ofxToast</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ofxToast\src\ToastMessage.h">
+      <Filter>addons\ofxToast</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">
@@ -264,6 +276,9 @@
     </Filter>
     <Filter Include="addons\ofxXmlSettings">
       <UniqueIdentifier>{79222ee1-2c0f-4567-8a04-384ccdd06363}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\ofxToast">
+      <UniqueIdentifier>{247f33ac-2456-4202-a5bb-8a5be96a543a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
