@@ -1492,6 +1492,7 @@ void testApp::keyPressed(int key){
 		case 'C': ofxProfile::clear(); break;
 
 		case 'f': fullScreenToggle->toggleValue(); fullScreenToggle->triggerSelf(); break;
+		//case 'g': guiAutoHide->toggleValue(); guiAutoHide->triggerSelf(); break;
 		case ' ': playToggle->toggleValue(); playToggle->triggerSelf(); break;
 
 
@@ -1618,7 +1619,7 @@ void testApp::setupGui()
 	
 	playToggle = gui1->addToggle("play/pause", false, dim, dim);
 
-	cvDepthToggle = gui1->addToggle("cvDepth", true, dim, dim);
+	cvDepthToggle = gui1->addToggle("cvDepth", false, dim, dim);
 
 	computeHistory = gui1->addToggle("computeHistory", false, dim, dim);
 	velocityMasking = gui1->addToggle("velocityMasking", false, dim, dim);
@@ -1626,7 +1627,6 @@ void testApp::setupGui()
 
 
 	gui1->addSpacer(length-xInit, 2);
-	//gui1->addWidgetDown(new ofxUILabel("H SLIDERS", OFX_UI_FONT_MEDIUM)); 
 	gui1->addSlider("can1", 0.0, 255.0, 10, length-xInit, dim);
 	gui1->addSlider("can2", 0.0, 255.0, 100, length-xInit, dim);
 
@@ -1653,7 +1653,7 @@ void testApp::setupGui()
 	faceToggle = gui1->addToggle("FaceTracker", false, dim, dim);
 
 	detectFingerToggle = gui1->addToggle("detectFinger", false, dim, dim);
-	drawHand = gui1->addToggle("drawHand", true, dim, dim);
+	drawHand = gui1->addToggle("drawHand", false, dim, dim);
 	drawHandHistory = gui1->addToggle("drawHandHistory", false, dim, dim);
 	drawFingerHistory = gui1->addToggle("drawFingerHistory", false, dim, dim);
 
