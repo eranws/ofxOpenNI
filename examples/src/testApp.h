@@ -166,9 +166,6 @@ private:
 	int depthHistorySize;
 
 	std::map<const char*, cv::Mat> matMap;
-
-	IplImage* motion;
-
 };
 
 #endif
