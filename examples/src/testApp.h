@@ -55,10 +55,7 @@ private:
 
 	ofxFaceTrackerThreaded faceTracker;
 
-	ofEasyCam handCam;
 	ofEasyCam sceneCam;
-
-	ofFbo pcaFbo;
 	
 	ofxToast toast;
 
@@ -78,7 +75,6 @@ private:
 
 	bool showProfilerString;
 	bool drawDebugString;
-	bool drawOpenNiDebug;
 
 	stringstream debugString;
 	stringstream logString;

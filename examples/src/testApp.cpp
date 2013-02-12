@@ -115,7 +115,6 @@ void testApp::setup() {
 		handTracker.startThread(false);
 	}
 
-	handCam.setDistance(10);
 	faceTracker.setup();
 
 	sceneCam.setGlobalPosition(0,0,0);
@@ -151,7 +150,6 @@ void testApp::setup() {
 
 	showProfilerString = false;
 	drawDebugString = false;
-	drawOpenNiDebug = false;
 	logToFile = false;
 
 	recordingStartFrame = 0;
