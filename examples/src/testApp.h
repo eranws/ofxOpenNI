@@ -164,6 +164,9 @@ private:
 	std::map<const char*, cv::Mat> matMap;
 
 	cv::Mat uiMat;
+
+	ofPoint fingMean;
+	ofPoint fingDir;
 };
 
 #endif

@@ -360,38 +360,54 @@ void testApp::update(){
 			int medianZ = median(zValues);
 			cout << medianZ << endl;
 
-
 			//dilate(biggestContourMask, biggestContourMask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
 			
 			cv::Mat maskDepth = depthMat < medianZ + 50 & depthMat > medianZ - 50;
-
 			cv::Mat mask2 = biggestContourMask & maskDepth;
-
 			showMat(mask2);
-			//showMat(maskDepth);
 
 
-				//vector<cv::Point3f> fingerPoints;
-
-				/*
-				ofPoint proj(pt.x, pt.y, depthMat.at<ushort>(pt.y, pt.x));
-				cv::Point3f real;
-				openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), proj.x, proj.y, proj.z, &real.x, &real.y, &real.z);
-				fingerPoints.push_back(real);
-			}
-
-
-			cv::Mat pcaset(fingerHistorySize, 3, CV_32FC1);
-			for (int i = 0; i < fingerHistorySize; i++)
+			vector<ofPoint> fingerPoints;
+			uchar* data = mask2.data;
+			for (int i = 0; i < mask2.cols * mask2.rows; i++)
 			{
-				pcaset.at<float>(i, 0) = fingerHistory[i].x;
-				pcaset.at<float>(i, 1) = fingerHistory[i].y;
-				pcaset.at<float>(i, 2) = fingerHistory[i].z;
+				if (data[i] == 0) continue;
+
+				int x = i / mask2.cols;
+				int y = i % mask2.cols;
+				int z = depthMat.at<ushort>(y, x);
+				if (z > 0)
+				{
+					ofPoint proj(x, y, z);
+					ofPoint real;
+					openni::CoordinateConverter::convertDepthToWorld(*depthStream.getStream(), proj.x, proj.y, proj.z, &real.x, &real.y, &real.z);
+					fingerPoints.push_back(real);
+				}
+
 			}
 
+			if (fingerPoints.size() > 0)
+			{
 
-			cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
-			*/
+				cv::Mat pcaset(fingerPoints.size(), 3, CV_32FC1);
+				for (int i = 0; i < pcaset.rows; i++)
+				{
+					pcaset.at<float>(i, 0) = fingerPoints[i].x;
+					pcaset.at<float>(i, 1) = fingerPoints[i].y;
+					pcaset.at<float>(i, 2) = fingerPoints[i].z;
+				}
+
+
+				cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
+				fingMean = ofPoint(pca.mean.at<float>(0), pca.mean.at<float>(1), pca.mean.at<float>(2));
+				fingDir = ofPoint(pca.eigenvectors.at<float>(0, 0),
+					pca.eigenvectors.at<float>(0, 1),
+					pca.eigenvectors.at<float>(0, 2));
+
+
+			}
+
+			
 
 		}
 	}
@@ -1255,6 +1271,9 @@ void testApp::draw(){
 	}
 
 
+	ofSetColor(255);
+	ofLine(fingMean, fingMean + fingDir * 100);
+	ofSphere(fingMean, 20);
 
 
 
