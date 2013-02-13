@@ -5,15 +5,13 @@
 #include "ofxFaceTrackerThreaded.h"
 #include "..\Scene.h"
 #include "..\ofxHandTracker.h"
-#include "..\ofxDepthStream.h"
-#include "..\ofxOniDevice.h"
-#include "..\ofxColorStream.h"
+
 #include "..\Keypad.h"
-#include "..\ofxRecorder.h"
 #include "ofxUI.h"
 #include "..\ofxOpenNi2.h"
 #include "..\ofxNite2.h"
 #include "ofxToast\src\ofxToast.h"
+#include "..\ColorFingerTracker.h"
 
 #define MAX_DEVICES 2
 #define MAX_HANDS 4
@@ -163,10 +161,8 @@ private:
 
 	std::map<const char*, cv::Mat> matMap;
 
-	cv::Mat uiMat;
-
-	ofPoint fingMean;
-	ofPoint fingDir;
+	ColorFingerTracker colorFingerTracker;
+	
 };
 
 #endif

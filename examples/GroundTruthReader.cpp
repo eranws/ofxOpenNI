@@ -33,7 +33,7 @@ void GroundTruthReader::draw()
 	if (colorStream.isValid())
 	{
 		ofTexture colorTexture;
-		ofPixels colorPixels = colorStream.getPixels(); 
+		ofPixels colorPixels = *colorStream.getPixels(); 
 		colorTexture.allocate(colorPixels);
 		colorTexture.loadData(colorPixels);
 

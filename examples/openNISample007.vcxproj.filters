@@ -71,6 +71,12 @@
     <ClCompile Include="..\..\ofxToast\src\ToastMessage.cpp">
       <Filter>addons\ofxToast</Filter>
     </ClCompile>
+    <ClCompile Include="ColorFingerTracker.cpp" />
+    <ClCompile Include="ofxNiAlgorithm.cpp" />
+    <ClCompile Include="JonFingerTracker.cpp" />
+    <ClCompile Include="cvUtils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\addons\ofxFaceTracker\src\ExpressionClassifier.h">
@@ -266,6 +272,9 @@
     <ClInclude Include="..\..\ofxToast\src\ToastMessage.h">
       <Filter>addons\ofxToast</Filter>
     </ClInclude>
+    <ClInclude Include="ColorFingerTracker.h" />
+    <ClInclude Include="ofxNiAlgorithm.h" />
+    <ClInclude Include="JonFingerTracker.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="addons\ofxProfile">

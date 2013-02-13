@@ -22,7 +22,7 @@ public:
 	int readFrame();
 	bool isValid();
 
-	ofPixels& getPixels() const { return *pixels[0]; }
+	ofPtr<ofPixels> getPixels() const { return pixels[0]; }
 
 protected:
 	ofPtr<ofPixels> pixels[2];
