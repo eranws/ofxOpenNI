@@ -280,49 +280,51 @@ void testApp::update(){
 	
 	vector<cv::Mat> mv;
 	cv::split(hsv, mv);
-	showMat(mv[0]);
-	showMat(mv[1]);
-	showMat(mv[2]);
+	//showMat(mv[0]);
+	//showMat(mv[1]);
+	//showMat(mv[2]);
 	
-	//uiMat = mv[2].clone();
+	//uiMat = mv[0].clone();
 	//imshow("ui", uiMat);
 
 	cv::Mat hue = mv[0];
 	cv::Mat sat = mv[1];
 	cv::Mat val = mv[2];
-
+	
 	//blur(sat, sat, cv::Size(5, 5));
 	ofxUISlider* s3 = (ofxUISlider*)gui1->getWidget("3");		
+	ofxUISlider* s4 = (ofxUISlider*)gui1->getWidget("4");		
 	//showMat(sat > s3->getScaledValue());
+	
+	cv::Mat basicMask = sat > s3->getScaledValue() & mv[2] > s4->getScaledValue();
+	
+	//cv::Mat mask = (mv[0] < 50 | mv[0] > 205) & basicMask;
+	//showMat(mask);
 
-	cv::Mat mask = (mv[0] < 50 | mv[0] > 205) & sat > 160 & mv[2] > 100;
-	showMat(mask);
-
-	/*
-	mv[0] = mv[0];
-	mv[1] = mask;//sat;
-	mv[2] = mask;//mv[2] > 50;
-	*/
-
-	//cv::Mat hsv2;
-	//cv::merge(mv, hsv2);
-	//cvtColor(hsv2,hsv2,CV_HSV2BGR);
+	vector<cv::Mat> mv2;
+	cv::split(hsv, mv2);
+	mv2[0] = mv[0];
+	mv2[1] = basicMask;
+	mv2[2] = basicMask;
+	
+	cv::Mat hsv2;
+	cv::merge(mv2, hsv2);
+	cvtColor(hsv2,hsv2,CV_HSV2BGR);
 	//showMat(hsv2);
 
 	//cv::medianBlur(mask, mask, 3);
 	//cv::medianBlur(mask, mask, 5);
 
-	cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
-	imshow("maskClose", mask);
-
+	cv::morphologyEx(basicMask, basicMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
+	
 
 	{
 		std::vector<std::vector<cv::Point> > contours;
 		std::vector<cv::Vec4i> hierarchy;
-		cv::findContours( mask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
+		cv::findContours( basicMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
 		if( !contours.empty() && !hierarchy.empty() )
 		{
-			cv::Mat biggestContourMask = cv::Mat::zeros(mask.size(), CV_8UC1);
+			cv::Mat biggestContourMask = cv::Mat::zeros(basicMask.size(), CV_8UC1);
 
 			int idx = 0;
 			for(int i = 0; i < hierarchy.size(); i++)
@@ -359,22 +361,14 @@ void testApp::update(){
 			cout << medianZ << endl;
 
 
-			dilate(biggestContourMask, biggestContourMask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
-			//showMat(biggestContourMask);
-
-			cv::Mat maskHue = (mv[0] < 50 | mv[0] > 255 - 50);
-			cv::Mat maskSat = sat > 120;
-			cv::Mat maskVal = mv[2] > 100;
+			//dilate(biggestContourMask, biggestContourMask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
+			
 			cv::Mat maskDepth = depthMat < medianZ + 50 & depthMat > medianZ - 50;
 
-			cv::Mat mask2 = biggestContourMask & maskHue & maskSat & maskVal & maskDepth;
-
+			cv::Mat mask2 = biggestContourMask & maskDepth;
 
 			showMat(mask2);
-			showMat(maskHue);
-			showMat(maskSat);
-			showMat(maskVal);
-			showMat(maskDepth);
+			//showMat(maskDepth);
 
 
 				//vector<cv::Point3f> fingerPoints;
@@ -1809,16 +1803,17 @@ void testApp::setupGui()
 	gui1->addSlider("can1", 0.0, 255.0, 10, length-xInit, dim);
 	gui1->addSlider("can2", 0.0, 255.0, 100, length-xInit, dim);
 
+	gui1->addSlider("3", 0.0, 255.0, 160, length-xInit, dim);
+	gui1->addSlider("4", 0.0, 255.0, 150, length-xInit, dim);
 
-	int sliderHeight = 30;
+
+	int sliderHeight = 128;
 	gui1->addSpacer(length-xInit, 2); 
 	gui1->addWidgetDown(new ofxUILabel("V SLIDERS", OFX_UI_FONT_MEDIUM)); 
 	gui1->addSlider("0", 0.0, 10255.0, 150, dim, sliderHeight);
 	gui1->setWidgetPosition(OFX_UI_WIDGET_POSITION_RIGHT);
 	gui1->addSlider("1", 0.0, 255.0, 150, dim, sliderHeight);
 	gui1->addSlider("2", 0.0, 1.0, 1, dim, sliderHeight);
-	gui1->addSlider("3", 0.0, 255.0, 150, dim, sliderHeight);
-	gui1->addSlider("4", 0.0, 255.0, 150, dim, sliderHeight);
 	gui1->addSlider("5", 0.0, 255.0, 150, dim, sliderHeight);
 	gui1->addSlider("6", 0.0, 255.0, 150, dim, sliderHeight);
 	gui1->addSlider("7", 0.0, 255.0, 150, dim, sliderHeight);

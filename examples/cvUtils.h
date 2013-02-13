@@ -17,6 +17,7 @@ bool g_hasFinger = false;
 template <class T>
 T median(vector<T> &v)
 {
+	if (v.empty()) return 0;
 	size_t n = v.size() / 2;
 	nth_element(v.begin(), v.begin()+n, v.end());
 	return v[n];
