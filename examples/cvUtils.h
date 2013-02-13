@@ -14,7 +14,13 @@ cv::Point2f g_fingerPoint2f; //in frameCoordinates
 cv::Point2f g_handPoint2f, g_prevHandPoint;
 bool g_hasFinger = false;
 
-
+template <class T>
+T median(vector<T> &v)
+{
+	size_t n = v.size() / 2;
+	nth_element(v.begin(), v.begin()+n, v.end());
+	return v[n];
+}
 
 cv::Rect getHandFrameFromFG(cv::Mat& img, const ofPoint& handPosition, const openni::VideoStream& depthStream)
 {

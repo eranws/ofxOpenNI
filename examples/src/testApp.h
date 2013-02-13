@@ -162,6 +162,8 @@ private:
 	int depthHistorySize;
 
 	std::map<const char*, cv::Mat> matMap;
+
+	cv::Mat uiMat;
 };
 
 #endif

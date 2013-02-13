@@ -31,3 +31,8 @@ bool ofxOniDevice::isValid()
 	return (device.use_count() > 0 && device->isValid());
 }
 
+void ofxOniDevice::setStreamSync( bool b )
+{
+	device->setDepthColorSyncEnabled(b);
+}
+

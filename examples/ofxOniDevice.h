@@ -19,7 +19,7 @@ public:
 	ofPtr<openni::Device> getDevice() const { return device; }
 	
 	void setRegistration( bool b ); //TODO: access via settings object
-
+	void setStreamSync( bool b );
 protected:
 	ofPtr<openni::Device> device;
 
