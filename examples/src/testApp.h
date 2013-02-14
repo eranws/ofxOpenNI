@@ -162,7 +162,13 @@ private:
 	std::map<const char*, cv::Mat> matMap;
 
 	ColorFingerTracker colorFingerTracker;
+
+	ofMesh pointCloud;
 	
+	cv::Mat WxMat;
+	cv::Mat WyMat;
+
+
 };
 
 #endif

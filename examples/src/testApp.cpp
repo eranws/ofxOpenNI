@@ -151,7 +151,7 @@ void testApp::setup() {
 	cv::namedWindow("Depth");
 	cvSetMouseCallback("Depth", depthOnMouse, this);
 
-	
+
 	showProfilerString = false;
 	drawDebugString = false;
 	logToFile = false;
@@ -159,6 +159,29 @@ void testApp::setup() {
 	recordingStartFrame = 0;
 
 	colorFingerTracker.setup(&depthStream, &colorStream);
+
+	//pointcloud conversion cache
+	int resX = depthStream.getStream()->getVideoMode().getResolutionX();
+	int resY = depthStream.getStream()->getVideoMode().getResolutionY();
+
+	float fovH = depthStream.getStream()->getHorizontalFieldOfView();
+	float fovV = depthStream.getStream()->getVerticalFieldOfView();
+
+	WxMat.create(resY, resX, CV_32FC1);
+	WyMat.create(resY, resX, CV_32FC1);
+
+	float xCoeff = tan(fovH / 2) * 2;
+	float yCoeff = tan(fovV / 2) * 2;
+
+
+	for (int j = 0; j < WxMat.rows; j++)
+	{
+		for (int i = 0; i < WxMat.cols; i++)
+		{
+			WxMat.at<float>(j, i) = (float(i) / resX - 0.5) * xCoeff;
+			WyMat.at<float>(j, i) = (0.5 - float(j) / resY) * yCoeff;
+		}
+	}
 
 }
 
@@ -182,7 +205,7 @@ ofPoint projToReal(const openni::VideoStream& stream, const cv::Mat depthMat, in
 void testApp::update(){
 
 	ofxProfileThisFunction();
-	
+
 	if (readOnUpdate)
 	{
 		depthStream.readFrame();
@@ -225,13 +248,35 @@ void testApp::update(){
 	ofPtr<ofPixels> colorPixels = colorStream.getPixels();
 	cv::Mat colorMat = ofxCv::toCv(*colorPixels);
 	cvtColor(colorMat,colorMat,CV_RGB2BGR);	
-	
+
 	ofPtr<ofShortPixels> depthPixels = depthStream.getPixels();
 	depthMat = ofxCv::toCv(*depthPixels);
 
 
+
+	cv::Mat wx(WxMat.size(), CV_32FC1);
+	cv::Mat wy(WyMat.size(), CV_32FC1);
+
+	cv::multiply(depthMat, WxMat, wx, 1.0, CV_32FC1);
+	cv::multiply(depthMat, WyMat, wy, 1.0, CV_32FC1);
+
+	pointCloud.clear();
+	for (int j = 0; j < WxMat.rows; j++)
+	{
+		for (int i = 0; i < WxMat.cols; i++)
+		{
+			ushort z = depthMat.at<ushort>(j, i);
+			if (z > 0)
+			{
+				ofPoint real(wx.at<float>(j, i), wy.at<float>(j, i), z);
+				pointCloud.addVertex(real);
+			}
+
+		}
+	}
+
 	colorFingerTracker.update();
-		
+
 
 	ofPoint handPoint = ofPoint();
 	if (handTracker.hasHand())
@@ -268,7 +313,7 @@ void testApp::update(){
 		screenPoint = ofVec2f();
 	}
 
-		
+
 	if (cvDepthToggle->getValue())
 	{
 		int wristFoundCounter = 0;
@@ -423,29 +468,29 @@ void testApp::update(){
 						}
 					}
 
-						if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 3 && pt.x < depthMat.cols - 2)
+					if (pt.y > 1 && pt.x > 2 && pt.y < depthMat.rows - 3 && pt.x < depthMat.cols - 2)
+					{
+						for (int j = 0; j < 4; j++)
 						{
-							for (int j = 0; j < 4; j++)
+							for (int i = -2; i < 3; i++)
 							{
-								for (int i = -2; i < 3; i++)
+								if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
 								{
-									if (wristGrayQ.at<uchar>(pt.y + j, pt.x + i) == 0)
-									{
-										short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
-										int zDiff = (i==0) ? 120 : 30;
-										if(fabs(z - handPoint.z) < 300 && abs(cz - z) < zDiff)
-											
-										{
-										
-											wristGrayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
-											wristQ.push_back(cv::Point(pt.x + i, pt.y + j));
-										}
+									short cz = depthMat.at<ushort>(pt.y + j, pt.x + i);
+									int zDiff = (i==0) ? 120 : 30;
+									if(fabs(z - handPoint.z) < 300 && abs(cz - z) < zDiff)
 
+									{
+
+										wristGrayQ.at<uchar>(pt.y + j, pt.x + i) = 1;
+										wristQ.push_back(cv::Point(pt.x + i, pt.y + j));
 									}
+
 								}
 							}
 						}
-					
+					}
+
 					wristQ.pop_front();
 				}
 
@@ -538,7 +583,7 @@ void testApp::update(){
 
 					ofPoint fingerWrist = wristReal - fingerReal;
 
-					
+
 
 					fingerWristHistory.push_front(fingerWrist);
 					if (fingerWristHistory.size() > fingerWristHistorySize)
@@ -953,6 +998,7 @@ void testApp::draw(){
 
 	ofSetColor(255);
 
+	pointCloud.drawVertices();
 
 
 	if (finger.frame == frameIndex)
@@ -1016,25 +1062,25 @@ void testApp::draw(){
 
 
 			cv::Mat pcaset(fingerHistorySize, 3, CV_32FC1);
-				for (int i = 0; i < fingerHistorySize; i++)
-				{
-					pcaset.at<float>(i, 0) = fingerHistory[i].x;
-					pcaset.at<float>(i, 1) = fingerHistory[i].y;
-					pcaset.at<float>(i, 2) = fingerHistory[i].z;
-				}
+			for (int i = 0; i < fingerHistorySize; i++)
+			{
+				pcaset.at<float>(i, 0) = fingerHistory[i].x;
+				pcaset.at<float>(i, 1) = fingerHistory[i].y;
+				pcaset.at<float>(i, 2) = fingerHistory[i].z;
+			}
 
-				
-				cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
-				
-				/*			
-				cout << pcaset << endl;
-				*/
 
-				/*
-				cout << pca.eigenvalues << endl;
-				cout << pca.eigenvectors << endl;
-				cout << pca.mean << endl;
-				*/
+			cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
+
+			/*			
+			cout << pcaset << endl;
+			*/
+
+			/*
+			cout << pca.eigenvalues << endl;
+			cout << pca.eigenvectors << endl;
+			cout << pca.mean << endl;
+			*/
 
 
 			stringstream fingerDebugString;
@@ -1056,7 +1102,7 @@ void testApp::draw(){
 
 				ofSetLineWidth(10 * p + 3);
 				ofLine(fingerHistory[i-1], fingerHistory[i]);
-				
+
 			}
 
 			ofPoint ev1(pca.eigenvectors.at<float>(0, 0),
@@ -1081,7 +1127,7 @@ void testApp::draw(){
 			{
 				fingerHistoryScreenIntersectionPoint = ofPoint();
 			}
-				
+
 
 
 		}
@@ -1245,7 +1291,7 @@ void testApp::draw(){
 	sceneCam.end();
 
 	//2D (gui) drawing
-	
+
 	if (drawFingerHistory->getValue() && fingerHistory.size() == fingerHistorySize && fingerHistoryScreenIntersectionPoint != ofPoint())
 	{
 		ofSetColor(ofColor::yellow);
@@ -1257,7 +1303,7 @@ void testApp::draw(){
 		ofCircle(hwscreenPoint.x, 0, 10);
 		ofCircle(hwscreenPoint.x, ofGetScreenHeight(), 10);
 	}
-	
+
 
 	if(faceToggle->getValue() && faceTracker.getFound())
 	{
@@ -1297,7 +1343,7 @@ void testApp::draw(){
 	debugString << endl;
 	debugString << "frame #" << frameIndex << endl;
 
-	
+
 
 	//	camString << "Device FPS: " << openNIDevice.getFrameRate()<< endl;
 
@@ -1437,11 +1483,11 @@ void testApp::keyPressed(int key){
 	case '5':
 	case '0':
 		{
-		stringstream ss;
-		ss << handTracker.getFrameIndex() - recordingStartFrame;
-		ss << " ";
-		ss << key - '0';
-		clicks.push_back(ss.str());
+			stringstream ss;
+			ss << handTracker.getFrameIndex() - recordingStartFrame;
+			ss << " ";
+			ss << key - '0';
+			clicks.push_back(ss.str());
 		}
 		break;
 
@@ -1496,12 +1542,12 @@ void testApp::keyPressed(int key){
 	{
 		switch (key)
 		{
-		//case '1': drawDebugString = !drawDebugString; break;
-		//case '2': showProfilerString = !showProfilerString; break;
+			//case '1': drawDebugString = !drawDebugString; break;
+			//case '2': showProfilerString = !showProfilerString; break;
 		case 'C': ofxProfile::clear(); break;
 
 		case 'f': fullScreenToggle->toggleValue(); fullScreenToggle->triggerSelf(); break;
-		//case 'g': guiAutoHide->toggleValue(); guiAutoHide->triggerSelf(); break;
+			//case 'g': guiAutoHide->toggleValue(); guiAutoHide->triggerSelf(); break;
 		case ' ': playToggle->toggleValue(); playToggle->triggerSelf(); break;
 
 
@@ -1515,7 +1561,7 @@ void testApp::keyPressed(int key){
 
 //--------------------------------------------------------------
 void testApp::keyReleased(int key){
-	
+
 
 }
 
@@ -1625,7 +1671,7 @@ void testApp::setupGui()
 
 	guiAutoHide = gui1->addToggle("guiAutoHide", false, dim, dim);
 	fullScreenToggle = gui1->addToggle("fullScreen", false, dim, dim);
-	
+
 	playToggle = gui1->addToggle("play/pause", false, dim, dim);
 
 	cvDepthToggle = gui1->addToggle("cvDepth", false, dim, dim);
@@ -1639,7 +1685,7 @@ void testApp::setupGui()
 	gui1->addSlider("can1", 0.0, 255.0, 10, length-xInit, dim);
 	gui1->addSlider("can2", 0.0, 255.0, 100, length-xInit, dim);
 
-	
+
 
 	int sliderHeight = 128;
 	gui1->addSpacer(length-xInit, 2); 
@@ -1765,7 +1811,7 @@ void testApp::guiEvent(ofxUIEventArgs &e)
 			colorStream.stopThread();
 			handTracker.stopThread();
 		}
-		
+
 	}
 
 
