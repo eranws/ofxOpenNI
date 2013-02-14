@@ -30,9 +30,6 @@ void ColorFingerTracker::update()
 	//showMat(mv[1]);
 	//showMat(mv[2]);
 
-	//uiMat = mv[0].clone();
-	//imshow("ui", uiMat);
-
 	cv::Mat hue = mv[0];
 	cv::Mat sat = mv[1];
 	cv::Mat val = mv[2];
@@ -54,13 +51,9 @@ void ColorFingerTracker::update()
 	cvtColor(hsv2,hsv2,CV_HSV2BGR);
 	//showMat(hsv2);
 
-	//cv::medianBlur(mask, mask, 3);
-	//cv::medianBlur(mask, mask, 5);
 
 	cv::morphologyEx(basicMask, basicMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
 
-
-	{
 		std::vector<std::vector<cv::Point> > contours;
 		std::vector<cv::Vec4i> hierarchy;
 		cv::findContours( basicMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
@@ -145,20 +138,25 @@ void ColorFingerTracker::update()
 				fingDir = ofPoint(pca.eigenvectors.at<float>(0, 0),
 					pca.eigenvectors.at<float>(0, 1),
 					pca.eigenvectors.at<float>(0, 2));
+				valid = true;
 
 
 			}
 
 
 		}
-	}
 }
 
 
 
 void ColorFingerTracker::draw()
 {
-	throw std::exception("The method or operation is not implemented.");
+	if (valid)
+	{
+		ofSetColor(ofColor::green);
+		ofLine(fingMean, fingMean + fingDir * 100);
+		ofSphere(fingMean, 20);
+	}
 }
 
 void ColorFingerTracker::setupGui()
@@ -170,6 +168,11 @@ void ColorFingerTracker::setupGui()
 	satThreshold = gui->addSlider("satThreshold", 0.0, 255.0, 160, length-xInit, dim);
 	valueThreshold = gui->addSlider("hueThreshold", 0.0, 255.0, 150, length-xInit, dim);		
 
+}
+
+void ColorFingerTracker::customSetup()
+{
+	valid = false;
 }
 
 

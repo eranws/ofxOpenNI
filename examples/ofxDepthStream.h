@@ -1,6 +1,6 @@
 #pragma once
-#include "ofThread.h"
-#include "ofPixels.h"
+#include "ofMain.h"
+
 
 namespace openni
 {
@@ -37,4 +37,5 @@ protected:
 	ofPtr<openni::Device> device;
 	ofPtr<openni::VideoStream> stream;
 	
+
 };

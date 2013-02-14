@@ -7,6 +7,7 @@ void ofxNiAlgorithm::setup(const ofxDepthStream* depthStream, const ofxColorStre
 	this->depthStream = depthStream;
 	this->colorStream = colorStream;
 
+	customSetup();
 
 	float dim = 16; 
 	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 

@@ -270,6 +270,11 @@ void testApp::update(){
 			{
 				ofPoint real(wx.at<float>(j, i), wy.at<float>(j, i), z);
 				pointCloud.addVertex(real);
+
+				ofColor curBgr = colorPixels->getColor(i, j);
+				ofColor curRgb(curBgr.b, curBgr.g, curBgr.r);//, 255.0f);
+				pointCloud.addColor(curRgb);
+
 			}
 
 		}
@@ -1134,11 +1139,8 @@ void testApp::draw(){
 	}
 
 
-	ofSetColor(255);
-	//ofLine(fingMean, fingMean + fingDir * 100);
-	//ofSphere(fingMean, 20);
 
-
+	colorFingerTracker.draw();
 
 
 #define camlog(func) {debugString << #func << " : " << sceneCam.func() << endl;}
