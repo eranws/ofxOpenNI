@@ -115,8 +115,8 @@ void ColorFingerTracker::update()
 			{
 				if (data[i] == 0) continue;
 
-				int x = i / mask2.cols;
-				int y = i % mask2.cols;
+				int x = i % mask2.cols;
+				int y = i / mask2.cols;
 				int z = depthMat.at<ushort>(y, x);
 				if (z > 0)
 				{
