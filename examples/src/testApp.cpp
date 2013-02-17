@@ -18,56 +18,6 @@ cv::Scalar red(0,0,255);
 cv::Scalar purple(255,0,255);
 cv::Scalar black(0,0,0);
 
-
-void depthOnMouse( int event, int x, int y, int flags, void* thisApp)
-{
-	switch( event )
-	{
-	case CV_EVENT_LBUTTONDOWN:
-		{
-			testApp* app = (testApp*)thisApp;
-			cv::Mat mat = app->depthMat.clone();
-
-			ofPoint proj;
-			proj.x = (float)x;
-			proj.y = (float)y;
-			proj.z = mat.at<ushort>(y, x);
-
-
-			stringstream ss;
-			ss << proj.z;
-			cv::putText(mat, ss.str(), cv::Point(15,15),cv::FONT_HERSHEY_PLAIN,1, cv::Scalar(0,0,0));
-			cv::putText(mat, ss.str(), cv::Point(14,16),cv::FONT_HERSHEY_PLAIN,1, cv::Scalar(255,255,255));
-
-			imshow("Depth", mat * 32);
-
-			printf("%.2f\n", proj.z);
-			//oni.depthGenerator().ConvertProjectiveToRealWorld(1, &proj, &g_handPosition);
-
-
-		}
-		break;
-	case CV_EVENT_RBUTTONDOWN: 
-		{
-		}
-		break;
-	case CV_EVENT_LBUTTONUP:
-		{		
-		}
-		break;
-	case CV_EVENT_RBUTTONUP:
-		{
-		}
-		break;
-	case CV_EVENT_MOUSEMOVE:
-		{
-
-		}	
-		break;
-	}	
-}
-
-
 //--------------------------------------------------------------
 void testApp::setup() {
 
@@ -147,10 +97,6 @@ void testApp::setup() {
 	frameIndex = 0;
 	toUpdate = true;
 	readOnUpdate = false;
-
-	cv::namedWindow("Depth");
-	cvSetMouseCallback("Depth", depthOnMouse, this);
-
 
 	showProfilerString = false;
 	drawDebugString = false;
