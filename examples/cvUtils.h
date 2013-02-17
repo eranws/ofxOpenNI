@@ -30,12 +30,6 @@ cv::Rect getHandFrameFromFG(cv::Mat& img, const ofPoint& handPosition, const ope
 
 cv::Mat getHueMask( const cv::Mat& hueMat, int hue, int range );
 
-struct Contour
-{
-	std::vector<cv::Point> contour;
-	cv::Mat mask;
-};
+std::vector<cv::Point> getBiggestContour(const cv::Mat& mask);
 
-Contour getBiggestContour(const cv::Mat& mask);
-
-
+int getContourMedianZ( std::vector<cv::Point> contour, const cv::Mat& depthMat );

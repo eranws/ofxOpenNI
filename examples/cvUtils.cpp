@@ -58,9 +58,9 @@ cv::Mat getHueMask( const cv::Mat& hueMat, int hue, int range )
 }
 
 
-Contour getBiggestContour(const cv::Mat& mask)
+std::vector<cv::Point> getBiggestContour(const cv::Mat& mask)
 {
-	Contour biggest;
+	std::vector<cv::Point> biggest;
 
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<cv::Vec4i> hierarchy;
@@ -81,10 +81,20 @@ Contour getBiggestContour(const cv::Mat& mask)
 
 		}
 		
-		biggest.contour = contours[idx];
-		biggest.mask = cv::Mat::zeros(mask.size(), CV_8UC1);
-		cv::drawContours(biggest.mask, contours, idx, cv::Scalar::all(255), CV_FILLED);
+		biggest = contours[idx];
 	}
 
 	return biggest;
+}
+
+int getContourMedianZ( std::vector<cv::Point> contour, const cv::Mat& depthMat )
+{
+	vector<int> zValues;
+	for (int i = 0; i < contour.size(); i++)
+	{
+		const cv::Point& pt = contour[i];
+		int z = depthMat.at<ushort>(pt.y, pt.x);
+		if (z > 0) zValues.push_back(z);
+	}
+	return median(zValues);
 }

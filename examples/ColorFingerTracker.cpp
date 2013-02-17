@@ -33,6 +33,7 @@ void ColorFingerTracker::update()
 		sat < satRange->getScaledValueHigh() &
 		val > valRange->getScaledValueLow() &
 		val < valRange->getScaledValueHigh();
+	//showMat(basicMask);
 
 
 	cv::Mat redMask = getHueMask(hue, redSlider->getScaledValue(), hueRange->getScaledValue()) & basicMask;
@@ -45,112 +46,23 @@ void ColorFingerTracker::update()
 	mv2[0] = mv[0];
 	mv2[1] = basicMask;
 	mv2[2] = basicMask;
-	showMat(basicMask);
 
 	cv::Mat hsv2;
 	cv::merge(mv2, hsv2);
 	cvtColor(hsv2,hsv2, CV_HSV2BGR);
-	showMat(hsv2);
+	//showMat(hsv2);
 
 
-	Contour biggestRedContour = getBiggestContour(redMask);
-
-	if (!biggestRedContour.contour.empty())
-	{
-
-		cv::Mat fingerDepth;
-		depthMat.copyTo(fingerDepth, biggestRedContour.mask);
-
-		vector<int> zValues;
-		for (int i = 0; i < biggestRedContour.contour.size(); i++)
-		{
-			const cv::Point& pt = biggestRedContour.contour[i];
-			int z = depthMat.at<ushort>(pt.y, pt.x);
-			if (z > 0) zValues.push_back(z);
-		}
-
-		int medianZ = median(zValues);
-
-		cv::Mat maskDepth = depthMat < medianZ + 50 & depthMat > medianZ - 50;
-		cv::Mat mask2 = biggestRedContour.mask & maskDepth;
-		showMat(mask2);
-
-
-		vector<ofPoint> fingerPoints;
-		uchar* data = mask2.data;
-		for (int i = 0; i < mask2.cols * mask2.rows; i++)
-		{
-			if (data[i] == 0) continue;
-
-			int x = i % mask2.cols;
-			int y = i / mask2.cols;
-			int z = depthMat.at<ushort>(y, x);
-			if (z > 0)
-			{
-				ofPoint proj(x, y, z);
-				ofPoint real;
-				openni::CoordinateConverter::convertDepthToWorld(*depthStream->getStream(), proj.x, proj.y, proj.z, &real.x, &real.y, &real.z);
-				fingerPoints.push_back(real);
-			}
-
-		}
-
-		if (fingerPoints.size() > 0)
-		{
-
-			cv::Mat pcaset(fingerPoints.size(), 3, CV_32FC1);
-			for (int i = 0; i < pcaset.rows; i++)
-			{
-				pcaset.at<float>(i, 0) = fingerPoints[i].x;
-				pcaset.at<float>(i, 1) = fingerPoints[i].y;
-				pcaset.at<float>(i, 2) = fingerPoints[i].z;
-			}
-			cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
-
-			cv::Mat pcaProj = pca.project(pcaset);
-			
-			double minVal;
-			double maxVal;
-
-			cv::minMaxIdx(pcaProj.col(0), &minVal, &maxVal);
-
-			//TODO: stabilize point
-			cv::Mat baseTip = cv::Mat::zeros(2, 3, CV_32FC1);
-			
-			baseTip.at<float>(0, 0) = maxVal;
-			baseTip.at<float>(1, 0) = minVal;
-
-			pca.backProject(baseTip, baseTip);
-
-			fingerTip.pos = ofPoint(baseTip.at<float>(0, 0), baseTip.at<float>(0, 1), baseTip.at<float>(0, 2));
-			fingerBase.pos = ofPoint(baseTip.at<float>(1, 0), baseTip.at<float>(1, 1), baseTip.at<float>(1, 2));
-
-			fingerTip.valid = true;
-			fingerBase.valid = true;
-		}
-	}
+	//detectKnuckle(yellowMask, depthMat);
+	detectWrist(greenMask, depthMat);
+	detectFinger(redMask, depthMat);
 
 
 }
 
 
 
-void ColorFingerTracker::draw()
-{
-	if (fingerTip.valid && fingerBase.valid)
-	{
-		ofSetColor(ofColor::yellow / 2 + ofColor::red / 2); //orange
-		ofLine(fingerTip, fingerBase);
 
-		ofSetColor(ofColor::red / 2); //orange
-		ofSphere(fingerTip, 15);
-
-		ofSetColor(ofColor::yellow); //orange
-		ofSphere(fingerBase, 25);
-
-
-	}
-}
 
 void ColorFingerTracker::setupGui()
 {
@@ -173,3 +85,156 @@ void ColorFingerTracker::setupGui()
 	valRange->setIncrement(1);
 }
 
+vector<ofPoint> ColorFingerTracker::getContourRealPoints( std::vector<cv::Point> contour, const cv::Mat& depthMat, int medianZ, int range )
+{
+	vector<ofPoint> points;
+	for (int i = 0; i < contour.size(); i++)
+	{
+		const cv::Point& pt = contour[i];
+		ushort z = depthMat.at<ushort>(pt);
+		if (abs(z  - medianZ) < range)
+		{			ofPoint real;			openni::CoordinateConverter::convertDepthToWorld(*depthStream->getStream(), pt.x, pt.y, z, &real.x, &real.y, &real.z);			points.push_back(real);
+			//realPts.push_back(cv::Matx13f(real.x, real.y, real.z));
+
+		}
+	}
+	return points;
+}
+
+void ColorFingerTracker::detectWrist( cv::Mat wristMask, const cv::Mat depthMat )
+{
+	std::vector<cv::Point> biggestContour = getBiggestContour(wristMask);
+	if (!biggestContour.empty())
+	{
+		int medianZ = getContourMedianZ(biggestContour, depthMat);
+		vector<ofPoint> fingerPoints = getContourRealPoints(biggestContour, depthMat, medianZ, 50);
+		if (fingerPoints.size() > 0)
+		{
+			ofPoint wristMean;
+			for (int i = 0; i < fingerPoints.size(); i++)
+			{
+				wristMean += fingerPoints[i];
+			}
+			wristMean /= fingerPoints.size();
+
+			wrist.pos = wristMean;
+			wrist.valid = true;
+		}
+	}
+}
+
+void ColorFingerTracker::detectKnuckle( cv::Mat knuckleMask, const cv::Mat depthMat )
+{
+	std::vector<cv::Point> biggestContour = getBiggestContour(knuckleMask);
+	if (!biggestContour.empty())
+	{
+		int medianZ = getContourMedianZ(biggestContour, depthMat);
+		vector<ofPoint> knucklePoints = getContourRealPoints(biggestContour, depthMat, medianZ, 50);
+		if (knucklePoints.size() > 0)
+		{
+			ofPoint knuckleMean;
+			for (int i = 0; i < knucklePoints.size(); i++)
+			{
+				knuckleMean += knucklePoints[i];
+			}
+			knuckleMean /= knucklePoints.size();
+
+			fingerKnuckle.pos = knuckleMean;
+			fingerKnuckle.valid = true;
+		}
+	}
+}
+
+
+void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat& depthMat)
+{
+
+	std::vector<cv::Point> biggestContour = getBiggestContour(fingerMask);
+	if (!biggestContour.empty())
+	{
+		int medianZ = getContourMedianZ(biggestContour, depthMat);
+		vector<ofPoint> fingerPoints = getContourRealPoints(biggestContour, depthMat, medianZ, 50);
+
+		if (fingerPoints.size() > 0)
+		{
+			cv::Mat pcaset(fingerPoints.size(), 3, CV_32FC1);
+			for (int i = 0; i < pcaset.rows; i++)
+			{
+				pcaset.at<float>(i, 0) = fingerPoints[i].x;
+				pcaset.at<float>(i, 1) = fingerPoints[i].y;
+				pcaset.at<float>(i, 2) = fingerPoints[i].z;
+			}
+			cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
+
+			cv::Mat pcaProj = pca.project(pcaset);
+
+			double minVal;
+			double maxVal;
+
+			cv::minMaxIdx(pcaProj.col(0), &minVal, &maxVal);
+
+			//TODO: stabilize point
+			cv::Mat baseTip = cv::Mat::zeros(2, 3, CV_32FC1);
+
+			baseTip.at<float>(0, 0) = minVal;
+			baseTip.at<float>(1, 0) = maxVal;
+
+			pca.backProject(baseTip, baseTip);
+
+			ofPoint minPoint(baseTip.at<float>(0, 0), baseTip.at<float>(0, 1), baseTip.at<float>(0, 2));
+			ofPoint maxPoint(baseTip.at<float>(1, 0), baseTip.at<float>(1, 1), baseTip.at<float>(1, 2));
+
+			if ((wrist.isValid() && minPoint.distance(wrist) > maxPoint.distance(wrist)) ||
+				(fingerKnuckle.isValid() &&  minPoint.distance(fingerKnuckle) > maxPoint.distance(fingerKnuckle)) ||
+				minPoint.z < maxPoint.z)
+				{
+					swap(minPoint, maxPoint);
+				}
+			
+			
+			fingerTip.pos = maxPoint;
+			fingerBase.pos = minPoint;
+
+			fingerTip.valid = true;
+			fingerBase.valid = true;
+		}
+	}
+}
+
+void ColorFingerTracker::draw()
+{
+	ofPushStyle();
+
+	if (fingerTip.isValid())
+	{
+		ofSetColor(ofColor::red); //orange
+		ofSphere(fingerTip, 15);
+	}
+	
+	if (fingerBase.isValid())
+	{
+		ofSetColor(ofColor::blue);
+		ofSphere(fingerBase, 15);
+	}
+
+	if (fingerTip.isValid() && fingerBase.isValid())
+	{
+		ofSetColor(ofColor::yellow / 2 + ofColor::red / 2); //orange
+		ofSetLineWidth(5);
+		ofLine(fingerTip, fingerBase);
+	}
+
+	if (wrist.isValid())
+	{
+		ofSetColor(ofColor::green);
+		ofSphere(wrist, 15);
+	}
+
+	if (fingerKnuckle.isValid())
+	{
+		ofSetColor(ofColor::yellow);
+		ofSphere(fingerKnuckle, 25);
+	}
+
+	ofPopStyle();
+}
