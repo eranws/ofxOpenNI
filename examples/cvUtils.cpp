@@ -47,3 +47,44 @@ cv::Rect getHandFrameFromFG(cv::Mat& img, const ofPoint& handPosition, const ope
 	return res;
 }
 
+cv::Mat getHueMask( const cv::Mat& hueMat, int hue, int range )
+{
+	//compares hue mask from value and range (wraps around 180)
+	cv::Mat mask;
+	mask = (hueMat < hue + range & hueMat > hue - range);
+	if (hue - range < 0) mask |= hueMat > hue - range + 180;
+	if (hue + range > 180) mask |= hueMat < hue + range - 180;
+	return mask;
+}
+
+
+Contour getBiggestContour(const cv::Mat& mask)
+{
+	Contour biggest;
+
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours( mask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
+	if( !contours.empty() && !hierarchy.empty() )
+	{
+		int idx = 0;
+		int maxArea = 0; 
+		for(int i = 0; i < hierarchy.size(); i++)
+		{
+			//find biggest cc
+			int area = cv::contourArea(contours[i]);
+			if (maxArea < area)
+			{
+				maxArea = area;
+				idx = i;
+			}
+
+		}
+		
+		biggest.contour = contours[idx];
+		biggest.mask = cv::Mat::zeros(mask.size(), CV_8UC1);
+		cv::drawContours(biggest.mask, contours, idx, cv::Scalar::all(255), CV_FILLED);
+	}
+
+	return biggest;
+}

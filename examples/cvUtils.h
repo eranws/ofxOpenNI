@@ -28,4 +28,14 @@ T median(std::vector<T> &v)
 cv::Rect getHandFrameFromFG(cv::Mat& img, const ofPoint& handPosition, const openni::VideoStream& depthStream);
 
 
+cv::Mat getHueMask( const cv::Mat& hueMat, int hue, int range );
+
+struct Contour
+{
+	std::vector<cv::Point> contour;
+	cv::Mat mask;
+};
+
+Contour getBiggestContour(const cv::Mat& mask);
+
 

@@ -3,6 +3,22 @@
 #include "ofxNiAlgorithm.h"
 
 
+class ofJoint
+{
+public:
+	ofJoint(){valid = false;}
+
+	bool isValid() const { return valid; }
+	ofPoint getPos() const { return pos; }
+	operator ofPoint(){return pos;}
+
+private:
+	bool valid;
+	ofPoint pos;
+
+	friend class ColorFingerTracker;
+};
+
 class ColorFingerTracker : public ofxNiAlgorithm
 {
 public:
@@ -11,19 +27,21 @@ public:
 	virtual void draw();
 
 	virtual void setupGui();
-
-	virtual void customSetup();
-
-	bool isValid() const { return valid; }
-
 protected:
 
-	bool valid;
-	ofPoint fingMean;
-	ofPoint fingDir;
+	ofJoint fingerTip;
+	ofJoint fingerBase;
+	ofJoint wrist;
+	ofJoint shoulder;
 
-	ofxUISlider* satThreshold;
-	ofxUISlider* valueThreshold;
+	
+	ofxUIRangeSlider* satRange;
+	ofxUIRangeSlider* valRange;
 
+	ofxUISlider* redSlider;
+	ofxUISlider* yellowSlider;
+	ofxUISlider* greenSlider;
+
+	ofxUISlider* hueRange;
 };
 
