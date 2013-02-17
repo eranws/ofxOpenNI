@@ -8,24 +8,16 @@
 void ColorFingerTracker::update()
 {
 	ofPtr<ofPixels> colorPixels = colorStream->getPixels();
-	cv::Mat colorMat = ofxCv::toCv(*colorPixels);
-	cvtColor(colorMat,colorMat,CV_RGB2BGR);	
+	const cv::Mat colorMat = ofxCv::toCv(*colorPixels);
+	
 	ofPtr<ofShortPixels> depthPixels = depthStream->getPixels();
-	cv::Mat depthMat = ofxCv::toCv(*depthPixels);
+	const cv::Mat depthMat = ofxCv::toCv(*depthPixels);
 
-	vector<cv::Mat> mvrgb;
-	cv::split(colorMat, mvrgb);
-	//showMat(mvrgb[0]);
-	//showMat(mvrgb[1]);
-	//showMat(mvrgb[2]);
-
-
-
-	cv::Mat hsv;
-	cvtColor(colorMat,hsv,CV_BGR2HSV);
+	cv::Mat colorMatHsv;
+	cvtColor(colorMat,colorMatHsv,CV_RGB2HSV);
 
 	vector<cv::Mat> mv;
-	cv::split(hsv, mv);
+	cv::split(colorMatHsv, mv);
 	//showMat(mv[0]);
 	//showMat(mv[1]);
 	//showMat(mv[2]);
@@ -41,7 +33,7 @@ void ColorFingerTracker::update()
 	//showMat(mask);
 
 	vector<cv::Mat> mv2;
-	cv::split(hsv, mv2);
+	cv::split(colorMatHsv, mv2);
 	mv2[0] = mv[0];
 	mv2[1] = basicMask;
 	mv2[2] = basicMask;
@@ -49,7 +41,7 @@ void ColorFingerTracker::update()
 	cv::Mat hsv2;
 	cv::merge(mv2, hsv2);
 	cvtColor(hsv2,hsv2,CV_HSV2BGR);
-	//showMat(hsv2);
+	showMat(hsv2);
 
 
 	cv::morphologyEx(basicMask, basicMask, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7)));
@@ -135,9 +127,7 @@ void ColorFingerTracker::update()
 
 				cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
 				fingMean = ofPoint(pca.mean.at<float>(0), pca.mean.at<float>(1), pca.mean.at<float>(2));
-				fingDir = ofPoint(pca.eigenvectors.at<float>(0, 0),
-					pca.eigenvectors.at<float>(0, 1),
-					pca.eigenvectors.at<float>(0, 2));
+				fingDir = ofPoint(pca.eigenvectors.at<float>(0, 0), pca.eigenvectors.at<float>(0, 1), pca.eigenvectors.at<float>(0, 2));
 				valid = true;
 
 
@@ -164,7 +154,7 @@ void ColorFingerTracker::setupGui()
 	float dim = 16; 
 	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 
 	float length = 255-xInit; 
-
+	
 	satThreshold = gui->addSlider("satThreshold", 0.0, 255.0, 160, length-xInit, dim);
 	valueThreshold = gui->addSlider("hueThreshold", 0.0, 255.0, 150, length-xInit, dim);		
 

@@ -247,7 +247,6 @@ void testApp::update(){
 	// TODO: opencvCommon?
 	ofPtr<ofPixels> colorPixels = colorStream.getPixels();
 	cv::Mat colorMat = ofxCv::toCv(*colorPixels);
-	cvtColor(colorMat,colorMat,CV_RGB2BGR);	
 
 	ofPtr<ofShortPixels> depthPixels = depthStream.getPixels();
 	depthMat = ofxCv::toCv(*depthPixels);
@@ -272,8 +271,8 @@ void testApp::update(){
 				pointCloud.addVertex(real);
 
 				ofColor curBgr = colorPixels->getColor(i, j);
-				ofColor curRgb(curBgr.b, curBgr.g, curBgr.r);//, 255.0f);
-				pointCloud.addColor(curRgb);
+				//ofColor curRgb(curBgr.b, curBgr.g, curBgr.r);//, 255.0f);
+				pointCloud.addColor(curBgr);
 
 			}
 
@@ -955,9 +954,9 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw(){
+	ofPushStyle();
 	ofxProfileThisFunction();
 	ofBackground(0);
-
 	ofSetColor(255);
 
 	ofTexture colorTexture;
@@ -989,8 +988,9 @@ void testApp::draw(){
 
 	depthTexture.allocate(depthPixels);
 	depthTexture.loadData(depthPixels);
+	
+	ofSetColor(255);
 	depthTexture.draw(640,0);
-
 	colorTexture.draw(320,0);
 	depthTexture.draw(320,0);
 
@@ -1001,7 +1001,6 @@ void testApp::draw(){
 
 	scene.draw();
 
-	ofSetColor(255);
 
 	pointCloud.drawVertices();
 
@@ -1368,6 +1367,7 @@ void testApp::draw(){
 
 	keypad.draw();
 
+	ofPushStyle();
 }
 
 #ifdef OPENNI1
