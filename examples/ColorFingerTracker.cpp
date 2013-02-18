@@ -40,6 +40,8 @@ void ColorFingerTracker::update()
 	cv::Mat yellowMask = getHueMask(hue, yellowSlider->getScaledValue(), hueRange->getScaledValue()) & basicMask;
 	cv::Mat greenMask = getHueMask(hue, greenSlider->getScaledValue(), hueRange->getScaledValue()) & basicMask;
 
+	cv::morphologyEx(redMask, redMask, CV_MOP_CLOSE, cv::getStructuringElement(CV_SHAPE_ELLIPSE, cv::Size(5,5)));
+
 
 	vector<cv::Mat> mv2;
 	cv::split(colorMatHsv, mv2);
@@ -155,7 +157,7 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 		int medianZ = getContourMedianZ(biggestContour, depthMat);
 		vector<ofPoint> fingerPoints = getContourRealPoints(biggestContour, depthMat, medianZ, 50);
 
-		if (fingerPoints.size() > 0)
+		if (fingerPoints.size() > 10)
 		{
 			cv::Mat pcaset(fingerPoints.size(), 3, CV_32FC1);
 			for (int i = 0; i < pcaset.rows; i++)
@@ -173,27 +175,18 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 
 			cv::minMaxIdx(pcaProj.col(0), &minVal, &maxVal);
 
-			//TODO: stabilize point
-			cv::Mat baseTip = cv::Mat::zeros(2, 3, CV_32FC1);
+			ofPoint ev1(pca.eigenvectors.at<float>(0, 0),
+				pca.eigenvectors.at<float>(0, 1),
+				pca.eigenvectors.at<float>(0, 2));
 
-			baseTip.at<float>(0, 0) = minVal;
-			baseTip.at<float>(1, 0) = maxVal;
+			ofPoint pcaMean(pca.mean.at<float>(0),
+				pca.mean.at<float>(1),
+				pca.mean.at<float>(2));
 
-			pca.backProject(baseTip, baseTip);
-
-			ofPoint minPoint(baseTip.at<float>(0, 0), baseTip.at<float>(0, 1), baseTip.at<float>(0, 2));
-			ofPoint maxPoint(baseTip.at<float>(1, 0), baseTip.at<float>(1, 1), baseTip.at<float>(1, 2));
-
-			if ((wrist.isValid() && minPoint.distance(wrist) > maxPoint.distance(wrist)) ||
-				(fingerKnuckle.isValid() &&  minPoint.distance(fingerKnuckle) > maxPoint.distance(fingerKnuckle)) ||
-				minPoint.z < maxPoint.z)
-				{
-					swap(minPoint, maxPoint);
-				}
+			if (ev1.x < 0) ev1 = -ev1; //force point towards screen ('x': sensor on ceiling, rotated 90deg)
 			
-			
-			fingerTip.pos = maxPoint;
-			fingerBase.pos = minPoint;
+			fingerTip.pos = pcaMean + ev1 * maxVal;
+			fingerBase.pos = pcaMean + ev1 * minVal;
 
 			fingerTip.valid = true;
 			fingerBase.valid = true;

@@ -71,8 +71,8 @@ void testApp::setup() {
 	faceTracker.setup();
 
 	sceneCam.setGlobalPosition(0,0,0);
-	sceneCam.setTarget(ofPoint(0, 0, 3000));
-	sceneCam.setDistance(2000);
+	sceneCam.setTarget(ofPoint(0, 0, 1500));
+	sceneCam.setDistance(1000);
 
 	setupGui(); 
 
