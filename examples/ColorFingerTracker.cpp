@@ -183,7 +183,7 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 				pca.mean.at<float>(1),
 				pca.mean.at<float>(2));
 
-			if (ev1.x < 0) ev1 = -ev1; //force point towards screen ('x': sensor on ceiling, rotated 90deg)
+			if (ev1.x > 0) ev1 = -ev1; //force point towards screen ('x': sensor on ceiling, rotated 90deg)
 			
 			fingerTip.pos = pcaMean + ev1 * maxVal;
 			fingerBase.pos = pcaMean + ev1 * minVal;

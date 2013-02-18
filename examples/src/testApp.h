@@ -89,6 +89,7 @@ private:
 	void setupGui(); 
 	void guiEvent(ofxUIEventArgs &e);
 	void dumpGroundTruth();
+	void drawDebugScreenPoint( ofVec2f hwscreenPoint );
 	ofxUIToggle* guiAutoHide;
 	ofxUIToggle* playToggle;
 	ofxUIToggle* faceToggle; 
@@ -168,7 +169,42 @@ private:
 	cv::Mat WxMat;
 	cv::Mat WyMat;
 
+	
+	struct ScreenCorners
+	{
 
+	public:
+
+		ScreenCorners() : name("ScreenCorners.txt")
+		{
+			ofBuffer buf = ofBufferFromFile(name);
+			if (buf.size() > 0)
+			{
+				stringstream ss;
+				ss.str(buf.getFirstLine());
+				ss >> tl;
+				ss.ignore(1); //space
+				ss >> tr;
+				ss.ignore(1); //space
+				ss >> bl;
+			}
+		}
+		~ScreenCorners()
+		{
+			stringstream ss;
+			ss << tl << " " << tr << " " << bl;
+
+			ofBuffer buf(ss.str());
+			ofBufferToFile(name, buf);
+
+		}
+		bool isReady() {return (tl != ofPoint() && tr != ofPoint() && bl != ofPoint());}
+		ofPoint tl, tr, bl;
+		const string name;
+
+
+	} sc;
+	
 };
 
 #endif

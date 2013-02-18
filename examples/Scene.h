@@ -32,8 +32,10 @@ public:
 
 	}
 
+	ofPoint getIntersectionPointWithLine( ofPoint p1, ofPoint p2, ofPoint p3, ofPoint p4, ofPoint p5);
 	ofPoint getIntersectionPointWithLine(ofPoint p1, ofPoint p2);
 	ofVec2f getScreenPointFromWorld(ofPoint);
+	ofVec2f getScreenPointFromWorld(ofPoint tl, ofPoint tr, ofPoint bl, ofPoint q);
 
 
 };

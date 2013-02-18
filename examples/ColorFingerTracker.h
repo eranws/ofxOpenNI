@@ -11,7 +11,10 @@ public:
 
 	bool isValid() const { return valid; }
 	ofPoint getPos() const { return pos; }
+
+	operator bool(){return valid;}
 	operator ofPoint(){return pos;}
+
 
 private:
 	bool valid;
@@ -29,6 +32,10 @@ public:
 
 	virtual void setupGui();
 
+	ofJoint getFingerTip() const { return fingerTip; }
+	ofJoint getFingerBase() const { return fingerBase; }
+
+
 protected:
 
 
@@ -42,6 +49,7 @@ protected:
 	ofJoint fingerKnuckle;	//yellow region
 	ofJoint wrist;
 	ofJoint shoulder;
+
 
 	
 	ofxUIRangeSlider* satRange;

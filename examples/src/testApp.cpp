@@ -1087,6 +1087,8 @@ void testApp::draw(){
 
 	colorFingerTracker.draw();
 
+	
+
 
 #define camlog(func) {debugString << #func << " : " << sceneCam.func() << endl;}
 	camlog(getDistance);
@@ -1235,20 +1237,27 @@ void testApp::draw(){
 	ofDisableBlendMode();
 	ofPopMatrix();
 
+	ofPoint kScreenIntersectionPoint;
+	if (sc.isReady() && colorFingerTracker.getFingerTip().isValid() && colorFingerTracker.getFingerBase().isValid())
+	{
+		kScreenIntersectionPoint = scene.screen.getIntersectionPointWithLine(sc.tl, sc.tr, sc.bl, colorFingerTracker.getFingerTip(), colorFingerTracker.getFingerBase());
+		ofLine(colorFingerTracker.getFingerTip(), kScreenIntersectionPoint);
+
+	}
 	sceneCam.end();
 
 	//2D (gui) drawing
+	if (sc.isReady() && colorFingerTracker.getFingerTip().isValid() && colorFingerTracker.getFingerBase().isValid())
+	{
+		ofVec2f kScreenPoint = scene.screen.getScreenPointFromWorld(sc.tl, sc.tr, sc.bl, kScreenIntersectionPoint);
+		drawDebugScreenPoint(kScreenPoint);
+	}
+
 
 	if (drawFingerHistory->getValue() && fingerHistory.size() == fingerHistorySize && fingerHistoryScreenIntersectionPoint != ofPoint())
 	{
-		ofSetColor(ofColor::yellow);
 		ofVec2f hwscreenPoint = scene.screen.getScreenPointFromWorld(fingerHistoryScreenIntersectionPoint);
-		ofCircle(hwscreenPoint, 10);
-		ofLine(ofGetScreenWidth()/2, ofGetScreenHeight()/2, hwscreenPoint.x, hwscreenPoint.y);
-		ofCircle(0, hwscreenPoint.y, 10);
-		ofCircle(ofGetScreenWidth(), hwscreenPoint.y, 10);
-		ofCircle(hwscreenPoint.x, 0, 10);
-		ofCircle(hwscreenPoint.x, ofGetScreenHeight(), 10);
+		drawDebugScreenPoint(hwscreenPoint);
 	}
 
 
@@ -1490,10 +1499,8 @@ void testApp::keyPressed(int key){
 	{
 		switch (key)
 		{
-			//case '1': drawDebugString = !drawDebugString; break;
-			//case '2': showProfilerString = !showProfilerString; break;
+			
 		case 'C': ofxProfile::clear(); break;
-
 		case 'f': fullScreenToggle->toggleValue(); fullScreenToggle->triggerSelf(); break;
 			//case 'g': guiAutoHide->toggleValue(); guiAutoHide->triggerSelf(); break;
 		case ' ': playToggle->toggleValue(); playToggle->triggerSelf(); break;
@@ -1502,6 +1509,22 @@ void testApp::keyPressed(int key){
 
 		default:
 			break;
+		}
+
+		ofJoint ft = colorFingerTracker.getFingerTip();
+		if (ft)
+		{
+			switch (key)
+			{
+
+			case 'q': sc.tl = ft; break;
+			case 'w': sc.tr = ft; break;
+			case 'a': sc.bl = ft; break;
+			default:
+				break;
+
+		
+			}
 		}
 	}
 
@@ -1780,4 +1803,36 @@ void testApp::dumpGroundTruth()
 		clicks.clear();
 		of.close();
 	}
+}
+
+void testApp::drawDebugScreenPoint( ofVec2f hwscreenPoint )
+{
+	int radius = 10;
+
+	
+	int edge = 10;
+	ofVec2f p(CLAMP(hwscreenPoint.x, edge, ofGetScreenHeight() - edge), CLAMP(hwscreenPoint.y, edge, ofGetScreenWidth() - edge));
+	ofVec2f t(hwscreenPoint.x, 0);
+	ofVec2f b(hwscreenPoint.x, ofGetScreenHeight());
+	ofVec2f r(ofGetScreenWidth(), hwscreenPoint.y);
+	ofVec2f l(0, hwscreenPoint.y);
+	
+	ofPushStyle();
+	
+	ofNoFill();
+	ofSetColor(ofColor::yellow);
+	ofCircle(hwscreenPoint, radius);
+
+	ofLine(hwscreenPoint, t);
+	ofLine(hwscreenPoint, b);
+	ofLine(hwscreenPoint, r);
+	ofLine(hwscreenPoint, l);
+
+	ofFill();
+	ofSetColor(ofColor::red);
+	ofCircle(hwscreenPoint, radius / 2);
+
+	//ofVec2f c(ofGetScreenWidth()/2, ofGetScreenHeight()/2);
+	//ofLine(c, p);
+	ofPopStyle();
 }

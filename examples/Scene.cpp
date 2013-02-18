@@ -40,14 +40,11 @@ void SceneItem::customDraw()
 
 }
 
+
 // http://mathworld.wolfram.com/Line-PlaneIntersection.html
-ofPoint Screen::getIntersectionPointWithLine( ofPoint p4, ofPoint p5 )
+ofPoint Screen::getIntersectionPointWithLine( ofPoint p1, ofPoint p2, ofPoint p3, ofPoint p4, ofPoint p5)
 {
-	ofPoint hs = getScale() / 2; //= halfScale 
-	ofPoint p1 = getPosition() + ofPoint(+hs.x, +hs.y, 0);
-	ofPoint p2 = getPosition() + ofPoint(-hs.x, +hs.y, 0);
-	ofPoint p3 = getPosition() + ofPoint(-hs.x, -hs.y, 0);
-	
+
 	float t =
 		-ofMatrix4x4(
 		1   ,1   ,1   ,1   ,
@@ -68,6 +65,15 @@ ofPoint Screen::getIntersectionPointWithLine( ofPoint p4, ofPoint p5 )
 	return res;
 }
 
+ofPoint Screen::getIntersectionPointWithLine( ofPoint p4, ofPoint p5 )
+{
+	ofPoint hs = getScale() / 2; //= halfScale 
+	ofPoint p1 = getPosition() + ofPoint(+hs.x, +hs.y, 0);
+	ofPoint p2 = getPosition() + ofPoint(-hs.x, +hs.y, 0);
+	ofPoint p3 = getPosition() + ofPoint(-hs.x, -hs.y, 0);
+	return getIntersectionPointWithLine(p1, p2, p3, p4, p5);
+}
+
 ofVec2f Screen::getScreenPointFromWorld(ofPoint p)
 {
 	ofPoint hs = getScale() / 2; //= halfScale 
@@ -75,6 +81,21 @@ ofVec2f Screen::getScreenPointFromWorld(ofPoint p)
 	
 	ofVec2f res((dp.x + p.x) * ofGetScreenWidth()  / getScale().x,
 		(dp.y - p.y) * ofGetScreenHeight() / getScale().y);
+
+	return res;
+}
+
+ofVec2f Screen::getScreenPointFromWorld(ofPoint tl, ofPoint tr, ofPoint bl, ofPoint q)
+{
+	ofVec3f vx = (tr-tl).normalize();
+	ofVec3f vy = (bl-tl).normalize();
+	ofVec3f v = (q-tl);
+
+	float qMapX = v.dot(vx);
+	float qMapY = v.dot(vy);
+
+	ofVec2f res(qMapX * ofGetScreenWidth()  / getScale().x,  qMapY * ofGetScreenHeight() / getScale().y);
+
 
 	return res;
 }
