@@ -52,7 +52,7 @@ void ColorFingerTracker::update()
 	cv::Mat hsv2;
 	cv::merge(mv2, hsv2);
 	cvtColor(hsv2,hsv2, CV_HSV2BGR);
-	//showMat(hsv2);
+	
 
 
 	//detectKnuckle(yellowMask, depthMat);
@@ -164,7 +164,7 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 			{
 				pcaset.at<float>(i, 0) = fingerPoints[i].x;
 				pcaset.at<float>(i, 1) = fingerPoints[i].y;
-				pcaset.at<float>(i, 2) = fingerPoints[i].z;
+				pcaset.at<float>(i, 2) = medianZ; //fingerPoints[i].z; HACKHACK, z values are rubbish
 			}
 			cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
 
