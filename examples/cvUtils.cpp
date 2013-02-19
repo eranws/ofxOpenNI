@@ -64,7 +64,7 @@ std::vector<cv::Point> getBiggestContour(const cv::Mat& mask)
 
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours( mask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
+	cv::findContours( mask.clone(), contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE ); //Find the Contour BLOBS
 	if( !contours.empty() && !hierarchy.empty() )
 	{
 		int idx = 0;
@@ -97,4 +97,14 @@ int getContourMedianZ( std::vector<cv::Point> contour, const cv::Mat& depthMat )
 		if (z > 0) zValues.push_back(z);
 	}
 	return median(zValues);
+}
+
+ofPoint toProj( const openni::VideoStream& stream, ofPoint real )
+{
+	ofPoint proj;
+	openni::CoordinateConverter::convertWorldToDepth(stream,
+		real.x, real.y, real.z,
+		&proj.x, &proj.y, &proj.z);
+
+	return proj;
 }

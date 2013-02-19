@@ -33,3 +33,9 @@ cv::Mat getHueMask( const cv::Mat& hueMat, int hue, int range );
 std::vector<cv::Point> getBiggestContour(const cv::Mat& mask);
 
 int getContourMedianZ( std::vector<cv::Point> contour, const cv::Mat& depthMat );
+
+
+
+ofPoint toProj(const openni::VideoStream& stream, ofPoint real);
+
+
