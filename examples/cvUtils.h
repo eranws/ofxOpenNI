@@ -38,5 +38,5 @@ int getContourMedianZ( std::vector<cv::Point> contour, const cv::Mat& depthMat )
 
 
 ofPoint toProj(const openni::VideoStream& stream, ofPoint real);
-
+ofPoint toReal(const openni::VideoStream& stream, const cv::Mat depthMat, int i, int j);
 

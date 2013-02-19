@@ -82,7 +82,14 @@ std::vector<cv::Point> getBiggestContour(const cv::Mat& mask)
 		}
 		
 		biggest = contours[idx];
+
+		cv::Mat m;
+		cvtColor(mask, m, CV_GRAY2RGB);
+		cv::drawContours(m, contours, idx, CV_RGB(255,0,0));
+		showMat(m);
 	}
+
+	
 
 	return biggest;
 }
@@ -107,4 +114,17 @@ ofPoint toProj( const openni::VideoStream& stream, ofPoint real )
 		&proj.x, &proj.y, &proj.z);
 
 	return proj;
+}
+
+
+
+ofPoint toReal(const openni::VideoStream& stream, const cv::Mat depthMat, int i, int j) 
+{
+	ofPoint real;
+
+	openni::CoordinateConverter::convertDepthToWorld(stream,
+		i, j, depthMat.at<ushort>(j, i),
+		&real.x, &real.y, &real.z);
+
+	return real;
 }

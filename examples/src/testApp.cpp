@@ -134,16 +134,6 @@ void testApp::setup() {
 
 
 
-ofPoint projToReal(const openni::VideoStream& stream, const cv::Mat depthMat, int i, int j) 
-{
-	ofPoint real;
-
-	openni::CoordinateConverter::convertDepthToWorld(stream,
-		j, i, depthMat.at<ushort>(i,  j),
-		&real.x, &real.y, &real.z);
-
-	return real;
-}
 
 
 

@@ -96,7 +96,6 @@ vector<ofPoint> ColorFingerTracker::getContourRealPoints( std::vector<cv::Point>
 		ushort z = depthMat.at<ushort>(pt);
 		if (abs(z  - medianZ) < range)
 		{			ofPoint real;			openni::CoordinateConverter::convertDepthToWorld(*depthStream->getStream(), pt.x, pt.y, z, &real.x, &real.y, &real.z);			points.push_back(real);
-			//realPts.push_back(cv::Matx13f(real.x, real.y, real.z));
 
 		}
 	}
@@ -154,17 +153,34 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 	std::vector<cv::Point> biggestContour = getBiggestContour(fingerMask);
 	if (!biggestContour.empty())
 	{
-		int medianZ = getContourMedianZ(biggestContour, depthMat);
-		vector<ofPoint> fingerPoints = getContourRealPoints(biggestContour, depthMat, medianZ, 50);
 
-		if (fingerPoints.size() > 10)
+		int medianZ = getContourMedianZ(biggestContour, depthMat);
+
+		cv::Mat m = cv::Mat::zeros(fingerMask.size(), CV_8UC1);
+		cv::fillConvexPoly(m, &biggestContour[0], biggestContour.size(), CV_RGB(255, 255, 255));
+		cv::morphologyEx(m, m, CV_MOP_CLOSE, cv::getStructuringElement(CV_SHAPE_ELLIPSE, cv::Size(5, 5)));
+	
+		cv::Mat depthmask;
+		absdiff(depthMat, medianZ, depthmask);
+		depthmask = depthmask < 50;
+		m &= depthmask;
+
+		int sz = cv::countNonZero(m);
+		if (biggestContour.size() > 10 && sz > 0)
 		{
-			cv::Mat pcaset(fingerPoints.size(), 3, CV_32FC1);
-			for (int i = 0; i < pcaset.rows; i++)
+			cv::Mat pcaset(sz, 2, CV_32FC1);
+			int i = 0;
+			for (int y = 0; y < m.rows; y++) //TODO: optimize by iterating on enclosing rect
 			{
-				pcaset.at<float>(i, 0) = fingerPoints[i].x;
-				pcaset.at<float>(i, 1) = fingerPoints[i].y;
-				pcaset.at<float>(i, 2) = medianZ; //fingerPoints[i].z; HACKHACK, z values are rubbish
+				for (int x = 0; x < m.cols; x++)
+				{
+					if (m.at<uchar>(y,x) > 0)
+					{
+						pcaset.at<float>(i, 0) = x;
+						pcaset.at<float>(i, 1) = y;
+						i++;
+					}
+				}
 			}
 			cv::PCA pca(pcaset, cv::Mat(), CV_PCA_DATA_AS_ROW);
 
@@ -175,18 +191,22 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 
 			cv::minMaxIdx(pcaProj.col(0), &minVal, &maxVal);
 
-			ofPoint ev1(pca.eigenvectors.at<float>(0, 0),
-				pca.eigenvectors.at<float>(0, 1),
-				pca.eigenvectors.at<float>(0, 2));
-
-			ofPoint pcaMean(pca.mean.at<float>(0),
-				pca.mean.at<float>(1),
-				pca.mean.at<float>(2));
-
+			ofPoint ev1(pca.eigenvectors.at<float>(0, 0) ,pca.eigenvectors.at<float>(0, 1));
+			ofPoint pcaMean(pca.mean.at<float>(0), pca.mean.at<float>(1));
+			
 			if (ev1.x > 0) ev1 = -ev1; //force point towards screen ('x': sensor on ceiling, rotated 90deg)
 			
-			fingerTip.pos = pcaMean + ev1 * maxVal;
-			fingerBase.pos = pcaMean + ev1 * minVal;
+			ofPoint tip = pcaMean + ev1 * maxVal * 0.8;
+			ofPoint base = pcaMean + ev1 * minVal * 0.8;
+
+			
+			fingerTip.pos = toReal(*depthStream->getStream(), depthMat, tip.x, tip.y);
+			fingerBase.pos = toReal(*depthStream->getStream(), depthMat, base.x, base.y);
+
+			
+			fingerTip.pos.z = medianZ;
+			fingerBase.pos.z = medianZ; 
+			
 
 			fingerTip.valid = true;
 			fingerBase.valid = true;
