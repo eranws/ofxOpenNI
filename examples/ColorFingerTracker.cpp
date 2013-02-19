@@ -96,7 +96,6 @@ vector<ofPoint> ColorFingerTracker::getContourRealPoints( std::vector<cv::Point>
 		ushort z = depthMat.at<ushort>(pt);
 		if (abs(z  - medianZ) < range)
 		{			ofPoint real;			openni::CoordinateConverter::convertDepthToWorld(*depthStream->getStream(), pt.x, pt.y, z, &real.x, &real.y, &real.z);			points.push_back(real);
-
 		}
 	}
 	return points;
@@ -118,8 +117,8 @@ void ColorFingerTracker::detectWrist( cv::Mat wristMask, const cv::Mat depthMat 
 			}
 			wristMean /= fingerPoints.size();
 
-			wrist.pos = wristMean;
-			wrist.valid = true;
+			wrist.setPos(wristMean);
+			wrist.setValid(true);
 		}
 	}
 }
@@ -140,8 +139,8 @@ void ColorFingerTracker::detectKnuckle( cv::Mat knuckleMask, const cv::Mat depth
 			}
 			knuckleMean /= knucklePoints.size();
 
-			fingerKnuckle.pos = knuckleMean;
-			fingerKnuckle.valid = true;
+			fingerKnuckle.setPos(knuckleMean);
+			fingerKnuckle.setValid(true);
 		}
 	}
 }
@@ -199,17 +198,18 @@ void ColorFingerTracker::detectFinger( const cv::Mat& fingerMask, const cv::Mat&
 			ofPoint tip = pcaMean + ev1 * maxVal * 0.8;
 			ofPoint base = pcaMean + ev1 * minVal * 0.8;
 
+			ofPoint tipReal = toReal(*depthStream->getStream(), depthMat, tip.x, tip.y);
+			ofPoint baseReal = toReal(*depthStream->getStream(), depthMat, base.x, base.y);
 			
-			fingerTip.pos = toReal(*depthStream->getStream(), depthMat, tip.x, tip.y);
-			fingerBase.pos = toReal(*depthStream->getStream(), depthMat, base.x, base.y);
-
-			
-			fingerTip.pos.z = medianZ;
-			fingerBase.pos.z = medianZ; 
+			tipReal.z = medianZ;
+			baseReal.z = medianZ; 
 			
 
-			fingerTip.valid = true;
-			fingerBase.valid = true;
+			fingerTip.setPos(tipReal);
+			fingerBase.setPos(baseReal);
+		
+			fingerTip.setValid(true);
+			fingerBase.setValid(true);
 		}
 	}
 }

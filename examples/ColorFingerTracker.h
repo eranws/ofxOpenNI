@@ -10,7 +10,23 @@ public:
 	ofJoint(){valid = false;}
 
 	bool isValid() const { return valid; }
+	void setValid(bool val)
+	{
+		valid = val;
+		if (!val)
+		{
+			prev = ofPoint();
+		}
+	}
+
 	ofPoint getPos() const { return pos; }
+	void setPos(ofPoint val)
+	{
+		if (prev == ofPoint()) prev = val;
+		const float a = 0.7;
+		pos = a * val + (1-a) * prev;
+		prev = pos;
+	}
 
 	operator bool(){return valid;}
 	operator ofPoint(){return pos;}
@@ -20,7 +36,7 @@ private:
 	bool valid;
 	ofPoint pos;
 
-	friend class ColorFingerTracker;
+	ofPoint prev;
 };
 
 class ColorFingerTracker : public ofxNiAlgorithm
