@@ -16,8 +16,9 @@
 
 
 template <class T>
-T median(std::vector<T> &v)
+T median(const std::vector<T> &v1)
 {
+	std::vector<T> v = v1;
 	if (v.empty()) return 0;
 	size_t n = v.size() / 2;
 	nth_element(v.begin(), v.begin()+n, v.end());
