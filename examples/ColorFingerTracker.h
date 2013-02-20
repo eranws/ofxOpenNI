@@ -46,7 +46,7 @@ public:
 	virtual void update();
 	virtual void draw();
 
-	virtual void setupGui();
+	virtual void customSetupGui();
 
 	ofJoint getFingerTip() const { return fingerTip; }
 	ofJoint getFingerBase() const { return fingerBase; }

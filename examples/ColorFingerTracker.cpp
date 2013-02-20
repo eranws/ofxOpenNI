@@ -66,7 +66,7 @@ void ColorFingerTracker::update()
 
 
 
-void ColorFingerTracker::setupGui()
+void ColorFingerTracker::customSetupGui()
 {
 	float dim = 16; 
 	float xInit = OFX_UI_GLOBAL_WIDGET_SPACING; 
