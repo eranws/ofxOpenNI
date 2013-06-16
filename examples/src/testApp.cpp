@@ -1507,9 +1507,9 @@ void testApp::keyPressed(int key){
 			switch (key)
 			{
 
-			case 'q': sc.tl = ft; break;
-			case 'w': sc.tr = ft; break;
-			case 'a': sc.bl = ft; break;
+			case 'Q': sc.tl = ft; break;
+			case 'W': sc.tr = ft; break;
+			case 'A': sc.bl = ft; break;
 			default:
 				break;
 
