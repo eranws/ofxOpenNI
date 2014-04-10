@@ -35,9 +35,6 @@
 #include "ofxOpenNIUtils.h"
 #include "ofxOpenNITypes.h"
 
-using namespace openni;
-using namespace nite;
-
 class ofxOpenNI : public ofThread {
     
 public:
@@ -45,8 +42,9 @@ public:
     ofxOpenNI();
     ~ofxOpenNI();
     
-    bool setup();
-    
+    bool setup(const char* deviceUri = openni::ANY_DEVICE);
+    static void shutdown();
+
     void start();
     void stop();
     
@@ -94,12 +92,12 @@ protected:
     VideoFrameRef depthFrame;
     VideoFrameRef imageFrame;
     
-    HandTracker handTracker;
-    HandTrackerFrameRef handFrame;
+    nite::HandTracker handTracker;
+    nite::HandTrackerFrameRef handFrame;
     map<int, ofxOpenNIHand> trackedHands;
     
-    UserTracker userTracker;
-    UserTrackerFrameRef userFrame;
+    nite::UserTracker userTracker;
+    nite::UserTrackerFrameRef userFrame;
     map<int, ofxOpenNIUser> trackedUsers;
     
     ofTexture depthTexture;

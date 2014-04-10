@@ -36,11 +36,11 @@ ofxOpenNI::ofxOpenNI(){
 
 //--------------------------------------------------------------
 ofxOpenNI::~ofxOpenNI(){
-    stop();
+//    stop();
 }
 
 //--------------------------------------------------------------
-bool ofxOpenNI::setup(){
+bool ofxOpenNI::setup(const char* deviceUri){
     
     openni::Status rc = OpenNI::initialize();
     if (rc != openni::STATUS_OK) {
@@ -48,7 +48,7 @@ bool ofxOpenNI::setup(){
         bUseDevice = false;
     }
     
-    const char* deviceUri = ANY_DEVICE;
+    
     
     rc = device.open(deviceUri);
     if (rc != openni::STATUS_OK) {
@@ -62,6 +62,11 @@ bool ofxOpenNI::setup(){
     
     return bUseDevice;
     
+}
+
+void ofxOpenNI::shutdown()
+{
+	openni::OpenNI::shutdown();
 }
 
 //--------------------------------------------------------------
@@ -151,7 +156,7 @@ bool ofxOpenNI::addUserTracker(){
     }
     
     if(!bUseNite){
-        NiTE::initialize();
+        nite::NiTE::initialize();
         bUseNite = true;
     }
     
@@ -185,7 +190,7 @@ bool ofxOpenNI::addHandsTracker(){
     }
     
     if(!bUseNite){
-        NiTE::initialize();
+        nite::NiTE::initialize();
         bUseNite = true;
     }
     
@@ -200,8 +205,8 @@ bool ofxOpenNI::addHandsTracker(){
         
         ofLogNotice() << "Succeeded to add hand tracker";
         
-        handTracker.startGestureDetection(GESTURE_WAVE);
-        handTracker.startGestureDetection(GESTURE_CLICK);
+        handTracker.startGestureDetection(nite::GESTURE_WAVE);
+        handTracker.startGestureDetection(nite::GESTURE_CLICK);
         
         bUseHands = true;
     }
@@ -243,12 +248,19 @@ void ofxOpenNI::stop(){
     if(isThreadRunning()){
         ofLogNotice() << "Stopping ofxOpenNI!";
         stopThread();
+		waitForThread(true);
     }
-    
-    if(bUseDevice){
+
+
+	if(bUseDevice){
+		depthStream.destroy();
+		imageStream.destroy();
+   
         ofLogNotice() << "Closing openNI device" << device.getDeviceInfo().getName();
         device.close();
     }
+    
+    
     
     depthWidth = depthHeight = 0.0f;
     imageWidth = imageHeight = 0.0f;
@@ -300,7 +312,7 @@ void ofxOpenNI::updateGenerators(){
     
     unlock();
 
-    ofSleepMillis(30);
+    //ofSleepMillis(10);
     
 }
 
@@ -344,7 +356,7 @@ void ofxOpenNI::updateUserFrame(){
     if(userFrame.isValid()){
         const nite::Array<nite::UserData>& users = userFrame.getUsers();
         for(int i = 0; i < users.getSize(); ++i){
-            const UserData& user = users[i];
+            const nite::UserData& user = users[i];
             
             if(user.isNew()){
                 ofLogNotice() << "Found user id: " << user.getId();
@@ -424,20 +436,20 @@ void ofxOpenNI::updateHandFrame(){
         const nite::Array<nite::GestureData>& gestures = handFrame.getGestures();
         for(int i = 0; i < gestures.getSize(); ++i){
             if(gestures[i].isComplete()){
-                const Point3f& position = gestures[i].getCurrentPosition();
+                const nite::Point3f& position = gestures[i].getCurrentPosition();
                 ofLogNotice() << "Detected hand gesture: " << gestures[i].getType() << " at " << position.x << ", " << position.y << ", " << position.z;
-                HandId newId;
+                nite::HandId newId;
                 handTracker.startHandTracking(gestures[i].getCurrentPosition(), &newId);
             }
         }
         
         const nite::Array<nite::HandData>& hands = handFrame.getHands();
         for(int i = 0; i < hands.getSize(); ++i){
-            const HandData& hand = hands[i];
+            const nite::HandData& hand = hands[i];
             
             if(!hand.isTracking()){
                 ofLogNotice() << "Lost hand id: " << hand.getId();
-                HandId id = hand.getId();
+                nite::HandId id = hand.getId();
                 trackedHands.erase(trackedHands.find(id));
             }else{
                 if(hand.isNew()){
@@ -461,21 +473,23 @@ void ofxOpenNI::updateHandFrame(){
 
 //--------------------------------------------------------------
 bool ofxOpenNI::isDepthFrameNew(){
-    ofScopedLock lock(mutex);
+    //ofScopedLock lock(mutex);
     return bIsDepthFrameNew;
 }
 
 //--------------------------------------------------------------
 bool ofxOpenNI::isImageFrameNew(){
-    ofScopedLock lock(mutex);
+    //ofScopedLock lock(mutex);
     return bIsImageFrameNew;
 }
 
 //--------------------------------------------------------------
 void ofxOpenNI::threadedFunction(){
-    while (isThreadRunning()) {
+
+	while (isThreadRunning()) {
         updateGenerators();
     }
+	
 }
 
 //--------------------------------------------------------------
