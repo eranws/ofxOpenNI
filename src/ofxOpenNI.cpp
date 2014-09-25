@@ -30,6 +30,7 @@
 
 //--------------------------------------------------------------
 ofxOpenNI::ofxOpenNI(){
+	bUseNite = false;
     stop();
     CreateRainbowPallet();
 }
@@ -66,7 +67,12 @@ bool ofxOpenNI::setup(const char* deviceUri){
 
 void ofxOpenNI::shutdown()
 {
+	ofLogNotice() << "Nite Shutdown";
+	nite::NiTE::shutdown();
+	ofLogNotice() << "Nite Shutdown OK";
+	ofLogNotice() << "Openni Shutdown";
 	openni::OpenNI::shutdown();
+	ofLogNotice() << "Openni Shutdown OK";
 }
 
 //--------------------------------------------------------------
@@ -156,6 +162,7 @@ bool ofxOpenNI::addUserTracker(){
     }
     
     if(!bUseNite){
+		ofLogNotice("Init Nite");
         nite::NiTE::initialize();
         bUseNite = true;
     }
@@ -244,20 +251,39 @@ void ofxOpenNI::start(){
 
 //--------------------------------------------------------------
 void ofxOpenNI::stop(){
-    
+    ofLogNotice("Stopping ofxOpenNI");
     if(isThreadRunning()){
-        ofLogNotice() << "Stopping ofxOpenNI!";
+		ofLogNotice("Stopping Thread");
         stopThread();
 		waitForThread(true);
+		ofLogNotice("Stopping Thread ok");
     }
+
+	if(bUseUsers)
+	{
+		ofLogNotice("release userFrame");
+		userFrame.release();
+		ofLogNotice("destroy userTracker");
+		userTracker.destroy();
+	}
+	if(bUseUsers)
+	{
+		ofLogNotice("release handFrame");
+		handFrame.release();
+		ofLogNotice("destroy handTracker");
+		handTracker.destroy();
+	}
 
 
 	if(bUseDevice){
+		ofLogNotice("destroy depthStream");
 		depthStream.destroy();
+		ofLogNotice("destroy imageStream");
 		imageStream.destroy();
    
-        ofLogNotice() << "Closing openNI device" << device.getDeviceInfo().getName();
+        ofLogNotice() << "Closing openNI device: " << device.getDeviceInfo().getName();
         device.close();
+		ofLogNotice() << "Closing openNI device: OK";
     }
     
     
@@ -285,6 +311,7 @@ void ofxOpenNI::update(){
     
     if(!bUseDevice) return;
     
+
     if(isDepthFrameNew()){
        depthTexture.loadData(depthPixels.getPixels(), depthWidth, depthHeight, GL_RGBA);
     }
@@ -394,7 +421,7 @@ void ofxOpenNI::updateUserFrame(){
                 }
                 case nite::SKELETON_CALIBRATING:
                 {
-                    ofLogNotice() << "Skeleton Tracking Started: " << user.getId();
+                    //ofLogNotice() << "Skeleton Tracking Started: " << user.getId();
                     trackedUsers[user.getId()].resetSkeleton();
                     break;
                 }
@@ -485,14 +512,49 @@ bool ofxOpenNI::isImageFrameNew(){
 
 //--------------------------------------------------------------
 void ofxOpenNI::threadedFunction(){
-
 	while (isThreadRunning()) {
         updateGenerators();
     }
-	
 }
 
 //--------------------------------------------------------------
+void ofxOpenNI::drawImageSubsection(float w, float h, float sx, float sy){
+    if(!bUseDevice) return;
+    
+    ofSetColor(255, 255, 255);
+    
+    ofPushMatrix();
+    if(bUseImage){
+        imageTexture.drawSubsection(0, 0, w, h, sx, sy);
+		//0, 0, imageWidth, imageHeight);
+    }
+    ofPopMatrix();
+}
+
+void ofxOpenNI::drawImage(){
+    if(!bUseDevice) return;
+    
+    ofSetColor(255, 255, 255);
+    
+    ofPushMatrix();
+    if(bUseImage){
+        imageTexture.draw(0, 0, imageWidth, imageHeight);
+    }
+    ofPopMatrix();
+}
+
+void ofxOpenNI::drawDepth(){
+    if(!bUseDevice) return;
+    
+    ofSetColor(255, 255, 255);
+    
+    ofPushMatrix();
+    if(bUseDepth){
+        depthTexture.draw(0, 0, depthWidth, depthHeight);
+    }
+    ofPopMatrix();
+}
+
 void ofxOpenNI::draw(){
     if(!bUseDevice) return;
     
@@ -506,9 +568,13 @@ void ofxOpenNI::draw(){
     if(bUseImage){
         imageTexture.draw(0, 0, imageWidth, imageHeight);
     }
-    
     ofPopMatrix();
     
+//	stringstream deviceInfo;
+//	deviceInfo << device.getDeviceInfo().getName() << ":" << device.getDeviceInfo().getUri();
+//	ofDrawBitmapStringHighlight(deviceInfo.str(), 15, 15);
+
+
     if(trackedHands.size() > 0){
         for(map<int, ofxOpenNIHand>::iterator it = trackedHands.begin(); it != trackedHands.end(); ++it){
             ofxOpenNIHand& h = it->second;
@@ -525,3 +591,19 @@ void ofxOpenNI::draw(){
     
     ofSetColor(255, 255, 255);
 }
+
+
+void ofxOpenNI::startRecording(string filename)
+{
+	recorder.create(filename.c_str());
+	recorder.attach(depthStream, true);
+	recorder.attach(imageStream, true);
+	recorder.start();
+}
+void ofxOpenNI::stopRecording()
+{
+	recorder.stop();
+	recorder.destroy();
+}
+
+	

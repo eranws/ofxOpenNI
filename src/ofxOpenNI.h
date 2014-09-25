@@ -50,11 +50,8 @@ public:
     
     bool addDepthStream();
 	bool addImageStream();
-//	bool addInfraGenerator();
 	bool addUserTracker();
-//    bool addGestureGenerator();
     bool addHandsTracker();
-//    bool addAudioGenerator();
     
 //    bool removeDepthGenerator();
 //    bool removeImageGenerator();
@@ -63,13 +60,27 @@ public:
 //    bool removeGestureGenerator();
 //    bool removeHandsGenerator();
 //    bool removeAudioGenerator();
-    
+
+	//Recorder recorder;
+	void stopRecording();
+	void startRecording(string filename = "");
+
+	
+
     void update();
+
+	void drawImageSubsection(float w, float h, float sx, float sy);
+	void drawImage();
+	void drawDepth();
     void draw();
     
     bool isDepthFrameNew();
     bool isImageFrameNew();
     
+	//HACKHACK
+	float imageWidth;
+    float imageHeight;
+
 protected:
     
     void updateGenerators();
@@ -94,24 +105,31 @@ protected:
     
     nite::HandTracker handTracker;
     nite::HandTrackerFrameRef handFrame;
-    map<int, ofxOpenNIHand> trackedHands;
-    
+
+	Recorder recorder;
+
+public:
+	map<int, ofxOpenNIHand> trackedHands;
+protected:
+
     nite::UserTracker userTracker;
     nite::UserTrackerFrameRef userFrame;
+
+public:
     map<int, ofxOpenNIUser> trackedUsers;
+protected:
     
     ofTexture depthTexture;
     ofTexture imageTexture;
     
     ofPixels depthPixels;
+public:
     ofPixels imagePixels;
+protected:
     
     float depthWidth;
     float depthHeight;
-    
-    float imageWidth;
-    float imageHeight;
-    
+        
     bool bIsDepthFrameNew;
     bool bIsImageFrameNew;
     
