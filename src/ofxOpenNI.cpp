@@ -318,38 +318,61 @@ void ofxOpenNI::update(){
 void ofxOpenNI::updateGenerators(){
 
 	openni::Status rc;
-	
-	rc = openni::STATUS_OK;
-	openni::VideoStream* streams[] = {&depthStream, &imageStream};
 
-	int changedIndex = -1;
+	rc = openni::STATUS_OK;
+	openni::VideoStream* streams1[] = {&depthStream};
+
+
+	int changedIndex;
 	int timeout = 0;//TIMEOUT_FOREVER;
-	int n_streams = 2;
-	//while (rc == openni::STATUS_OK)
-	for (int i=0;i<n_streams;i++)
+	int n_streams = 1;
+
+	changedIndex = -1;
+	rc = openni::OpenNI::waitForAnyStream(streams1, n_streams, &changedIndex, timeout);
+	if (rc == openni::STATUS_OK)
 	{
-		rc = openni::OpenNI::waitForAnyStream(streams, n_streams, &changedIndex, timeout);
-		if (rc == openni::STATUS_OK)
+		switch (changedIndex)
 		{
-			switch (changedIndex)
+		case 0:
+			depthStream.readFrame(&depthFrame);
+			updateDepthFrame();
+			if(bUseUsers)
 			{
-			case 0:
-				depthStream.readFrame(&depthFrame);
-				if(bUseUsers) userTracker.readFrame(&userFrame);
-				if(bUseHands) handTracker.readFrame(&handFrame);
-				break;
-			case 1:
-				imageStream.readFrame(&imageFrame); break;
-			default:
-				printf("Error in wait\n");
+				userTracker.readFrame(&userFrame);
+				updateUserFrame();
 			}
+			if(bUseHands)
+			{
+				handTracker.readFrame(&handFrame);
+				updateHandFrame();
+			}
+			break;
+		default:
+			printf("Error in wait\n");
 		}
 	}
 
-	updateDepthFrame();
-	updateImageFrame();
-	updateUserFrame();
-	updateHandFrame();
+
+
+
+	/////////
+	openni::VideoStream* streams2[] = {&imageStream};
+	changedIndex = -1;
+	rc = openni::OpenNI::waitForAnyStream(streams2, n_streams, &changedIndex, timeout);
+	if (rc == openni::STATUS_OK)
+	{
+		switch (changedIndex)
+		{
+
+		case 0:
+			imageStream.readFrame(&imageFrame);
+			updateImageFrame();	
+			break;
+		default:
+			printf("Error in wait\n");
+		}
+	}
+
 }
 
 //--------------------------------------------------------------
