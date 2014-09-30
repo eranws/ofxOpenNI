@@ -258,7 +258,7 @@ void ofxOpenNI::stop(){
 		ofLogNotice("destroy userTracker");
 		userTracker.destroy();
 	}
-	if(bUseUsers)
+	if(bUseHands)
 	{
 		ofLogNotice("release handFrame");
 		handFrame.release();
