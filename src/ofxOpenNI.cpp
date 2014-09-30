@@ -46,6 +46,8 @@ bool ofxOpenNI::setup(const char* deviceUri){
 	openni::Status rc;
 
 	/*
+	//TODO as singleton
+
 	openni::Status rc = OpenNI::initialize();
 	if (rc != openni::STATUS_OK) {
 	ofLogError() << "Failed to initialize OpenNI:" << OpenNI::getExtendedError();
@@ -298,24 +300,7 @@ void ofxOpenNI::stop(){
 
 //--------------------------------------------------------------
 void ofxOpenNI::update(){
-
-
 	if(!bUseDevice) return;
-
-	updateGenerators();
-
-	if(isDepthFrameNew()){
-		depthTexture.loadData(depthPixels.getPixels(), depthWidth, depthHeight, GL_RGBA);
-	}
-
-	if(isImageFrameNew()){
-		imageTexture.loadData(imagePixels.getPixels(), imageWidth, imageHeight, GL_RGB);
-	}
-
-}
-
-//--------------------------------------------------------------
-void ofxOpenNI::updateGenerators(){
 
 	openni::Status rc;
 
@@ -335,7 +320,6 @@ void ofxOpenNI::updateGenerators(){
 		{
 		case 0:
 			depthStream.readFrame(&depthFrame);
-			updateDepthFrame();
 			if(bUseUsers)
 			{
 				userTracker.readFrame(&userFrame);
@@ -378,10 +362,14 @@ void ofxOpenNI::updateGenerators(){
 //--------------------------------------------------------------
 void ofxOpenNI::updateDepthFrame(){
 	if(depthFrame.isValid()){
+		bIsDepthFrameNew = true;
+		
 		const openni::DepthPixel* depth = (const openni::DepthPixel*)depthFrame.getData();
-		for (int y = depthFrame.getCropOriginY(); y < depthFrame.getHeight() + depthFrame.getCropOriginY(); y++){
+		for (int y = depthFrame.getCropOriginY(); y < depthFrame.getHeight() + depthFrame.getCropOriginY(); y++)
+		{
 			unsigned char * texture = depthPixels.getPixels() + y * depthFrame.getWidth() * 4 + depthFrame.getCropOriginX() * 4;
-			for (int x = 0; x < depthPixels.getWidth(); x++, depth++, texture += 4) {
+			for (int x = 0; x < depthPixels.getWidth(); x++, depth++, texture += 4)
+			{
 				ofColor depthColor;
 
 				getDepthColor(COLORING_RAINBOW, *depth, depthColor, 10000);
@@ -390,22 +378,26 @@ void ofxOpenNI::updateDepthFrame(){
 				texture[1] = depthColor.g;
 				texture[2] = depthColor.b;
 
-				if(*depth == 0){
+				if(*depth == 0)
+				{
 					texture[3] = 0;
-				}else{
+				}
+				else
+				{
 					texture[3] = depthColor.a;
 				}
-
 			}
 		}
-		bIsDepthFrameNew = true;
 	}
+	
+	depthTexture.loadData(depthPixels.getPixels(), depthWidth, depthHeight, GL_RGBA);
 }
 
 //--------------------------------------------------------------
 void ofxOpenNI::updateImageFrame(){
 	if(imageFrame.isValid()){
-		imagePixels.setFromPixels((unsigned char *)imageFrame.getData(), imageFrame.getWidth(), imageFrame.getHeight(), OF_IMAGE_COLOR);
+		imageTexture.loadData((unsigned char *)imageFrame.getData(), imageFrame.getWidth(), imageFrame.getHeight(), GL_RGB); //load straight to GPU texture (faster)
+		//		imagePixels.setFromPixels((unsigned char *)imageFrame.getData(), imageFrame.getWidth(), imageFrame.getHeight(), OF_IMAGE_COLOR);
 		bIsImageFrameNew = true;
 	}
 }
@@ -569,6 +561,12 @@ void ofxOpenNI::drawImage(){
 	ofPopMatrix();
 }
 
+void ofxOpenNI::drawDepthTexture()
+{
+	updateDepthFrame();
+	depthTexture.draw(0, 0, depthWidth, depthHeight);
+}
+
 void ofxOpenNI::drawDepth(){
 	if(!bUseDevice) return;
 
@@ -576,7 +574,7 @@ void ofxOpenNI::drawDepth(){
 
 	ofPushMatrix();
 	if(bUseDepth){
-		depthTexture.draw(0, 0, depthWidth, depthHeight);
+		drawDepthTexture();
 	}
 	ofPopMatrix();
 }
@@ -588,7 +586,7 @@ void ofxOpenNI::draw(){
 
 	ofPushMatrix();
 	if(bUseDepth){
-		depthTexture.draw(0, 0, depthWidth, depthHeight);
+		drawDepthTexture();
 		ofTranslate(depthWidth, 0);
 	}
 	if(bUseImage){

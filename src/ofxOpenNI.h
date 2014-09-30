@@ -35,7 +35,7 @@
 #include "ofxOpenNIUtils.h"
 #include "ofxOpenNITypes.h"
 
-class ofxOpenNI// : public ofThread
+class ofxOpenNI
 {
 public:
     
@@ -52,26 +52,17 @@ public:
 	bool addImageStream();
 	bool addUserTracker();
     bool addHandsTracker();
-    
-//    bool removeDepthGenerator();
-//    bool removeImageGenerator();
-//    bool removeInfraGenerator();
-//    bool removeUserGenerator();
-//    bool removeGestureGenerator();
-//    bool removeHandsGenerator();
-//    bool removeAudioGenerator();
 
-	//Recorder recorder;
 	void stopRecording();
 	void startRecording(string filename = "");
-
-	
 
     void update();
 
 	void drawImageSubsection(float w, float h, float sx, float sy);
 	void drawImage();
 	void drawDepth();
+	void drawDepthTexture();
+
     void draw();
     
     bool isDepthFrameNew();
@@ -84,11 +75,7 @@ public:
 	Device& getDevice() {return device;}
 
 protected:
-    
-    void updateGenerators();
-    
-    void threadedFunction();
-    
+       
     Device device;
     
     void allocateDepthBuffers();
@@ -138,6 +125,8 @@ protected:
     bool bUseDevice;
     bool bUseNite;
     
+	bool useDepthTexture;
+
     bool bUseDepth;
 	bool bUseImage;
 	bool bUseInfra;
