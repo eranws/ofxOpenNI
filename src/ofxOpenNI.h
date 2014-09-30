@@ -35,8 +35,8 @@
 #include "ofxOpenNIUtils.h"
 #include "ofxOpenNITypes.h"
 
-class ofxOpenNI : public ofThread {
-    
+class ofxOpenNI// : public ofThread
+{
 public:
     
     ofxOpenNI();
@@ -80,6 +80,8 @@ public:
 	//HACKHACK
 	float imageWidth;
     float imageHeight;
+
+	Device& getDevice() {return device;}
 
 protected:
     

@@ -48,8 +48,8 @@ bool ofxOpenNI::setup(const char* deviceUri){
 	/*
 	openni::Status rc = OpenNI::initialize();
 	if (rc != openni::STATUS_OK) {
-		ofLogError() << "Failed to initialize OpenNI:" << OpenNI::getExtendedError();
-		bUseDevice = false;
+	ofLogError() << "Failed to initialize OpenNI:" << OpenNI::getExtendedError();
+	bUseDevice = false;
 	}
 	*/
 
@@ -60,7 +60,7 @@ bool ofxOpenNI::setup(const char* deviceUri){
 		bUseDevice = false;
 	}else{
 		ofLogNotice() << "Succeeded to open device:" << device.getDeviceInfo().getName();
-		device.setDepthColorSyncEnabled(true);
+		//device.setDepthColorSyncEnabled(true);
 		bUseDevice = true;
 	}
 
@@ -80,8 +80,6 @@ void ofxOpenNI::shutdown()
 
 //--------------------------------------------------------------
 bool ofxOpenNI::addDepthStream(){
-
-	ofScopedLock lock(mutex);
 
 	if(!bUseDevice){
 		bUseDepth = false;
@@ -117,8 +115,6 @@ bool ofxOpenNI::addDepthStream(){
 
 //--------------------------------------------------------------
 bool ofxOpenNI::addImageStream(){
-
-	ofScopedLock lock(mutex);
 
 	if(!bUseDevice){
 		bUseImage = false;
@@ -156,7 +152,6 @@ bool ofxOpenNI::addImageStream(){
 //--------------------------------------------------------------
 bool ofxOpenNI::addUserTracker(){
 
-	ofScopedLock lock(mutex);
 
 	if(!bUseDevice){
 		bUseUsers = false;
@@ -191,7 +186,6 @@ bool ofxOpenNI::addUserTracker(){
 //--------------------------------------------------------------
 bool ofxOpenNI::addHandsTracker(){
 
-	ofScopedLock lock(mutex);
 
 	if(!bUseDevice){
 		bUseHands = false;
@@ -245,7 +239,6 @@ void ofxOpenNI::allocateImageBuffers(){
 void ofxOpenNI::start(){
 	if(bUseDevice){
 		ofLogNotice() << "Starting ofxOpenNI!";
-		startThread();
 	}else{
 		ofLogError() << "Failed to start! You need to setup your device";
 	}
@@ -255,12 +248,6 @@ void ofxOpenNI::start(){
 //--------------------------------------------------------------
 void ofxOpenNI::stop(){
 	ofLogNotice("Stopping ofxOpenNI");
-	if(isThreadRunning()){
-		ofLogNotice("Stopping Thread");
-		stopThread();
-		waitForThread(true);
-		ofLogNotice("Stopping Thread ok");
-	}
 
 	if(bUseUsers)
 	{
@@ -312,8 +299,10 @@ void ofxOpenNI::stop(){
 //--------------------------------------------------------------
 void ofxOpenNI::update(){
 
+
 	if(!bUseDevice) return;
 
+	updateGenerators();
 
 	if(isDepthFrameNew()){
 		depthTexture.loadData(depthPixels.getPixels(), depthWidth, depthHeight, GL_RGBA);
@@ -328,22 +317,39 @@ void ofxOpenNI::update(){
 //--------------------------------------------------------------
 void ofxOpenNI::updateGenerators(){
 
-	lock();
+	openni::Status rc;
+	
+	rc = openni::STATUS_OK;
+	openni::VideoStream* streams[] = {&depthStream, &imageStream};
 
-	if(bUseDepth) depthStream.readFrame(&depthFrame);
-	if(bUseImage) imageStream.readFrame(&imageFrame);
-	if(bUseUsers) userTracker.readFrame(&userFrame);
-	if(bUseHands) handTracker.readFrame(&handFrame);
+	int changedIndex = -1;
+	int timeout = 0;//TIMEOUT_FOREVER;
+	int n_streams = 2;
+	//while (rc == openni::STATUS_OK)
+	for (int i=0;i<n_streams;i++)
+	{
+		rc = openni::OpenNI::waitForAnyStream(streams, n_streams, &changedIndex, timeout);
+		if (rc == openni::STATUS_OK)
+		{
+			switch (changedIndex)
+			{
+			case 0:
+				depthStream.readFrame(&depthFrame);
+				if(bUseUsers) userTracker.readFrame(&userFrame);
+				if(bUseHands) handTracker.readFrame(&handFrame);
+				break;
+			case 1:
+				imageStream.readFrame(&imageFrame); break;
+			default:
+				printf("Error in wait\n");
+			}
+		}
+	}
 
 	updateDepthFrame();
 	updateImageFrame();
 	updateUserFrame();
 	updateHandFrame();
-
-	unlock();
-
-	ofSleepMillis(10);
-
 }
 
 //--------------------------------------------------------------
@@ -511,19 +517,6 @@ bool ofxOpenNI::isDepthFrameNew(){
 bool ofxOpenNI::isImageFrameNew(){
 	//ofScopedLock lock(mutex);
 	return bIsImageFrameNew;
-}
-
-//--------------------------------------------------------------
-void ofxOpenNI::threadedFunction(){
-	try{
-		while (isThreadRunning()) {
-			updateGenerators();
-		}
-	}
-	catch(exception e)
-	{
-
-	}
 }
 
 //--------------------------------------------------------------
