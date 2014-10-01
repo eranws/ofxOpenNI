@@ -304,45 +304,51 @@ void ofxOpenNI::update(){
 
 	openni::Status rc;
 
-	rc = openni::STATUS_OK;
-	openni::VideoStream* streams1[] = {&depthStream};
-
-
-	int changedIndex;
-	int timeout = 0;//TIMEOUT_FOREVER;
-	int n_streams = 1;
-
-	changedIndex = -1;
-	rc = openni::OpenNI::waitForAnyStream(streams1, n_streams, &changedIndex, timeout);
-	if (rc == openni::STATUS_OK)
+	if (bUseDepth)
 	{
-		switch (changedIndex)
+		rc = openni::STATUS_OK;
+		openni::VideoStream* streams1[] = {&depthStream};
+
+
+		int changedIndex;
+		int depthtimeout = 20;
+		int n_streams = 1;
+
+		changedIndex = -1;
+		rc = openni::OpenNI::waitForAnyStream(streams1, n_streams, &changedIndex, depthtimeout);
+		if (rc == openni::STATUS_OK)
 		{
-		case 0:
-			depthStream.readFrame(&depthFrame);
-			if(bUseUsers)
+			switch (changedIndex)
 			{
-				userTracker.readFrame(&userFrame);
-				updateUserFrame();
+			case 0:
+				depthStream.readFrame(&depthFrame);
+				if(bUseUsers)
+				{
+					userTracker.readFrame(&userFrame);
+					updateUserFrame();
+				}
+				if(bUseHands)
+				{
+					handTracker.readFrame(&handFrame);
+					updateHandFrame();
+				}
+				break;
+			default:
+				printf("Error in wait\n");
 			}
-			if(bUseHands)
-			{
-				handTracker.readFrame(&handFrame);
-				updateHandFrame();
-			}
-			break;
-		default:
-			printf("Error in wait\n");
 		}
 	}
 
 
 
-
-	/////////
+	if (bUseImage)
+	{
+		rc = openni::STATUS_OK;
 	openni::VideoStream* streams2[] = {&imageStream};
-	changedIndex = -1;
-	rc = openni::OpenNI::waitForAnyStream(streams2, n_streams, &changedIndex, timeout);
+	int changedIndex = -1;
+	int n_streams = 1;
+	int imagetimeout = 0;
+	rc = openni::OpenNI::waitForAnyStream(streams2, n_streams, &changedIndex, imagetimeout);
 	if (rc == openni::STATUS_OK)
 	{
 		switch (changedIndex)
@@ -356,14 +362,14 @@ void ofxOpenNI::update(){
 			printf("Error in wait\n");
 		}
 	}
-
+	}
 }
 
 //--------------------------------------------------------------
 void ofxOpenNI::updateDepthFrame(){
 	if(depthFrame.isValid()){
 		bIsDepthFrameNew = true;
-		
+
 		const openni::DepthPixel* depth = (const openni::DepthPixel*)depthFrame.getData();
 		for (int y = depthFrame.getCropOriginY(); y < depthFrame.getHeight() + depthFrame.getCropOriginY(); y++)
 		{
@@ -389,7 +395,7 @@ void ofxOpenNI::updateDepthFrame(){
 			}
 		}
 	}
-	
+
 	depthTexture.loadData(depthPixels.getPixels(), depthWidth, depthHeight, GL_RGBA);
 }
 
