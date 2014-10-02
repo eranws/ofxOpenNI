@@ -268,10 +268,18 @@ void ofxOpenNI::stop(){
 
 
 	if(bUseDevice){
-		ofLogNotice("destroy depthStream");
-		depthStream.destroy();
-		ofLogNotice("destroy imageStream");
-		imageStream.destroy();
+
+		if (bUseDepth)
+		{
+			ofLogNotice("destroy depthStream");
+			depthStream.destroy();
+		}
+
+		if (bUseImage)
+		{
+			ofLogNotice("destroy imageStream");
+			imageStream.destroy();
+		}
 
 		ofLogNotice() << "Closing openNI device: " << device.getDeviceInfo().getName();
 		device.close();
