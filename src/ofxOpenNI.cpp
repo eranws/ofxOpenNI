@@ -62,7 +62,8 @@ bool ofxOpenNI::setup(const char* deviceUri){
 		bUseDevice = false;
 	}else{
 		ofLogNotice() << "Succeeded to open device:" << device.getDeviceInfo().getName();
-		//device.setDepthColorSyncEnabled(true);
+		device.setDepthColorSyncEnabled(true);
+		device.setImageRegistrationMode(IMAGE_REGISTRATION_DEPTH_TO_COLOR);
 		bUseDevice = true;
 	}
 
